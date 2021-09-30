@@ -1,24 +1,33 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"net/http"
-	routes "go_exploring/server"
+	"context"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/shurcooL/githubv4"
+	"golang.org/x/oauth2"
 )
 
 func main() {
-	router := gin.Default()
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	)
 
-	router.GET("./pong", routes.Pong)
+	httpClient := oauth2.NewClient(context.Background(), src)
+	client := githubv4.NewClient(httpClient)
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-	
-	router.NoRoute(func(c *gin.Context) {
-              c.AbortWithStatus(http.StatusNotFound)
-       })
-	router.Run(":8080") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	var query struct {
+		Viewer struct {
+			Login     string
+			CreatedAt time.Time
+		}
+	}
+	err := client.Query(context.Background(), &query, nil)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("error: %s", err))
+	}
+	fmt.Println("    Login:", query.Viewer.Login)
+	fmt.Println("CreatedAt:", query.Viewer.CreatedAt)
 }
