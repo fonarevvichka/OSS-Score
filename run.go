@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -18,16 +17,26 @@ func main() {
 	httpClient := oauth2.NewClient(context.Background(), src)
 	client := githubv4.NewClient(httpClient)
 
-	var query struct {
-		Viewer struct {
-			Login     string
-			CreatedAt time.Time
-		}
-	}
-	err := client.Query(context.Background(), &query, nil)
+	description, err := fetchRepoInfo(*client, context.Background(), "fonarevvichka", "tryNotToLaughAffectiva")
+
 	if err != nil {
-		fmt.Println(fmt.Sprintf("error: %s", err))
+		fmt.Println("Error!")
 	}
-	fmt.Println("    Login:", query.Viewer.Login)
-	fmt.Println("CreatedAt:", query.Viewer.CreatedAt)
+
+	fmt.Println(description)
+}
+
+func fetchRepoInfo(client githubv4.Client, ctx context.Context, owner string, name string) (string, error) {
+	var q struct {
+		Repository struct {
+			Description string
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+	variables := map[string]interface{}{
+		"owner": githubv4.String(owner),
+		"name":  githubv4.String(name),
+	}
+
+	err := client.Query(ctx, &q, variables)
+	return q.Repository.Description, err
 }
