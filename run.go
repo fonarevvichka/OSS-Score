@@ -35,13 +35,6 @@ func getRepoLicense(client githubv4.Client, ctx context.Context, owner string, n
 			LicenseInfo struct {
 				name string
 			}
-			// LicenseInfo struct {
-			// body string
-			// License struct {
-			// 	name string
-			// }
-			// }
-			// }
 		} `graphql:"repository(owner: $owner, name: $name)"`
 	}
 	variables := map[string]interface{}{
@@ -49,6 +42,6 @@ func getRepoLicense(client githubv4.Client, ctx context.Context, owner string, n
 		"name":  githubv4.String(name),
 	}
 	err := client.Query(ctx, &q, variables)
-	// fmt.Println(q.Repository.License)
+	fmt.Println(q.Repository.LicenseInfo)
 	return q.Repository.Description, err
 }
