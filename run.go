@@ -29,11 +29,10 @@ func main() {
 
 func getRepoLicense(client githubv4.Client, ctx context.Context, owner string, name string) (string, error) {
 	var q struct {
-		// Repository struct {
 		Repository struct {
-			Description string
 			LicenseInfo struct {
-				name string
+				Key string
+				// PsuedoLicense bool
 			}
 		} `graphql:"repository(owner: $owner, name: $name)"`
 	}
@@ -41,7 +40,8 @@ func getRepoLicense(client githubv4.Client, ctx context.Context, owner string, n
 		"owner": githubv4.String(owner),
 		"name":  githubv4.String(name),
 	}
+
 	err := client.Query(ctx, &q, variables)
-	fmt.Println(q.Repository.LicenseInfo)
-	return q.Repository.Description, err
+
+	return q.Repository.LicenseInfo.Key, err
 }
