@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"go_exploring/util"
 	"os"
 
 	"github.com/shurcooL/githubv4"
@@ -17,31 +18,13 @@ func main() {
 	httpClient := oauth2.NewClient(context.Background(), src)
 	client := githubv4.NewClient(httpClient)
 
-	description, err := getRepoLicense(*client, context.Background(), "facebook", "react")
+	// description, err := util.GetRepoLicense(*client, context.Background(), "facebook", "react")
+	description, err := util.GetAllIssues(*client, context.Background(), "fonarevvichka", "OSScore")
 
 	if err != nil {
-		fmt.Printf("Error! %f \n", err)
+		fmt.Println(err)
 		return
 	}
 
 	fmt.Println(description)
-}
-
-func getRepoLicense(client githubv4.Client, ctx context.Context, owner string, name string) (string, error) {
-	var q struct {
-		Repository struct {
-			LicenseInfo struct {
-				Key string
-				// PsuedoLicense bool
-			}
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
-	variables := map[string]interface{}{
-		"owner": githubv4.String(owner),
-		"name":  githubv4.String(name),
-	}
-
-	err := client.Query(ctx, &q, variables)
-
-	return q.Repository.LicenseInfo.Key, err
 }
