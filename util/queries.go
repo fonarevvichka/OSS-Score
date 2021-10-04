@@ -26,15 +26,16 @@ func GetRepoLicense(client githubv4.Client, ctx context.Context, owner string, n
 }
 
 type issue struct {
-	Closed bool
-	Body   string
-	Title  string
-	// CreatedAt githubv4.DateTime
-	// ClosedAt  githubv4.DateTime
+	// Closed bool
+	// Body      string
+	Title     string
+	CreatedAt githubv4.DateTime
+	ClosedAt  githubv4.DateTime
 	//comments
 }
 
-func GetAllIssues(client githubv4.Client, ctx context.Context, owner string, name string) ([]issue, error) {
+func GetIssuesByState(client githubv4.Client, ctx context.Context, owner string, name string, state githubv4.IssueState) ([]issue, error) {
+	// issueFilter := []githubv4.IssueState{state}
 	var q struct {
 		Repository struct {
 			Issues struct {
@@ -43,13 +44,14 @@ func GetAllIssues(client githubv4.Client, ctx context.Context, owner string, nam
 					EndCursor   githubv4.String
 					HasNextPage bool
 				}
-			} `graphql:"issues(first: 100, after: $issueCursor)"`
+			} `graphql:"issues(first: 100, after: $issueCursor, states: $states)"`
 		} `graphql:"repository(owner: $owner, name: $name)"`
 	}
 	variables := map[string]interface{}{
 		"owner":       githubv4.String(owner),
 		"name":        githubv4.String(name),
 		"issueCursor": (*githubv4.String)(nil),
+		"states":      []githubv4.IssueState{state},
 	}
 
 	var allIssues []issue
@@ -65,7 +67,7 @@ func GetAllIssues(client githubv4.Client, ctx context.Context, owner string, nam
 		}
 		variables["issueCursor"] = githubv4.NewString(q.Repository.Issues.PageInfo.EndCursor)
 
-		if q.Repository.Issues.PageInfo.EndCursor > "400" {
+		if q.Repository.Issues.PageInfo.EndCursor > "400" { // temp to make things quicker
 			break
 		}
 	}

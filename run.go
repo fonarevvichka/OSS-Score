@@ -19,7 +19,7 @@ func main() {
 	client := githubv4.NewClient(httpClient)
 
 	// description, err := util.GetRepoLicense(*client, context.Background(), "facebook", "react")
-	description, err := util.GetAllIssues(*client, context.Background(), "fonarevvichka", "OSScore")
+	description, err := util.GetIssuesByState(*client, context.Background(), "fonarevvichka", "OSScore", githubv4.IssueStateOpen)
 
 	if err != nil {
 		fmt.Println(err)
