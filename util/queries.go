@@ -2,17 +2,43 @@ package util
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/shurcooL/githubv4"
 )
 
-func GetRepoLicense(client githubv4.Client, ctx context.Context, owner string, name string) (string, error) {
+type issue struct {
+	Title     string
+	CreatedAt githubv4.DateTime
+	ClosedAt  githubv4.DateTime
+}
+
+type language struct {
+	Name string
+}
+
+type repoInfo struct {
+	languages    []string
+	createDate   githubv4.DateTime
+	license      string
+	closedIssues []issue
+	openIssues   []issue
+}
+
+type dependency struct {
+	dependenciesCount int
+}
+
+func GetRepoInfo(client githubv4.Client, ctx context.Context, owner string, name string) (repoInfo, error) {
 	var q struct {
 		Repository struct {
 			LicenseInfo struct {
 				Key string
-				// PsuedoLicense bool
 			}
+			CreatedAt githubv4.DateTime
+			Languages struct {
+				Nodes []language
+			} `graphql:"languages(first: 10)"`
 		} `graphql:"repository(owner: $owner, name: $name)"`
 	}
 	variables := map[string]interface{}{
@@ -21,21 +47,37 @@ func GetRepoLicense(client githubv4.Client, ctx context.Context, owner string, n
 	}
 
 	err := client.Query(ctx, &q, variables)
-
-	return q.Repository.LicenseInfo.Key, err
+	fmt.Println(q.Repository.Languages)
+	return repoInfo{license: q.Repository.LicenseInfo.Key, createDate: q.Repository.CreatedAt}, err
 }
 
-type issue struct {
-	// Closed bool
-	// Body      string
-	Title     string
-	CreatedAt githubv4.DateTime
-	ClosedAt  githubv4.DateTime
-	//comments
+func GetDependencies(client githubv4.Client, ctx context.Context, owner string, name string) (string, error) {
+	var q struct {
+		Repository struct {
+			LicenseInfo struct {
+				Key string
+			}
+			DependencyGraphManifests struct {
+				Nodes    []dependency
+				PageInfo struct {
+					EndCursor   githubv4.String
+					HasNextPage bool
+				}
+			} `graphql:"dependencies(first: 100, after: $dependencyCursor)"`
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+	variables := map[string]interface{}{
+		"owner":            githubv4.String(owner),
+		"name":             githubv4.String(name),
+		"dependencyCursor": (*githubv4.String)(nil),
+	}
+
+	err := client.Query(ctx, &q, variables)
+	fmt.Println(q.Repository.DependencyGraphManifests.Nodes)
+	return "all iz well", err
 }
 
 func GetIssuesByState(client githubv4.Client, ctx context.Context, owner string, name string, state githubv4.IssueState) ([]issue, error) {
-	// issueFilter := []githubv4.IssueState{state}
 	var q struct {
 		Repository struct {
 			Issues struct {
@@ -67,9 +109,9 @@ func GetIssuesByState(client githubv4.Client, ctx context.Context, owner string,
 		}
 		variables["issueCursor"] = githubv4.NewString(q.Repository.Issues.PageInfo.EndCursor)
 
-		if q.Repository.Issues.PageInfo.EndCursor > "400" { // temp to make things quicker
-			break
-		}
+		// if q.Repository.Issues.PageInfo.EndCursor > "400" { // temp to make things quicker
+		// 	break
+		// }
 	}
 	return allIssues, err
 }
