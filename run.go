@@ -5,25 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	util "go_exploring/util"
 	"log"
 	"net/http"
 	"os"
 
 	"golang.org/x/oauth2"
 )
-
-type repository struct {
-	Repository repoInfo
-}
-
-type repoInfo struct {
-	Name string
-	Url  string
-}
-
-type data struct {
-	Data repository
-}
 
 func main() {
 	gitUrl := "https://api.github.com/graphql"
@@ -47,11 +35,11 @@ func main() {
 	}
 	defer resp.Body.Close()
 
-	var datum data
+	var data util.Data
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&datum)
+	err = decoder.Decode(&data)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(datum.Data.Repository.Url)
+	fmt.Println(data.Data.Repository.Url)
 }
