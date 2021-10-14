@@ -1,32 +1,57 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"go_exploring/util"
+	"log"
+	"net/http"
 	"os"
 
-	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
 
+type repository struct {
+	Repository repoInfo
+}
+
+type repoInfo struct {
+	Name string
+	Url  string
+}
+
+type data struct {
+	Data repository
+}
+
 func main() {
+	gitUrl := "https://api.github.com/graphql"
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
 	)
-
 	httpClient := oauth2.NewClient(context.Background(), src)
-	client := githubv4.NewClient(httpClient)
 
-	// response, err := util.GetRepoInfo(*client, context.Background(), "facebook", "react")
-	response, err := util.GetDependencies(*client, context.Background(), "facebook", "react")
-	// description, err := util.GetIssuesByState(*client, context.Background(), "fonarevvichka", "OSScore", githubv4.IssueStateOpen)
-	// description, err := util.GetIssuesByState(*client, context.Background(), "facebook", "react", githubv4.IssueStateClosed)
+	postBody, _ := json.Marshal(map[string]string{
+		"query": "query ($name: String!, $owner: String!){	repository(owner: $owner, name: $name) {    name    url  }}",
+		"variables": "{\"owner\": \"fonarevvichka\", \"name\": \"go_exploring\"}",
+	})
+	responseBody := bytes.NewBuffer(postBody)
+
+	post_request, err := http.NewRequest("POST", gitUrl, responseBody)
+	post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
+	resp, err := httpClient.Do(post_request)
 
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalln(err)
 	}
+	defer resp.Body.Close()
 
-	fmt.Println(response)
+	var datum data
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&datum)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(datum.Data.Repository.Url)
 }

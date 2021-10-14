@@ -1,0 +1,40 @@
+query {
+	repository(owner: "fonarevvichka", name: "go_exploring") {
+    name
+    url
+  }
+}
+
+query ($name: String!, $owner: String!){
+	repository(owner: $owner, name: $name) {
+    name
+    url
+  }
+}
+
+variables = {"owner": "fonarevvichka", "name": "go_exploring"}
+
+query {
+	repository(owner: "facebook", name: "react") {
+    dependencyGraphManifests (first: 1) {
+      edges {
+        node {
+          dependencies {
+            totalCount
+            edges {
+              node {
+                packageName
+                repository {
+                  name
+                  owner {
+                    login
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

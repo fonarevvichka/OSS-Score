@@ -51,32 +51,6 @@ func GetRepoInfo(client githubv4.Client, ctx context.Context, owner string, name
 	return repoInfo{license: q.Repository.LicenseInfo.Key, createDate: q.Repository.CreatedAt}, err
 }
 
-func GetDependencies(client githubv4.Client, ctx context.Context, owner string, name string) (string, error) {
-	var q struct {
-		Repository struct {
-			LicenseInfo struct {
-				Key string
-			}
-			DependencyGraphManifests struct {
-				Nodes    []dependency
-				PageInfo struct {
-					EndCursor   githubv4.String
-					HasNextPage bool
-				}
-			} `graphql:"dependencies(first: 100, after: $dependencyCursor)"`
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
-	variables := map[string]interface{}{
-		"owner":            githubv4.String(owner),
-		"name":             githubv4.String(name),
-		"dependencyCursor": (*githubv4.String)(nil),
-	}
-
-	err := client.Query(ctx, &q, variables)
-	fmt.Println(q.Repository.DependencyGraphManifests.Nodes)
-	return "all iz well", err
-}
-
 func GetIssuesByState(client githubv4.Client, ctx context.Context, owner string, name string, state githubv4.IssueState) ([]issue, error) {
 	var q struct {
 		Repository struct {
