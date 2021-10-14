@@ -41,5 +41,6 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	fmt.Println(data.Data.Repository.Url)
 }
