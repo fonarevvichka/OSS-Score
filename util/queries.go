@@ -1,91 +1,88 @@
 package util
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"fmt"
-
-	"github.com/shurcooL/githubv4"
+	"log"
+	"net/http"
 )
 
-type issue struct {
-	Title     string
-	CreatedAt githubv4.DateTime
-	ClosedAt  githubv4.DateTime
-}
+// type issue struct {
+// 	Title     string
+// 	CreatedAt githubv4.DateTime
+// 	ClosedAt  githubv4.DateTime
+// }
 
-type language struct {
-	Name string
-}
+// post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
 
-type repoInfo struct {
-	languages    []string
-	createDate   githubv4.DateTime
-	license      string
-	closedIssues []issue
-	openIssues   []issue
-}
+func GetRepoInfo(client *http.Client, gitUrl string, owner string, name string) (RepoInfo, error) {
+	query := "query ($name: String!, $owner: String!){	repository(owner: $owner, name: $name) {    licenseInfo {      key    }    createdAt  }}"
+	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", owner, name)
 
-type dependency struct {
-	dependenciesCount int
-}
+	postBody, _ := json.Marshal(map[string]string{
+		"query":     query,
+		"variables": variables,
+	})
+	responseBody := bytes.NewBuffer(postBody)
 
-func GetRepoInfo(client githubv4.Client, ctx context.Context, owner string, name string) (repoInfo, error) {
-	var q struct {
-		Repository struct {
-			LicenseInfo struct {
-				Key string
-			}
-			CreatedAt githubv4.DateTime
-			Languages struct {
-				Nodes []language
-			} `graphql:"languages(first: 10)"`
-		} `graphql:"repository(owner: $owner, name: $name)"`
+	post_request, err := http.NewRequest("POST", gitUrl, responseBody)
+	resp, err := client.Do(post_request)
+
+	if err != nil {
+		log.Fatalln(err)
 	}
-	variables := map[string]interface{}{
-		"owner": githubv4.String(owner),
-		"name":  githubv4.String(name),
+	defer resp.Body.Close()
+
+	var data RepoInfoResponse
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&data)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	err := client.Query(ctx, &q, variables)
-	fmt.Println(q.Repository.Languages)
-	return repoInfo{license: q.Repository.LicenseInfo.Key, createDate: q.Repository.CreatedAt}, err
+	info := RepoInfo{
+		License:    data.Data.Repository.LicenseInfo.Key,
+		CreateDate: data.Data.Repository.CreatedAt,
+	}
+	return info, err
 }
 
-func GetIssuesByState(client githubv4.Client, ctx context.Context, owner string, name string, state githubv4.IssueState) ([]issue, error) {
-	var q struct {
-		Repository struct {
-			Issues struct {
-				Nodes    []issue
-				PageInfo struct {
-					EndCursor   githubv4.String
-					HasNextPage bool
-				}
-			} `graphql:"issues(first: 100, after: $issueCursor, states: $states)"`
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
-	variables := map[string]interface{}{
-		"owner":       githubv4.String(owner),
-		"name":        githubv4.String(name),
-		"issueCursor": (*githubv4.String)(nil),
-		"states":      []githubv4.IssueState{state},
-	}
+// func GetIssuesByState(client githubv4.Client, ctx context.Context, owner string, name string, state githubv4.IssueState) ([]issue, error) {
+// 	var q struct {
+// 		Repository struct {
+// 			Issues struct {
+// 				Nodes    []issue
+// 				PageInfo struct {
+// 					EndCursor   githubv4.String
+// 					HasNextPage bool
+// 				}
+// 			} `graphql:"issues(first: 100, after: $issueCursor, states: $states)"`
+// 		} `graphql:"repository(owner: $owner, name: $name)"`
+// 	}
+// 	variables := map[string]interface{}{
+// 		"owner":       githubv4.String(owner),
+// 		"name":        githubv4.String(name),
+// 		"issueCursor": (*githubv4.String)(nil),
+// 		"states":      []githubv4.IssueState{state},
+// 	}
 
-	var allIssues []issue
-	var err error
-	for {
-		err = client.Query(ctx, &q, variables)
-		if err != nil {
-			break
-		}
-		allIssues = append(allIssues, q.Repository.Issues.Nodes...)
-		if !q.Repository.Issues.PageInfo.HasNextPage {
-			break
-		}
-		variables["issueCursor"] = githubv4.NewString(q.Repository.Issues.PageInfo.EndCursor)
+// 	var allIssues []issue
+// 	var err error
+// 	for {
+// 		err = client.Query(ctx, &q, variables)
+// 		if err != nil {
+// 			break
+// 		}
+// 		allIssues = append(allIssues, q.Repository.Issues.Nodes...)
+// 		if !q.Repository.Issues.PageInfo.HasNextPage {
+// 			break
+// 		}
+// 		variables["issueCursor"] = githubv4.NewString(q.Repository.Issues.PageInfo.EndCursor)
 
-		// if q.Repository.Issues.PageInfo.EndCursor > "400" { // temp to make things quicker
-		// 	break
-		// }
-	}
-	return allIssues, err
-}
+// 		// if q.Repository.Issues.PageInfo.EndCursor > "400" { // temp to make things quicker
+// 		// 	break
+// 		// }
+// 	}
+// 	return allIssues, err
+// }
