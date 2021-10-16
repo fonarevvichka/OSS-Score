@@ -9,6 +9,13 @@ type RepoInfoResponse struct {
 				Key string
 			}
 			CreatedAt time.Time
+			Languages struct {
+				Edges []struct {
+					Node struct {
+						Name string
+					}
+				}
+			}
 		}
 	}
 }
@@ -16,4 +23,5 @@ type RepoInfoResponse struct {
 type RepoInfo struct {
 	License    string
 	CreateDate time.Time
+	Languages  []string
 }

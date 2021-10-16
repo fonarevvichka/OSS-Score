@@ -1,10 +1,3 @@
-query {
-	repository(owner: "fonarevvichka", name: "go_exploring") {
-    name
-    url
-  }
-}
-
 query ($name: String!, $owner: String!){
 	repository(owner: $owner, name: $name) {
     name
@@ -12,10 +5,21 @@ query ($name: String!, $owner: String!){
   }
 }
 
-variables = {"owner": "fonarevvichka", "name": "go_exploring"}
+{
+  repository(owner: "facebook", name: "react") {
+    languages(first: 10) {
+      edges {
+        node {
+          name
+        }
+      }
+    }
+  }
+}
 
-query {
-	repository(owner: "facebook", name: "react") {
+
+query ($name: String!, $owner: String!){
+	repository(owner: $owner, name: $name) {
     dependencyGraphManifests (first: 1) {
       edges {
         node {
@@ -35,6 +39,12 @@ query {
           }
         }
       }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
     }
   }
 }
+
+variables = {"owner": "facebook", "name": "react"}

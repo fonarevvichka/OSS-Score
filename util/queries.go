@@ -17,7 +17,7 @@ import (
 // post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
 
 func GetRepoInfo(client *http.Client, gitUrl string, owner string, name string) (RepoInfo, error) {
-	query := "query ($name: String!, $owner: String!){	repository(owner: $owner, name: $name) {    licenseInfo {      key    }    createdAt  }}"
+	query := "query ($name: String!, $owner: String!){	repository(owner: $owner, name: $name) {  languages(first: 10) { edges { node { name } } } licenseInfo { key } createdAt }}"
 	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", owner, name)
 
 	postBody, _ := json.Marshal(map[string]string{
@@ -41,9 +41,11 @@ func GetRepoInfo(client *http.Client, gitUrl string, owner string, name string) 
 		log.Fatalln(err)
 	}
 
+	fmt.Println(data.Data.Repository.Languages.Edges[0].Node.Name)
 	info := RepoInfo{
 		License:    data.Data.Repository.LicenseInfo.Key,
 		CreateDate: data.Data.Repository.CreatedAt,
+		// Languages:  data.Data.Repository.Languages.Names,
 	}
 	return info, err
 }
