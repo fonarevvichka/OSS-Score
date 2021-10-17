@@ -43,11 +43,15 @@ func GetRepoInfo(client *http.Client, gitUrl string, owner string, name string) 
 		log.Fatalln(err)
 	}
 
-	fmt.Println(data.Data.Repository.Languages.Edges[0].Node.Name)
+	var langauges []string
+	for _, node := range data.Data.Repository.Languages.Edges {
+		langauges = append(langauges, node.Node.Name)
+	}
+
 	info := RepoInfo{
 		License:    data.Data.Repository.LicenseInfo.Key,
 		CreateDate: data.Data.Repository.CreatedAt,
-		// Languages:  data.Data.Repository.Languages.Names,
+		Languages:  langauges,
 	}
 	return info, err
 }
