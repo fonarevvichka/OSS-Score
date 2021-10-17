@@ -18,7 +18,7 @@ import (
 
 // post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
 
-func GetRepoInfo(client *http.Client, gitUrl string, owner string, name string) (RepoInfo, error) {
+func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name string) (RepoInfo, error) {
 	query := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
 	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", owner, name)
 

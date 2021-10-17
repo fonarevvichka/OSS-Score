@@ -17,8 +17,7 @@ func main() {
 	)
 	client := oauth2.NewClient(context.Background(), src)
 
-	// var repoInfo util.RepoInfo
-	info, err := (util.GetRepoInfo(client, gitUrl, "facebook", "react"))
+	info, err := (util.GetCoreRepoInfo(client, gitUrl, "facebook", "react"))
 	if err != nil {
 		log.Fatalln(err)
 	}
