@@ -1,0 +1,24 @@
+query ($name: String!, $owner: String!, $cursor: String) {
+  repository(owner: $owner, name: $name) {
+    issues(first: 100, after: $cursor, states: OPEN) {
+      edges {
+        node {
+          createdAt
+          assignees {
+            totalCount
+          }
+          participants {
+            totalCount
+          }
+          comments {
+            totalCount
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
