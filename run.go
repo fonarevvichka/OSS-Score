@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	util "go_exploring/util"
-	"log"
 	"os"
 
 	"golang.org/x/oauth2"
@@ -17,10 +16,10 @@ func main() {
 	)
 	client := oauth2.NewClient(context.Background(), src)
 
-	info, err := (util.GetCoreRepoInfo(client, gitUrl, "facebook", "react"))
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(info)
-
+	// info, err := (util.GetCoreRepoInfo(client, gitUrl, "facebook", "react"))
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// fmt.Println(info)
+	fmt.Println(util.GetDependencies(client, gitUrl, "facebook", "react"))
 }

@@ -16,8 +16,6 @@ import (
 // 	ClosedAt  githubv4.DateTime
 // }
 
-// post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
-
 func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name string) (RepoInfo, error) {
 	query := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
 	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", owner, name)
@@ -54,6 +52,62 @@ func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name stri
 		Languages:  langauges,
 	}
 	return info, err
+}
+
+func GetDependencies(client *http.Client, gitUrl string, owner string, name string) []Dependency {
+	query := importQuery("./util/queries/dependencies.graphql") //TODO: Make this a an env var probably
+	graphCursor := ""
+	dependencyCursor := ""
+	hasNextGraphPage := true
+	hasNextDependencyPage := true
+	var dependencies []Dependency
+	var data DependencyResponse
+
+	for hasNextGraphPage { //API is always returning false for some reason
+		for hasNextDependencyPage {
+			variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"graphCursor\": \"%s\", \"dependencyCursor\": \"%s\"}", owner, name, graphCursor, dependencyCursor)
+			postBody, _ := json.Marshal(map[string]string{
+				"query":     query,
+				"variables": variables,
+			})
+			responseBody := bytes.NewBuffer(postBody)
+
+			post_request, err := http.NewRequest("POST", gitUrl, responseBody)
+			post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
+			resp, err := client.Do(post_request)
+
+			if err != nil {
+				log.Fatalln(err)
+			}
+			defer resp.Body.Close()
+
+			decoder := json.NewDecoder(resp.Body)
+			err = decoder.Decode(&data)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			// No dependencies found
+			if data.Data.Repository.DependencyGraphManifests.TotalCount == 0 {
+				return nil
+			}
+
+			for _, node := range data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.Edges {
+				newDep := Dependency{
+					PacakgeName:   node.Node.PacakgeName,
+					NameWithOwner: node.Node.Repository.NameWithOwner,
+					Version:       node.Node.Requirements,
+				}
+				dependencies = append(dependencies, newDep) //TODO: check for dupes
+			}
+			hasNextDependencyPage = data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.PageInfo.HasNextPage
+			dependencyCursor = data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.PageInfo.EndCursor
+		}
+		hasNextGraphPage = data.Data.Repository.DependencyGraphManifests.PageInfo.HasNextPage
+		graphCursor = data.Data.Repository.DependencyGraphManifests.PageInfo.EndCursor //TODO this is broken for some reason
+	}
+
+	return dependencies
 }
 
 // Takes file path and reads in the query from it
