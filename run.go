@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	util "go_exploring/util"
+	"go_exploring/util"
 	"os"
 
 	"golang.org/x/oauth2"

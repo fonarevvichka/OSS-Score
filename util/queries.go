@@ -56,8 +56,9 @@ func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name stri
 
 func GetDependencies(client *http.Client, gitUrl string, owner string, name string) []Dependency {
 	query := importQuery("./util/queries/dependencies.graphql") //TODO: Make this a an env var probably
-	graphCursor := ""
-	dependencyCursor := ""
+	var graphCursor string
+	var dependencyCursor string
+
 	hasNextGraphPage := true
 	hasNextDependencyPage := true
 	var dependencies []Dependency
