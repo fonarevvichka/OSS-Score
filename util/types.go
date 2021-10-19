@@ -1,6 +1,8 @@
 package util
 
-import "time"
+import (
+	"time"
+)
 
 type RepoInfoResponse struct {
 	Data struct {
@@ -19,10 +21,12 @@ type RepoInfoResponse struct {
 		}
 	}
 }
+
 type PageInfo struct {
 	HasNextPage bool
 	EndCursor   string
 }
+
 type DependencyResponse struct {
 	Data struct {
 		Repository struct {
@@ -41,19 +45,67 @@ type DependencyResponse struct {
 									}
 								}
 							}
-							PageInfo
+							PageInfo PageInfo
 						}
 					}
 				}
-				PageInfo
+				PageInfo PageInfo
 			}
 		}
 	}
 }
+
 type Dependency struct {
 	PacakgeName   string
 	NameWithOwner string
 	Version       string
+}
+
+type IssueResponse struct {
+	Data struct {
+		Repository struct {
+			Issues struct {
+				Edges []struct {
+					Node struct {
+						Closed    bool
+						CreatedAt time.Time
+						ClosedAt  time.Time
+						Assignees struct {
+							TotalCount int
+						}
+						Participants struct {
+							TotalCount int
+						}
+						Comments struct {
+							TotalCount int
+						}
+					}
+				}
+				PageInfo PageInfo
+			}
+		}
+	}
+}
+
+type OpenIssue struct {
+	CreateDate time.Time
+
+	Participants int
+	Comments     int
+	Assignees    int
+}
+
+type ClosedIssue struct {
+	CreateDate time.Time
+	CloseDate  time.Time
+
+	Participants int
+	Comments     int
+}
+
+type Issues struct {
+	OpenIssues   []OpenIssue
+	ClosedIssues []ClosedIssue
 }
 
 type RepoInfo struct {

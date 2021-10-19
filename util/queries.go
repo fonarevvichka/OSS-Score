@@ -10,12 +10,6 @@ import (
 	"os"
 )
 
-// type issue struct {
-// 	Title     string
-// 	CreatedAt githubv4.DateTime
-// 	ClosedAt  githubv4.DateTime
-// }
-
 func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name string) (RepoInfo, error) {
 	query := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
 	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", owner, name)
@@ -111,6 +105,69 @@ func GetDependencies(client *http.Client, gitUrl string, owner string, name stri
 	return dependencies
 }
 
+func GetIssues(client *http.Client, gitUrl string, owner string, name string, startDate string) Issues {
+	query := importQuery("./util/queries/issues.graphql") //TODO: Make this a an env var probably
+
+	hasNextPage := true
+	cursor := "init"
+
+	var closedIssues []ClosedIssue
+	var openIssues []OpenIssue
+	var data IssueResponse
+	var variables string
+	for hasNextPage {
+		if cursor == "init" {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", owner, name, startDate)
+		} else {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", owner, name, cursor, startDate)
+		}
+		postBody, _ := json.Marshal(map[string]string{
+			"query":     query,
+			"variables": variables,
+		})
+		responseBody := bytes.NewBuffer(postBody)
+
+		post_request, err := http.NewRequest("POST", gitUrl, responseBody)
+		resp, err := client.Do(post_request)
+
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer resp.Body.Close()
+
+		decoder := json.NewDecoder(resp.Body)
+		if decoder.Decode(&data) != nil {
+			log.Fatalln(err)
+		}
+		for _, node := range data.Data.Repository.Issues.Edges {
+			if node.Node.Closed {
+				issue := ClosedIssue{
+					CreateDate:   node.Node.CreatedAt,
+					CloseDate:    node.Node.ClosedAt,
+					Participants: node.Node.Participants.TotalCount,
+					Comments:     node.Node.Assignees.TotalCount,
+				}
+				closedIssues = append(closedIssues, issue)
+			} else {
+				issue := OpenIssue{
+					CreateDate:   node.Node.CreatedAt,
+					Assignees:    node.Node.Assignees.TotalCount,
+					Participants: node.Node.Participants.TotalCount,
+					Comments:     node.Node.Assignees.TotalCount,
+				}
+				openIssues = append(openIssues, issue)
+			}
+		}
+		hasNextPage = data.Data.Repository.Issues.PageInfo.HasNextPage
+		cursor = data.Data.Repository.Issues.PageInfo.EndCursor
+	}
+
+	return Issues{
+		OpenIssues:   openIssues,
+		ClosedIssues: closedIssues,
+	}
+}
+
 // Takes file path and reads in the query from it
 func importQuery(filename string) string {
 	file, err := os.Open(filename)
@@ -127,42 +184,3 @@ func importQuery(filename string) string {
 
 	return string(query[:]) // converts byte array to string
 }
-
-// func GetIssuesByState(client githubv4.Client, ctx context.Context, owner string, name string, state githubv4.IssueState) ([]issue, error) {
-// 	var q struct {
-// 		Repository struct {
-// 			Issues struct {
-// 				Nodes    []issue
-// 				PageInfo struct {
-// 					EndCursor   githubv4.String
-// 					HasNextPage bool
-// 				}
-// 			} `graphql:"issues(first: 100, after: $issueCursor, states: $states)"`
-// 		} `graphql:"repository(owner: $owner, name: $name)"`
-// 	}
-// 	variables := map[string]interface{}{
-// 		"owner":       githubv4.String(owner),
-// 		"name":        githubv4.String(name),
-// 		"issueCursor": (*githubv4.String)(nil),
-// 		"states":      []githubv4.IssueState{state},
-// 	}
-
-// 	var allIssues []issue
-// 	var err error
-// 	for {
-// 		err = client.Query(ctx, &q, variables)
-// 		if err != nil {
-// 			break
-// 		}
-// 		allIssues = append(allIssues, q.Repository.Issues.Nodes...)
-// 		if !q.Repository.Issues.PageInfo.HasNextPage {
-// 			break
-// 		}
-// 		variables["issueCursor"] = githubv4.NewString(q.Repository.Issues.PageInfo.EndCursor)
-
-// 		// if q.Repository.Issues.PageInfo.EndCursor > "400" { // temp to make things quicker
-// 		// 	break
-// 		// }
-// 	}
-// 	return allIssues, err
-// }

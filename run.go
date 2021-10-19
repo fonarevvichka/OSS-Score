@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go_exploring/util"
 	"os"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -21,5 +22,7 @@ func main() {
 	// 	log.Fatalln(err)
 	// }
 	// fmt.Println(info)
-	fmt.Println(util.GetDependencies(client, gitUrl, "facebook", "react"))
+
+	startDate := time.Date(2020, time.January, 1, 12, 0, 0, 0, time.UTC).Format(time.RFC3339)
+	fmt.Println(util.GetIssues(client, gitUrl, "swagger-api", "swagger-ui", startDate))
 }
