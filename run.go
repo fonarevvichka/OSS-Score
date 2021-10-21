@@ -43,9 +43,14 @@ func main() {
 	http_client := oauth2.NewClient(context.Background(), src)
 
 	repoInfo := util.RepoInfo{
-		Catalog: "github",
-		Owner:   "swagger-api",
-		Name:    "swagger-ui",
+		Catalog:      "github",
+		Owner:        "swagger-api",
+		Name:         "swagger-ui",
+		Dependencies: make([]util.Dependency, 0),
+		Issues: util.Issues{
+			OpenIssues:   make([]util.OpenIssue, 0),
+			ClosedIssues: make([]util.ClosedIssue, 0),
+		},
 	}
 
 	err = util.GetCoreRepoInfo(http_client, &repoInfo)

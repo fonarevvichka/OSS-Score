@@ -48,7 +48,7 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	repo.License = data.Data.Repository.LicenseInfo.Key
 	repo.CreateDate = data.Data.Repository.CreatedAt
 	repo.LatestRealease = data.Data.Repository.LatestRelease.CreatedAt
-	repo.Languages = langauges
+	repo.Languages = append(repo.Languages, langauges...)
 
 	return err
 }
@@ -111,7 +111,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 		graphCursor = data.Data.Repository.DependencyGraphManifests.PageInfo.EndCursor
 	}
 
-	repo.Dependencies = dependencies
+	repo.Dependencies = append(repo.Dependencies, dependencies...)
 }
 
 func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
@@ -171,8 +171,8 @@ func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
 		cursor = data.Data.Repository.Issues.PageInfo.EndCursor
 	}
 
-	repo.Issues.OpenIssues = openIssues
-	repo.Issues.ClosedIssues = closedIssues
+	repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, openIssues...)
+	repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, closedIssues...)
 }
 
 // Takes file path and reads in the query from it
