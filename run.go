@@ -1,24 +1,31 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"net/http"
-	routes "go_exploring/server"
+	"context"
+	"fmt"
+	"go_exploring/util"
+	"log"
+	"os"
+	"time"
+
+	"golang.org/x/oauth2"
 )
 
 func main() {
-	router := gin.Default()
+	gitUrl := "https://api.github.com/graphql"
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	)
+	client := oauth2.NewClient(context.Background(), src)
 
-	router.GET("./pong", routes.Pong)
+	repoInfo, err := (util.GetCoreRepoInfo(client, gitUrl, "facebook", "react"))
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-	
-	router.NoRoute(func(c *gin.Context) {
-              c.AbortWithStatus(http.StatusNotFound)
-       })
-	router.Run(":8080") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	startDate := time.Date(2020, time.January, 1, 12, 0, 0, 0, time.UTC).Format(time.RFC3339)
+	repoInfo.Issues = util.GetIssues(client, gitUrl, "swagger-api", "swagger-ui", startDate)
+	repoInfo.Dependencies = util.GetDependencies(client, gitUrl, "swagger-api", "swagger-ui")
+
+	fmt.Println(repoInfo)
 }
