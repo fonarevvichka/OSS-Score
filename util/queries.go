@@ -41,9 +41,10 @@ func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name stri
 	}
 
 	info := RepoInfo{
-		License:    data.Data.Repository.LicenseInfo.Key,
-		CreateDate: data.Data.Repository.CreatedAt,
-		Languages:  langauges,
+		License:        data.Data.Repository.LicenseInfo.Key,
+		CreateDate:     data.Data.Repository.CreatedAt,
+		LatestRealease: data.Data.Repository.LatestRelease.CreatedAt,
+		Languages:      langauges,
 	}
 	return info, err
 }

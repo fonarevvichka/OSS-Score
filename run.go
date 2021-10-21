@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go_exploring/util"
+	"log"
 	"os"
 	"time"
 
@@ -17,12 +18,14 @@ func main() {
 	)
 	client := oauth2.NewClient(context.Background(), src)
 
-	// info, err := (util.GetCoreRepoInfo(client, gitUrl, "facebook", "react"))
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// fmt.Println(info)
+	repoInfo, err := (util.GetCoreRepoInfo(client, gitUrl, "facebook", "react"))
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	startDate := time.Date(2020, time.January, 1, 12, 0, 0, 0, time.UTC).Format(time.RFC3339)
-	fmt.Println(util.GetIssues(client, gitUrl, "swagger-api", "swagger-ui", startDate))
+	repoInfo.Issues = util.GetIssues(client, gitUrl, "swagger-api", "swagger-ui", startDate)
+	repoInfo.Dependencies = util.GetDependencies(client, gitUrl, "swagger-api", "swagger-ui")
+
+	fmt.Println(repoInfo)
 }

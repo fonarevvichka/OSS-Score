@@ -7,6 +7,9 @@ import (
 type RepoInfoResponse struct {
 	Data struct {
 		Repository struct {
+			LatestRelease struct {
+				CreatedAt time.Time
+			}
 			LicenseInfo struct {
 				Key string
 			}
@@ -109,10 +112,12 @@ type Issues struct {
 }
 
 type RepoInfo struct {
-	License      string
-	CreateDate   time.Time
-	Languages    []string
-	Dependencies []Dependency
+	License        string
+	CreateDate     time.Time
+	LatestRealease time.Time
+	Languages      []string
+	Issues         Issues
+	Dependencies   []Dependency
 }
 
 type QueryError struct {
