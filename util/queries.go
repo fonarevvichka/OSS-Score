@@ -10,9 +10,11 @@ import (
 	"os"
 )
 
-func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name string) (RepoInfo, error) {
+const GIT_URL = "https://api.github.com/graphql"
+
+func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	query := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
-	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", owner, name)
+	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", repo.Owner, repo.Name)
 
 	postBody, _ := json.Marshal(map[string]string{
 		"query":     query,
@@ -20,7 +22,10 @@ func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name stri
 	})
 	responseBody := bytes.NewBuffer(postBody)
 
-	post_request, err := http.NewRequest("POST", gitUrl, responseBody)
+	post_request, err := http.NewRequest("POST", GIT_URL, responseBody)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	resp, err := client.Do(post_request)
 
 	if err != nil {
@@ -40,16 +45,15 @@ func GetCoreRepoInfo(client *http.Client, gitUrl string, owner string, name stri
 		langauges = append(langauges, node.Node.Name)
 	}
 
-	info := RepoInfo{
-		License:        data.Data.Repository.LicenseInfo.Key,
-		CreateDate:     data.Data.Repository.CreatedAt,
-		LatestRealease: data.Data.Repository.LatestRelease.CreatedAt,
-		Languages:      langauges,
-	}
-	return info, err
+	repo.License = data.Data.Repository.LicenseInfo.Key
+	repo.CreateDate = data.Data.Repository.CreatedAt
+	repo.LatestRealease = data.Data.Repository.LatestRelease.CreatedAt
+	repo.Languages = langauges
+
+	return err
 }
 
-func GetDependencies(client *http.Client, gitUrl string, owner string, name string) []Dependency {
+func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 	query := importQuery("./util/queries/dependencies.graphql") //TODO: Make this a an env var probably
 	var graphCursor string
 	var dependencyCursor string
@@ -61,14 +65,18 @@ func GetDependencies(client *http.Client, gitUrl string, owner string, name stri
 
 	for hasNextGraphPage { //API is always returning false for some reason
 		for hasNextDependencyPage {
-			variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"graphCursor\": \"%s\", \"dependencyCursor\": \"%s\"}", owner, name, graphCursor, dependencyCursor)
+			variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"graphCursor\": \"%s\", \"dependencyCursor\": \"%s\"}", repo.Owner, repo.Name, graphCursor, dependencyCursor)
 			postBody, _ := json.Marshal(map[string]string{
 				"query":     query,
 				"variables": variables,
 			})
 			responseBody := bytes.NewBuffer(postBody)
 
-			post_request, err := http.NewRequest("POST", gitUrl, responseBody)
+			post_request, err := http.NewRequest("POST", GIT_URL, responseBody)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
 			post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
 			resp, err := client.Do(post_request)
 
@@ -83,16 +91,16 @@ func GetDependencies(client *http.Client, gitUrl string, owner string, name stri
 				log.Fatalln(err)
 			}
 
-			// No dependencies found
 			if data.Data.Repository.DependencyGraphManifests.TotalCount == 0 {
-				return nil
+				break
 			}
 
 			for _, node := range data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.Edges {
 				newDep := Dependency{
-					PacakgeName:   node.Node.PacakgeName,
-					NameWithOwner: node.Node.Repository.NameWithOwner,
-					Version:       node.Node.Requirements,
+					Catalog: "github",
+					Owner:   node.Node.Repository.Owner.Login,
+					Name:    node.Node.Repository.Name,
+					Version: node.Node.Requirements,
 				}
 				dependencies = append(dependencies, newDep) //TODO: check for dupes
 			}
@@ -100,13 +108,13 @@ func GetDependencies(client *http.Client, gitUrl string, owner string, name stri
 			dependencyCursor = data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.PageInfo.EndCursor
 		}
 		hasNextGraphPage = data.Data.Repository.DependencyGraphManifests.PageInfo.HasNextPage
-		graphCursor = data.Data.Repository.DependencyGraphManifests.PageInfo.EndCursor //TODO this is broken for some reason
+		graphCursor = data.Data.Repository.DependencyGraphManifests.PageInfo.EndCursor
 	}
 
-	return dependencies
+	repo.Dependencies = dependencies
 }
 
-func GetIssues(client *http.Client, gitUrl string, owner string, name string, startDate string) Issues {
+func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
 	query := importQuery("./util/queries/issues.graphql") //TODO: Make this a an env var probably
 
 	hasNextPage := true
@@ -118,9 +126,9 @@ func GetIssues(client *http.Client, gitUrl string, owner string, name string, st
 	var variables string
 	for hasNextPage {
 		if cursor == "init" {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", owner, name, startDate)
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
 		} else {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", owner, name, cursor, startDate)
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
 		}
 		postBody, _ := json.Marshal(map[string]string{
 			"query":     query,
@@ -128,7 +136,7 @@ func GetIssues(client *http.Client, gitUrl string, owner string, name string, st
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", gitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GIT_URL, responseBody)
 		resp, err := client.Do(post_request)
 
 		if err != nil {
@@ -163,10 +171,8 @@ func GetIssues(client *http.Client, gitUrl string, owner string, name string, st
 		cursor = data.Data.Repository.Issues.PageInfo.EndCursor
 	}
 
-	return Issues{
-		OpenIssues:   openIssues,
-		ClosedIssues: closedIssues,
-	}
+	repo.Issues.OpenIssues = openIssues
+	repo.Issues.ClosedIssues = closedIssues
 }
 
 // Takes file path and reads in the query from it

@@ -44,7 +44,10 @@ type DependencyResponse struct {
 									PacakgeName  string
 									Requirements string
 									Repository   struct {
-										NameWithOwner string
+										Name  string
+										Owner struct {
+											Login string
+										}
 									}
 								}
 							}
@@ -59,9 +62,10 @@ type DependencyResponse struct {
 }
 
 type Dependency struct {
-	PacakgeName   string
-	NameWithOwner string
-	Version       string
+	Catalog string
+	Owner   string
+	Name    string
+	Version string
 }
 
 type IssueResponse struct {
@@ -112,6 +116,9 @@ type Issues struct {
 }
 
 type RepoInfo struct {
+	Name           string
+	Owner          string
+	Catalog        string
 	License        string
 	CreateDate     time.Time
 	LatestRealease time.Time

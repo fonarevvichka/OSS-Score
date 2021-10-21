@@ -18,7 +18,7 @@ tags:
   - name: developers
     description: Operations available to regular developers
 paths:
-  /{catalog}/scores/{scoreType}/{owner}/{repo}:
+  /catalog/{catalog}/owner/{owner}/repo/{repo}/scores/{scoreType}:
     parameters:
       - in: path
         name: catalog
@@ -52,7 +52,7 @@ paths:
             - license
     get:
       summary: Get the requested score type for the passed in repo
-      operationId: getCachedScore
+      operationId: getOrRequestScore
       description: |
         Get the requested score type for the passed in repo
       tags:
@@ -92,7 +92,7 @@ paths:
         '202':
           description: calculation already pending
           
-  /{catalog}/badges/{scoreType}/{owner}/{repo}:
+  /catalog/{catalog}/owner/{owner}/repo/{repo}/badges/{scoreType}:
     get:
       tags:
         - developers
@@ -147,7 +147,7 @@ paths:
         '400':
           description: bad input parameter
           
-  /{catalog}/metrics/{metricType}/{owner}/{repo}:
+  /catalog/{catalog}/owner/{owner}/repo/{repo}/metrics/{metricType}:
     get:
       tags:
         - admins
@@ -207,7 +207,6 @@ paths:
                 $ref: '#/components/schemas/Wait'
         '400':
           description: bad input parameter
-
 
 components:
   schemas:
