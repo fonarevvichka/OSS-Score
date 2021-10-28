@@ -7,7 +7,8 @@ import (
 type RepoInfoResponse struct {
 	Data struct {
 		Repository struct {
-			LatestRelease struct {
+			StargazerCount int
+			LatestRelease  struct {
 				CreatedAt time.Time
 			}
 			LicenseInfo struct {
@@ -111,11 +112,17 @@ type Issues struct {
 	ClosedIssues []ClosedIssue
 }
 
+type Release struct {
+	CreateDate time.Time
+}
+
 type RepoInfo struct {
 	License        string
 	CreateDate     time.Time
 	LatestRealease time.Time
+	Releases       []Release
 	Languages      []string
+	Stars          int
 	Issues         Issues
 	Dependencies   []Dependency
 }

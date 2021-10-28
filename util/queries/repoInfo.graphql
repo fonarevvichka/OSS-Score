@@ -1,5 +1,6 @@
 query ($name: String!, $owner: String!) {
   repository(owner: $owner, name: $name) {
+    stargazerCount
     latestRelease {
       createdAt
     }
