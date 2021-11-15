@@ -22,6 +22,7 @@ func main() {
 	mongo_client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 
 	if err != nil {
+		log.Fatalln(err)
 		panic(err)
 	}
 	defer func() {
@@ -42,10 +43,13 @@ func main() {
 	)
 	http_client := oauth2.NewClient(context.Background(), src)
 
+	repoOwner := "swagger-api"
+	repoName := "swagger-ui"
+
 	repoInfo := util.RepoInfo{
 		Catalog:      "github",
-		Owner:        "swagger-api",
-		Name:         "swagger-ui",
+		Owner:        repoOwner,
+		Name:         repoName,
 		Dependencies: make([]util.Dependency, 0),
 		Issues: util.Issues{
 			OpenIssues:   make([]util.OpenIssue, 0),
@@ -54,9 +58,6 @@ func main() {
 	}
 
 	err = util.GetCoreRepoInfo(http_client, &repoInfo)
-	if err != nil {
-		log.Fatalln(err)
-	}
 
 	startDate := time.Date(2020, time.January, 1, 12, 0, 0, 0, time.UTC).Format(time.RFC3339)
 	util.GetGithubIssues(http_client, &repoInfo, startDate)

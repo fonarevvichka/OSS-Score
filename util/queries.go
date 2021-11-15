@@ -63,7 +63,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 	var dependencies []Dependency
 	var data DependencyResponse
 
-	for hasNextGraphPage { //API is always returning false for some reason
+	for hasNextGraphPage {
 		for hasNextDependencyPage {
 			variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"graphCursor\": \"%s\", \"dependencyCursor\": \"%s\"}", repo.Owner, repo.Name, graphCursor, dependencyCursor)
 			postBody, _ := json.Marshal(map[string]string{
@@ -137,8 +137,11 @@ func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
 		responseBody := bytes.NewBuffer(postBody)
 
 		post_request, err := http.NewRequest("POST", GIT_URL, responseBody)
-		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Fatalln(err)
+		}
 
+		resp, err := client.Do(post_request)
 		if err != nil {
 			log.Fatalln(err)
 		}
