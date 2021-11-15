@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"go_exploring/util"
+	"oss_score/util"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
