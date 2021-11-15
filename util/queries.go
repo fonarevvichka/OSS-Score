@@ -59,7 +59,7 @@ func GetDependencies(client *http.Client, gitUrl string, owner string, name stri
 	var dependencies []Dependency
 	var data DependencyResponse
 
-	for hasNextGraphPage { //API is always returning false for some reason
+	for hasNextGraphPage {
 		for hasNextDependencyPage {
 			variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"graphCursor\": \"%s\", \"dependencyCursor\": \"%s\"}", owner, name, graphCursor, dependencyCursor)
 			postBody, _ := json.Marshal(map[string]string{
@@ -69,6 +69,11 @@ func GetDependencies(client *http.Client, gitUrl string, owner string, name stri
 			responseBody := bytes.NewBuffer(postBody)
 
 			post_request, err := http.NewRequest("POST", gitUrl, responseBody)
+
+			if err != nil {
+				log.Fatalln(err)
+			}
+
 			post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
 			resp, err := client.Do(post_request)
 
@@ -129,8 +134,11 @@ func GetIssues(client *http.Client, gitUrl string, owner string, name string, st
 		responseBody := bytes.NewBuffer(postBody)
 
 		post_request, err := http.NewRequest("POST", gitUrl, responseBody)
-		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Fatalln(err)
+		}
 
+		resp, err := client.Do(post_request)
 		if err != nil {
 			log.Fatalln(err)
 		}
