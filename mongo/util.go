@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"oss_score/util"
+	"OSS-Score/util"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )

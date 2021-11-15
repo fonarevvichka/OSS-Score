@@ -1,10 +1,10 @@
 package main
 
 import (
+	db "OSS-Score/mongo"
+	"OSS-Score/util"
 	"context"
 	"fmt"
-	db "go_exploring/mongo"
-	"go_exploring/util"
 	"log"
 	"os"
 	"time"
