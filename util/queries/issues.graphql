@@ -1,6 +1,6 @@
 query ($name: String!, $owner: String!, $cursor: String, $startDate: DateTime) {
   repository(owner: $owner, name: $name) {
-    issues(first: 100, after: $cursor, filterBy: {since: $startDate}) {
+    issues(first: 100, after: $cursor, filterBy: {since: $startDate}, orderBy: {field: CREATED_AT, direction: ASC}) {
       edges {
         node {
           closed
