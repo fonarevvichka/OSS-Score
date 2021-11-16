@@ -63,7 +63,7 @@ func main() {
 	util.GetGithubIssues(http_client, &repoInfo, startDate)
 	util.GetGithubDependencies(http_client, &repoInfo)
 
-	collection := mongo_client.Database("OSSHub").Collection("github")
+	collection := mongo_client.Database("OSS-Score").Collection("Github")
 	result, err := db.InsertNewRepo(*collection, context.TODO(), repoInfo)
 
 	if err != nil {
