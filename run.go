@@ -3,7 +3,6 @@ package main
 import (
 	"OSS-Score/util"
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -33,7 +32,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Successfully connected and pinged.")
+	// fmt.Println("Successfully connected and pinged.")
 
 	// src := oauth2.StaticTokenSource(
 	// 	&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
@@ -50,6 +49,7 @@ func main() {
 	// 	Catalog:      "github",
 	// 	Owner:        repoOwner,
 	// 	Name:         repoName,
+	// 	UpdatedAt:    time.Now(),
 	// 	Dependencies: make([]util.Dependency, 0),
 	// 	Issues: util.Issues{
 	// 		OpenIssues:   make([]util.OpenIssue, 0),
@@ -63,8 +63,13 @@ func main() {
 	// util.GetGithubIssues(http_client, &repoInfo, startDate)
 	// util.GetGithubDependencies(http_client, &repoInfo)
 
-	// collection := mongo_client.Database("OSS-Score").Collection("Github")
-	// result, err := db.InsertNewRepo(*collection, context.TODO(), repoInfo)
+	// collection := mongoClient.Database("OSS-Score").Collection("Github")
+
+	// result, err := collection.InsertOne(context.TODO(), repoInfo)
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// if err != nil {
 	// 	log.Fatalln(err)

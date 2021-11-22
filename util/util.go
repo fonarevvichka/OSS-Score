@@ -12,6 +12,7 @@ import (
 
 func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string) {
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+	shelfLife := 7                                                      // Days TODO: make env var
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -36,6 +37,13 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 			log.Fatalln(err)
 		}
 		fmt.Println("Doing limited query")
+		expireDate := time.Now().AddDate(0, 0, -shelfLife)
+
+		if repoInfo.UpdatedAt.Before(expireDate) {
+			fmt.Println("out of date")
+		} else {
+			return RepoInfo
+		}
 		// Check date and return data or query with according back stop
 	}
 

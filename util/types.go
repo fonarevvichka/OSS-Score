@@ -121,9 +121,14 @@ type Release struct {
 }
 
 type RepoInfo struct {
-	Name           string
-	Owner          string
-	Catalog        string
+	Name    string
+	Owner   string
+	Catalog string
+
+	ActivityScore float32
+	LicenseScore  float32
+	UpdatedAt     time.Time
+
 	License        string
 	CreateDate     time.Time
 	LatestRealease time.Time
@@ -132,8 +137,4 @@ type RepoInfo struct {
 	Stars          int
 	Issues         Issues
 	Dependencies   []Dependency
-}
-
-type QueryError struct {
-	message string
 }
