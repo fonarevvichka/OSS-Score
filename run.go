@@ -3,6 +3,7 @@ package main
 import (
 	"OSS-Score/util"
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -31,48 +32,12 @@ func main() {
 	if err := mongoClient.Ping(context.TODO(), readpref.Primary()); err != nil {
 		panic(err)
 	}
-
-	// fmt.Println("Successfully connected and pinged.")
-
-	// src := oauth2.StaticTokenSource(
-	// 	&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
-	// )
-	// http_client := oauth2.NewClient(context.Background(), src)
+	fmt.Println("Successfully connected and pinged.")
 
 	repoCatalog := "Github"
 	repoOwner := "swagger-api"
 	repoName := "swagger-ui"
 
-	util.GetScore(mongoClient, repoCatalog, repoOwner, repoName)
-
-	// repoInfo := util.RepoInfo{
-	// 	Catalog:      "github",
-	// 	Owner:        repoOwner,
-	// 	Name:         repoName,
-	// 	UpdatedAt:    time.Now(),
-	// 	Dependencies: make([]util.Dependency, 0),
-	// 	Issues: util.Issues{
-	// 		OpenIssues:   make([]util.OpenIssue, 0),
-	// 		ClosedIssues: make([]util.ClosedIssue, 0),
-	// 	},
-	// }
-
-	// err = util.GetCoreRepoInfo(http_client, &repoInfo)
-
-	// startDate := time.Date(2020, time.January, 1, 12, 0, 0, 0, time.UTC).Format(time.RFC3339)
-	// util.GetGithubIssues(http_client, &repoInfo, startDate)
-	// util.GetGithubDependencies(http_client, &repoInfo)
-
-	// collection := mongoClient.Database("OSS-Score").Collection("Github")
-
-	// result, err := collection.InsertOne(context.TODO(), repoInfo)
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// fmt.Println(result)
+	repoInfoResponse := util.GetScore(mongoClient, repoCatalog, repoOwner, repoName)
+	fmt.Println(repoInfoResponse.Ready)
 }

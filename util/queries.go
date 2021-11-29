@@ -10,9 +10,9 @@ import (
 	"os"
 )
 
-const GIT_URL = "https://api.github.com/graphql"
+const GitUrl = "https://api.github.com/graphql"
 
-func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
+func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 	query := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
 	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", repo.Owner, repo.Name)
 
@@ -22,11 +22,11 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	})
 	responseBody := bytes.NewBuffer(postBody)
 
-	post_request, err := http.NewRequest("POST", GIT_URL, responseBody)
+	postRequest, err := http.NewRequest("POST", GitUrl, responseBody)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	resp, err := client.Do(post_request)
+	resp, err := client.Do(postRequest)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -40,17 +40,15 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 		log.Fatalln(err)
 	}
 
-	var langauges []string
+	var languages []string
 	for _, node := range data.Data.Repository.Languages.Edges {
-		langauges = append(langauges, node.Node.Name)
+		languages = append(languages, node.Node.Name)
 	}
 
 	repo.License = data.Data.Repository.LicenseInfo.Key
 	repo.CreateDate = data.Data.Repository.CreatedAt
 	repo.LatestRealease = data.Data.Repository.LatestRelease.CreatedAt
-	repo.Languages = append(repo.Languages, langauges...)
-
-	return err
+	repo.Languages = append(repo.Languages, languages...)
 }
 
 func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
@@ -72,7 +70,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 			})
 			responseBody := bytes.NewBuffer(postBody)
 
-			post_request, err := http.NewRequest("POST", GIT_URL, responseBody)
+			post_request, err := http.NewRequest("POST", GitUrl, responseBody)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -136,7 +134,7 @@ func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GIT_URL, responseBody)
+		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
 		if err != nil {
 			log.Fatalln(err)
 		}

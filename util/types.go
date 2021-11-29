@@ -138,3 +138,8 @@ type RepoInfo struct {
 	Issues         Issues
 	Dependencies   []Dependency
 }
+
+type RepoInfoDBResponse struct {
+	Ready    bool
+	RepoInfo RepoInfo
+}
