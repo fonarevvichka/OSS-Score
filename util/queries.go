@@ -48,6 +48,7 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 	repo.License = data.Data.Repository.LicenseInfo.Key
 	repo.CreateDate = data.Data.Repository.CreatedAt
 	repo.LatestRealease = data.Data.Repository.LatestRelease.CreatedAt
+	repo.Stars = data.Data.Repository.StargazerCount
 	repo.Languages = append(repo.Languages, languages...)
 }
 
