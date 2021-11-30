@@ -34,10 +34,12 @@ func main() {
 	}
 	fmt.Println("Successfully connected and pinged.")
 
-	repoCatalog := "Github"
-	repoOwner := "swagger-api"
-	repoName := "swagger-ui"
+	repoCatalog := "github"
+	repoOwner := "facebook"
+	repoName := "react"
+	// repoOwner := "jasonlong"
+	// repoName := "isometric-contributions"
 
-	repoInfoResponse := util.GetScore(mongoClient, repoCatalog, repoOwner, repoName)
+	repoInfoResponse := util.GetScore(mongoClient, repoCatalog, repoOwner, repoName, 0)
 	fmt.Println(repoInfoResponse.Ready)
 }

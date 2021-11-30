@@ -13,7 +13,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string) RepoInfoDBResponse {
+func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, level int) RepoInfoDBResponse {
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 	shelfLife := 7                                                      // Days TODO: make env var
 
@@ -37,9 +37,11 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-1, 0, 0)) // hardcode to 1 year timefirame
 		infoReady = true                                                           // temp while this is synchronous
 		_, err := collection.InsertOne(context.TODO(), repoInfo)
+		fmt.Println("Inserting Data")
 		if err != nil {
 			log.Fatal(err)
 		}
+
 	} else { // Match in DB found
 		err := res.Decode(&repoInfo)
 
@@ -50,19 +52,29 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		if repoInfo.UpdatedAt.Before(expireDate) {
 			fmt.Println("out of date: need to make partial query")
-			repoInfo = queryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull 1 week of data
-			infoReady = true                                                 // temp while this is synchronous
+
+			repoInfo := queryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull 1 week of data
+			infoReady = true                                                  // temp while this is synchronous
 
 			insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
 			_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
 			if err != nil {
 				log.Fatal(err)
 			}
-
 		} else {
 			infoReady = true
 		}
 	}
+
+	if level < 1 {
+		level += 1
+		fmt.Println(level)
+		for _, dependency := range repoInfo.Dependencies {
+			fmt.Println("updating: " + dependency.Name)
+			GetScore(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, level)
+		}
+	}
+	// calculate the MF score
 
 	return RepoInfoDBResponse{
 		Ready:    infoReady,
@@ -94,4 +106,16 @@ func queryGithub(catalog string, owner string, name string, startPoint time.Time
 	GetGithubDependencies(httpClient, &repoInfo)
 
 	return repoInfo
+}
+
+func dependencyInSlice(dependency Dependency, dependencies []Dependency) bool {
+	for _, elem := range dependencies {
+		if dependency.Catalog == elem.Catalog &&
+			dependency.Owner == elem.Owner &&
+			dependency.Name == elem.Name &&
+			dependency.Version == elem.Version { // NOT SURE IF DEEP COMPARE LIKE THIS IS NEEDED
+			return true
+		}
+	}
+	return false
 }
