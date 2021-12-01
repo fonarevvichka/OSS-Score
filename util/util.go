@@ -100,10 +100,11 @@ func queryGithub(catalog string, owner string, name string, startPoint time.Time
 		},
 	}
 
-	// These can probably be async
+	// These need to be async
 	GetCoreRepoInfo(httpClient, &repoInfo)
 	GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	GetGithubDependencies(httpClient, &repoInfo)
+	GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 
 	return repoInfo
 }

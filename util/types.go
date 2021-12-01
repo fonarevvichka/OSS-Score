@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+type PageInfo struct {
+	HasNextPage bool
+	EndCursor   string
+}
+
 type RepoInfoResponse struct {
 	Data struct {
 		Repository struct {
@@ -26,9 +31,26 @@ type RepoInfoResponse struct {
 	}
 }
 
-type PageInfo struct {
-	HasNextPage bool
-	EndCursor   string
+type CommitResponse struct {
+	Data struct {
+		Repository struct {
+			Ref struct {
+				Target struct {
+					History struct {
+						Edges []struct {
+							Node struct {
+								PushedDate time.Time
+								Author     struct {
+									Name string
+								}
+							}
+						}
+						PageInfo PageInfo
+					}
+				}
+			}
+		}
+	}
 }
 
 type DependencyResponse struct {
@@ -120,23 +142,36 @@ type Release struct {
 	CreateDate time.Time
 }
 
+type Commit struct {
+	PushedDate time.Time
+	Author     string
+}
+
 type RepoInfo struct {
 	Name    string
 	Owner   string
 	Catalog string
 
-	ActivityScore float32
-	LicenseScore  float32
-	UpdatedAt     time.Time
+	ActivityScore          float32
+	DependencyActivtyScore float32
+	ActivityConfidence     float32
 
-	License        string
-	CreateDate     time.Time
-	LatestRealease time.Time
-	Releases       []Release
-	Languages      []string
-	Stars          int
-	Issues         Issues
-	Dependencies   []Dependency
+	LicenseScore           float32
+	DependencyLicenseScore float32
+	LicenseConfidence      float32
+
+	UpdatedAt time.Time
+
+	License       string
+	CreateDate    time.Time
+	LatestRelease time.Time
+	Stars         int
+
+	Releases     []Release
+	Languages    []string
+	Issues       Issues
+	Dependencies []Dependency
+	Commits      []Commit
 }
 
 type RepoInfoDBResponse struct {

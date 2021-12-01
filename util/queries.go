@@ -47,7 +47,8 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 
 	repo.License = data.Data.Repository.LicenseInfo.Key
 	repo.CreateDate = data.Data.Repository.CreatedAt
-	repo.LatestRealease = data.Data.Repository.LatestRelease.CreatedAt
+	repo.LatestRelease = data.Data.Repository.LatestRelease.CreatedAt
+	repo.Stars = data.Data.Repository.StargazerCount
 	repo.Languages = append(repo.Languages, languages...)
 }
 
@@ -174,6 +175,54 @@ func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
 
 	repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, openIssues...)
 	repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, closedIssues...)
+}
+
+func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
+	query := importQuery("./util/queries/commits.graphql") //TODO: Make this a an env var probably
+
+	hasNextPage := true
+	cursor := "init"
+
+	var commits []Commit
+	var data CommitResponse
+	var variables string
+
+	for hasNextPage {
+		if cursor == "init" {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
+		} else {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
+		}
+		postBody, _ := json.Marshal(map[string]string{
+			"query":     query,
+			"variables": variables,
+		})
+		responseBody := bytes.NewBuffer(postBody)
+
+		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer resp.Body.Close()
+
+		decoder := json.NewDecoder(resp.Body)
+		if decoder.Decode(&data) != nil {
+			log.Fatalln(err)
+		}
+		for _, node := range data.Data.Repository.Ref.Target.History.Edges {
+			commits = append(commits, Commit{
+				PushedDate: node.Node.PushedDate,
+				Author:     node.Node.Author.Name,
+			})
+		}
+		hasNextPage = data.Data.Repository.Ref.Target.History.PageInfo.HasNextPage
+		cursor = data.Data.Repository.Ref.Target.History.PageInfo.EndCursor
+	}
 }
 
 // Takes file path and reads in the query from it
