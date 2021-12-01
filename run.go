@@ -34,7 +34,7 @@ func main() {
 	}
 	fmt.Println("Successfully connected and pinged.")
 
-	repoCatalog := "Github"
+	repoCatalog := "github"
 	repoOwner := "swagger-api"
 	repoName := "swagger-ui"
 
