@@ -4,6 +4,9 @@ query ($name: String!, $owner: String!) {
     latestRelease {
       createdAt
     }
+    defaultBranchRef {
+      name
+    }
     languages(first: 10) {
       edges {
         node {

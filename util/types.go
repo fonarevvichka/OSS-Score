@@ -12,8 +12,11 @@ type PageInfo struct {
 type RepoInfoResponse struct {
 	Data struct {
 		Repository struct {
-			StargazerCount int
-			LatestRelease  struct {
+			StargazerCount   int
+			DefaultBranchRef struct {
+				Name string
+			}
+			LatestRelease struct {
 				CreatedAt time.Time
 			}
 			LicenseInfo struct {
@@ -117,6 +120,21 @@ type IssueResponse struct {
 	}
 }
 
+type ReleaseResponse struct {
+	Data struct {
+		Repository struct {
+			Releases struct {
+				Edges []struct {
+					Node struct {
+						CreatedAt time.Time
+					}
+				}
+				PageInfo PageInfo
+			}
+		}
+	}
+}
+
 type OpenIssue struct {
 	CreateDate time.Time
 
@@ -151,6 +169,8 @@ type RepoInfo struct {
 	Name    string
 	Owner   string
 	Catalog string
+
+	DefaultBranch string
 
 	ActivityScore          float32
 	DependencyActivtyScore float32

@@ -49,6 +49,7 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 	repo.CreateDate = data.Data.Repository.CreatedAt
 	repo.LatestRelease = data.Data.Repository.LatestRelease.CreatedAt
 	repo.Stars = data.Data.Repository.StargazerCount
+	repo.DefaultBranch = data.Data.Repository.DefaultBranchRef.Name
 	repo.Languages = append(repo.Languages, languages...)
 }
 
@@ -129,6 +130,7 @@ func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
 		} else {
 			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
 		}
+
 		postBody, _ := json.Marshal(map[string]string{
 			"query":     query,
 			"variables": variables,
@@ -183,16 +185,16 @@ func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
 	hasNextPage := true
 	cursor := "init"
 
-	var commits []Commit
 	var data CommitResponse
 	var variables string
 
 	for hasNextPage {
 		if cursor == "init" {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"branch\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, repo.DefaultBranch, startDate)
 		} else {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"branch\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, repo.DefaultBranch, cursor, startDate)
 		}
+
 		postBody, _ := json.Marshal(map[string]string{
 			"query":     query,
 			"variables": variables,
@@ -214,14 +216,63 @@ func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
 		if decoder.Decode(&data) != nil {
 			log.Fatalln(err)
 		}
+
 		for _, node := range data.Data.Repository.Ref.Target.History.Edges {
-			commits = append(commits, Commit{
+			repo.Commits = append(repo.Commits, Commit{
 				PushedDate: node.Node.PushedDate,
 				Author:     node.Node.Author.Name,
 			})
 		}
 		hasNextPage = data.Data.Repository.Ref.Target.History.PageInfo.HasNextPage
 		cursor = data.Data.Repository.Ref.Target.History.PageInfo.EndCursor
+	}
+}
+
+func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) {
+	query := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
+
+	hasNextPage := true
+	cursor := "init"
+
+	var data ReleaseResponse
+	var variables string
+
+	for hasNextPage {
+		if cursor == "init" {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
+		} else {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
+		}
+
+		postBody, _ := json.Marshal(map[string]string{
+			"query":     query,
+			"variables": variables,
+		})
+		responseBody := bytes.NewBuffer(postBody)
+
+		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer resp.Body.Close()
+
+		decoder := json.NewDecoder(resp.Body)
+		if decoder.Decode(&data) != nil {
+			log.Fatalln(err)
+		}
+
+		for _, node := range data.Data.Repository.Releases.Edges {
+			repo.Releases = append(repo.Releases, Release{
+				CreateDate: node.Node.CreatedAt,
+			})
+		}
+		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
+		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
 	}
 }
 

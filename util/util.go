@@ -74,7 +74,16 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 			GetScore(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, level)
 		}
 	}
-	// calculate the MF score
+
+	res = collection.FindOne(ctx, filter)
+	activityScore, activityConfidence := CalculateActivityScore(&repoInfo, time.Now().AddDate(-1, 0, 0)) // startpoint hardcoded for now
+	repoInfo.ActivityScore = float32(activityScore)
+	repoInfo.ActivityConfidence = float32(activityConfidence)
+	insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
+	_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return RepoInfoDBResponse{
 		Ready:    infoReady,
@@ -105,6 +114,7 @@ func queryGithub(catalog string, owner string, name string, startPoint time.Time
 	GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	GetGithubDependencies(httpClient, &repoInfo)
 	GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 
 	return repoInfo
 }
