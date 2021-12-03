@@ -13,10 +13,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, level int) RepoInfoDBResponse {
-	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-	shelfLife := 7                                                      // Days TODO: make env var
-
+func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mongo.SingleResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -28,13 +25,27 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 			}},
 	}
 
-	res := collection.FindOne(ctx, filter)
-	var repoInfo RepoInfo
+	return collection.FindOne(ctx, filter)
+}
+
+func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, level int) (Score, bool) {
+	shelfLife := 7 // Days TODO: make env var
 	infoReady := false
+	filter := bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"owner", owner}},
+				bson.D{{"name", name}},
+			}},
+	}
+	var repoInfo RepoInfo
+
+	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+	res := GetRepoFromDB(collection, owner, name)
 
 	if res.Err() == mongo.ErrNoDocuments { // No match in DB
 		fmt.Println("need to do full query")
-		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-1, 0, 0)) // hardcode to 1 year timefirame
+		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-5, 0, 0)) // hardcode to 1 year timefirame
 		infoReady = true                                                           // temp while this is synchronous
 		_, err := collection.InsertOne(context.TODO(), repoInfo)
 		fmt.Println("Inserting Data")
@@ -75,20 +86,24 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		}
 	}
 
-	res = collection.FindOne(ctx, filter)
-	activityScore, activityConfidence := CalculateActivityScore(&repoInfo, time.Now().AddDate(-1, 0, 0)) // startpoint hardcoded for now
-	repoInfo.ActivityScore = float32(activityScore)
-	repoInfo.ActivityConfidence = float32(activityConfidence)
+	repoScore, dependencyScore := CalculateActivityScore(mongoClient, &repoInfo, time.Now().AddDate(-1, 0, 0)) // startpoint hardcoded for now
+
+	repoInfo.RepoActivityScore = repoScore
+	repoInfo.DependencyActivityScore = dependencyScore
+
 	insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
 	_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return RepoInfoDBResponse{
-		Ready:    infoReady,
-		RepoInfo: RepoInfo{},
-	}
+	repoWeight := 0.75
+	dependencyWeight := 1 - repoWeight
+
+	return Score{
+		Score:      (repoScore.Score * repoWeight) + (dependencyScore.Score * dependencyWeight),
+		Confidence: (repoScore.Confidence * repoWeight) + (dependencyScore.Confidence * dependencyWeight),
+	}, infoReady
 }
 
 func queryGithub(catalog string, owner string, name string, startPoint time.Time) RepoInfo {

@@ -172,13 +172,11 @@ type RepoInfo struct {
 
 	DefaultBranch string
 
-	ActivityScore          float32
-	DependencyActivtyScore float32
-	ActivityConfidence     float32
+	RepoActivityScore Score
+	RepoLicenseScore  Score
 
-	LicenseScore           float32
-	DependencyLicenseScore float32
-	LicenseConfidence      float32
+	DependencyActivityScore Score
+	DependencyLicenseScore  Score
 
 	UpdatedAt time.Time
 
@@ -194,7 +192,7 @@ type RepoInfo struct {
 	Commits      []Commit
 }
 
-type RepoInfoDBResponse struct {
-	Ready    bool
-	RepoInfo RepoInfo
+type Score struct {
+	Score      float64
+	Confidence float64
 }
