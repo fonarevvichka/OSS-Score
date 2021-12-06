@@ -81,7 +81,7 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		level += 1
 		fmt.Println(level)
 		for _, dependency := range repoInfo.Dependencies {
-			fmt.Println("updating: " + dependency.Name)
+			fmt.Println("updating: " + dependency.Owner + "/" + dependency.Name)
 			GetScore(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, level)
 		}
 	}
