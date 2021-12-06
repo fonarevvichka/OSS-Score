@@ -44,7 +44,7 @@ func main() {
 	// repoOwner := "fonarevvichka"
 	// repoName := "OSS-Score"
 
-	score, ready := util.GetScore(mongoClient, repoCatalog, repoOwner, repoName, 0)
+	score, ready := util.GetScore(mongoClient, repoCatalog, repoOwner, repoName, 12, 1)
 	if ready {
 		fmt.Println(score)
 	}

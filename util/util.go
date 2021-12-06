@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -28,7 +29,7 @@ func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mon
 	return collection.FindOne(ctx, filter)
 }
 
-func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, level int) (Score, bool) {
+func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) (Score, bool) {
 	shelfLife := 7 // Days TODO: make env var
 	infoReady := false
 	filter := bson.D{
@@ -45,8 +46,8 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 
 	if res.Err() == mongo.ErrNoDocuments { // No match in DB
 		fmt.Println("need to do full query")
-		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-5, 0, 0)) // hardcode to 1 year timefirame
-		infoReady = true                                                           // temp while this is synchronous
+		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
+		infoReady = true // temp while this is synchronous
 		_, err := collection.InsertOne(context.TODO(), repoInfo)
 		fmt.Println("Inserting Data")
 		if err != nil {
@@ -64,7 +65,7 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		if repoInfo.UpdatedAt.Before(expireDate) {
 			fmt.Println("out of date: need to make partial query")
 
-			repoInfo := queryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull 1 week of data
+			repoInfo := queryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull only needed data
 			infoReady = true                                                  // temp while this is synchronous
 
 			insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
@@ -82,7 +83,7 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		fmt.Println(level)
 		for _, dependency := range repoInfo.Dependencies {
 			fmt.Println("updating: " + dependency.Owner + "/" + dependency.Name)
-			GetScore(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, level)
+			GetScore(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, level)
 		}
 	}
 
@@ -124,12 +125,28 @@ func queryGithub(catalog string, owner string, name string, startPoint time.Time
 		},
 	}
 
-	// These need to be async
 	GetCoreRepoInfo(httpClient, &repoInfo)
-	GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
-	GetGithubDependencies(httpClient, &repoInfo)
-	GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
-	GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	}()
+	go func() {
+		defer wg.Done()
+		GetGithubDependencies(httpClient, &repoInfo)
+	}()
+	go func() {
+		defer wg.Done()
+		GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	}()
+	go func() {
+		defer wg.Done()
+		GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	}()
+
+	wg.Wait()
 
 	return repoInfo
 }
