@@ -1,12 +1,13 @@
 package main
 
 import (
-	"OSS-Score/util"
+	"OSS-Score/server"
 	"context"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -34,18 +35,22 @@ func main() {
 	}
 	fmt.Println("Successfully connected and pinged.")
 
-	repoCatalog := "github"
-	repoOwner := "swagger-api"
-	repoName := "swagger-ui"
-	// repoOwner := "facebook"
-	// repoName := "react"
-	// repoOwner := "jasonlong"
-	// repoName := "isometric-contributions"
-	// repoOwner := "fonarevvichka"
-	// repoName := "OSS-Score"
+	router := gin.Default()
+	router.GET("/", server.Pong)
+	router.Run("localhost:8080")
 
-	score, ready := util.GetScore(mongoClient, repoCatalog, repoOwner, repoName, 12, 1)
-	if ready {
-		fmt.Println(score)
-	}
+	// repoCatalog := "github"
+	// repoOwner := "swagger-api"
+	// repoName := "swagger-ui"
+	// // repoOwner := "facebook"
+	// // repoName := "react"
+	// // repoOwner := "jasonlong"
+	// // repoName := "isometric-contributions"
+	// // repoOwner := "fonarevvichka"
+	// // repoName := "OSS-Score"
+
+	// score, ready := util.GetScore(mongoClient, repoCatalog, repoOwner, repoName, 12, 1)
+	// if ready {
+	// 	fmt.Println(score)
+	// }
 }
