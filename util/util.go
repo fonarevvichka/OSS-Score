@@ -29,7 +29,45 @@ func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mon
 	return collection.FindOne(ctx, filter)
 }
 
-func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) (Score, bool) {
+func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, bool) {
+	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+	res := GetRepoFromDB(collection, owner, name)
+	var score Score
+	shelfLife := 7 // Days TODO: make env var
+	var repoInfo RepoInfo
+	cached := false
+
+	if res.Err() != mongo.ErrNoDocuments { // No match in DB
+		err := res.Decode(&repoInfo)
+
+		if err != nil {
+			log.Fatalln(err)
+		}
+		expireDate := time.Now().AddDate(0, 0, -shelfLife)
+		if repoInfo.UpdatedAt.After(expireDate) {
+			cached = true
+
+			repoWeight := 0.75
+			dependencyWeight := 1 - repoWeight
+			if scoreType == "activity" {
+				score = Score{
+					Score:      (repoInfo.RepoActivityScore.Score * repoWeight) + (repoInfo.DependencyActivityScore.Score * dependencyWeight),
+					Confidence: (repoInfo.RepoActivityScore.Confidence * repoWeight) + (repoInfo.DependencyActivityScore.Confidence * dependencyWeight),
+				}
+			} else if scoreType == "license" {
+				score = Score{
+					Score:      (repoInfo.RepoLicenseScore.Score * repoWeight) + (repoInfo.DependencyLicenseScore.Score * dependencyWeight),
+					Confidence: (repoInfo.RepoLicenseScore.Confidence * repoWeight) + (repoInfo.DependencyLicenseScore.Confidence * dependencyWeight),
+				}
+
+			}
+		}
+	}
+
+	return score, cached
+}
+
+func CalculateScore(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) (Score, bool) {
 	shelfLife := 7 // Days TODO: make env var
 	infoReady := false
 	filter := bson.D{
@@ -83,7 +121,7 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		fmt.Println(level)
 		for _, dependency := range repoInfo.Dependencies {
 			fmt.Println("updating: " + dependency.Owner + "/" + dependency.Name)
-			GetScore(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, level)
+			CalculateScore(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, level)
 		}
 	}
 
