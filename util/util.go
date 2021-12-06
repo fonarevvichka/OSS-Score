@@ -48,8 +48,8 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		fmt.Println("need to do full query")
 		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
 		infoReady = true // temp while this is synchronous
-		_, err := collection.InsertOne(context.TODO(), repoInfo)
 		fmt.Println("Inserting Data")
+		_, err := collection.InsertOne(context.TODO(), repoInfo)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -87,7 +87,7 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		}
 	}
 
-	repoScore, dependencyScore := CalculateActivityScore(mongoClient, &repoInfo, time.Now().AddDate(-1, 0, 0)) // startpoint hardcoded for now
+	repoScore, dependencyScore := CalculateActivityScore(mongoClient, &repoInfo, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0)) // startpoint hardcoded for now
 
 	repoInfo.RepoActivityScore = repoScore
 	repoInfo.DependencyActivityScore = dependencyScore
