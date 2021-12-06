@@ -36,8 +36,8 @@ func main() {
 	fmt.Println("Successfully connected and pinged.")
 
 	router := gin.Default()
-	router.GET("/", server.Pong)
-	router.Run("localhost:8080")
+	router.GET("/Pong", server.Pong)
+	router.Run()
 
 	// repoCatalog := "github"
 	// repoOwner := "swagger-api"
