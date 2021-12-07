@@ -11,11 +11,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"golang.org/x/oauth2"
 )
 
 func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mongo.SingleResult {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	filter := bson.D{
@@ -29,13 +31,12 @@ func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mon
 	return collection.FindOne(ctx, filter)
 }
 
-func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, bool) {
+func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 	res := GetRepoFromDB(collection, owner, name)
 	var score Score
 	shelfLife := 7 // Days TODO: make env var
 	var repoInfo RepoInfo
-	cached := false
 
 	if res.Err() != mongo.ErrNoDocuments { // No match in DB
 		err := res.Decode(&repoInfo)
@@ -44,9 +45,7 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 			log.Fatalln(err)
 		}
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
-		if repoInfo.UpdatedAt.After(expireDate) {
-			cached = true
-
+		if repoInfo.UpdatedAt.After(expireDate) && repoInfo.ScoreStatus == 2 {
 			repoWeight := 0.75
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
@@ -64,10 +63,34 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 		}
 	}
 
-	return score, cached
+	return score, repoInfo.ScoreStatus
 }
 
-func CalculateScore(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) (Score, bool) {
+func CalculateScore(catalog string, owner string, name string, timeFrame int, level int) (Score, bool) {
+	uri := os.Getenv("MONGO_URI")
+	// Create a new mongo_client and connect to the server
+	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
+
+	if err != nil {
+		log.Fatalln(err)
+		panic(err)
+	}
+	defer func() {
+		if err = mongoClient.Disconnect(context.Background()); err != nil {
+			panic(err)
+		}
+	}()
+
+	// Ping the primary
+	if err := mongoClient.Ping(context.Background(), readpref.Primary()); err != nil {
+		panic(err)
+	}
+	fmt.Println("Successfully connected and pinged.")
+
+	return calculateScoreHelper(mongoClient, catalog, owner, name, timeFrame, level)
+}
+
+func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) (Score, bool) {
 	shelfLife := 7 // Days TODO: make env var
 	infoReady := false
 	filter := bson.D{
@@ -86,6 +109,8 @@ func CalculateScore(mongoClient *mongo.Client, catalog string, owner string, nam
 		fmt.Println("need to do full query")
 		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
 		infoReady = true // temp while this is synchronous
+		repoInfo.ScoreStatus = 1
+
 		fmt.Println("Inserting Data")
 		_, err := collection.InsertOne(context.TODO(), repoInfo)
 		if err != nil {
@@ -107,6 +132,7 @@ func CalculateScore(mongoClient *mongo.Client, catalog string, owner string, nam
 			infoReady = true                                                  // temp while this is synchronous
 
 			insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
+			repoInfo.ScoreStatus = 1
 			_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
 			if err != nil {
 				log.Fatal(err)
@@ -118,17 +144,30 @@ func CalculateScore(mongoClient *mongo.Client, catalog string, owner string, nam
 
 	if level < 1 {
 		level += 1
-		fmt.Println(level)
+		var wg sync.WaitGroup
+		counter := 0
 		for _, dependency := range repoInfo.Dependencies {
-			fmt.Println("updating: " + dependency.Owner + "/" + dependency.Name)
-			CalculateScore(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, level)
+			if counter < 10 {
+				counter += 1
+				wg.Add(1)
+				go func(catalog string, owner string, name string, timeFrame int, level int) {
+					defer wg.Done()
+					fmt.Println("updating: " + owner + "/" + name)
+					calculateScoreHelper(mongoClient, catalog, owner, name, timeFrame, level)
+				}(dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, level)
+			} else {
+				counter = 0
+				wg.Wait()
+			}
 		}
+		wg.Wait()
 	}
 
 	repoScore, dependencyScore := CalculateActivityScore(mongoClient, &repoInfo, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0)) // startpoint hardcoded for now
 
 	repoInfo.RepoActivityScore = repoScore
 	repoInfo.DependencyActivityScore = dependencyScore
+	repoInfo.ScoreStatus = 2
 
 	insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
 	_, err := collection.UpdateOne(context.TODO(), filter, insertableData)

@@ -172,6 +172,7 @@ type RepoInfo struct {
 
 	DefaultBranch string
 
+	ScoreStatus       int //0 - not calcualted, 1 - queued, 2 ready
 	RepoActivityScore Score
 	RepoLicenseScore  Score
 

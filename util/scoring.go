@@ -158,7 +158,7 @@ func CalculateActivityScore(mongoClient *mongo.Client, repoInfo *RepoInfo, start
 	numDeps := float64(len(repoInfo.Dependencies))
 
 	depScore := Score{
-		Score:      100 * score / numDeps,
+		Score:      score / numDeps,
 		Confidence: confidence / numDeps,
 	}
 
