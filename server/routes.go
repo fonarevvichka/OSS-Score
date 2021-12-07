@@ -23,7 +23,7 @@ func Pong(c *gin.Context) {
 func CalculateScore(c *gin.Context) {
 	uri := os.Getenv("MONGO_URI")
 	// Create a new mongo_client and connect to the server
-	mongoClient, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 
 	if err != nil {
 		log.Fatalln(err)
@@ -36,7 +36,7 @@ func CalculateScore(c *gin.Context) {
 	}()
 
 	// Ping the primary
-	if err := mongoClient.Ping(context.TODO(), readpref.Primary()); err != nil {
+	if err := mongoClient.Ping(context.Background(), readpref.Primary()); err != nil {
 		panic(err)
 	}
 	fmt.Println("Successfully connected and pinged.")
@@ -46,7 +46,7 @@ func CalculateScore(c *gin.Context) {
 	repoName := c.Param("name")
 	// scoreType := c.Param("scoreType")
 
-	util.CalculateScore(mongoClient, repoCatalog, repoOwner, repoName, 24, 0)
+	go util.CalculateScore(mongoClient, repoCatalog, repoOwner, repoName, 24, 0)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Score request accepted",
