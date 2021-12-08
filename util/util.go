@@ -126,49 +126,62 @@ func addUpdateRepo(mongoClient *mongo.Client, catalog string, owner string, name
 }
 
 func QueryProject(catalog string, owner string, name string, timeFrame int) {
-	repoInfo := QueryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
-	fmt.Println(repoInfo)
-	// mongoClient := getMongoClient()
-	// defer mongoClient.Disconnect(context.TODO())
+	mongoClient := getMongoClient()
+	defer mongoClient.Disconnect(context.TODO())
 
-	// repoInfoChannel := make(chan RepoInfo)
-	// dataStatusChannel := make(chan int)
+	repoInfoChannel := make(chan RepoInfo)
+	dataStatusChannel := make(chan int)
 
-	// go addUpdateRepo(mongoClient, catalog, owner, name, timeFrame, repoInfoChannel, dataStatusChannel)
-	// mainRepo := <-repoInfoChannel
-	// dataStatus := <-dataStatusChannel
+	go addUpdateRepo(mongoClient, catalog, owner, name, timeFrame, repoInfoChannel, dataStatusChannel)
+	mainRepo := <- repoInfoChannel
+	dataStatus := <- dataStatusChannel
 
-	// //TEMP FOR NOW!!!
-	// // ------- insert / update main repo in Mongo if needed ----------
-	// collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-	// filter := bson.D{
-	// 	{"$and",
-	// 		bson.A{
-	// 			bson.D{{"owner", owner}},
-	// 			bson.D{{"name", name}},
-	// 		}},
-	// }
-	// if dataStatus == 1 {
-	// 	insertableData := bson.D{primitive.E{Key: "$set", Value: mainRepo}}
-	// 	log.Println(owner + "/" + name + " Updating Data")
-	// 	_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// } else if dataStatus == 2 {
-	// 	_, err := collection.InsertOne(context.TODO(), mainRepo)
-	// 	if err != nil {
-	// 		log.Println(mainRepo.Owner + "/" + mainRepo.Name)
-	// 		log.Fatal(err)
-	// 	}
-	// }
+
+	//TEMP FOR NOW!!!
+	// ------- insert / update main repo in Mongo if needed ----------
+	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+	filter := bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"owner", owner}},
+				bson.D{{"name", name}},
+			}},
+	}
+	if dataStatus == 1 {
+		insertableData := bson.D{primitive.E{Key: "$set", Value: mainRepo}}
+		log.Println(owner + "/" + name + " Updating Data")
+		_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if dataStatus == 2 {
+		_, err := collection.InsertOne(context.TODO(), mainRepo)
+		if err != nil {
+			log.Println(mainRepo.Owner + "/" + mainRepo.Name)
+			log.Fatal(err)
+		}
+	}
 	//--------------- Dependency Time -----------------//
-	// for _, dependency := range mainRepo.Dependencies {
-
-	// }
 	//--------------- Dependency Time -----------------//
+
+	//--------------- Bulk Write Time -----------------//
+	//--------------- Bulk Write Time -----------------//
+
+	//--------------- Calculate Score -----------------//
+	//--------------- Calculate Score -----------------//
 	log.Println("DONE!")
 }
+
+// func updateDependencies(mongoClient *mongo.Client, []Dependency, timeFrame int, repo) {
+// 	var wg sync.WaitGroup
+// 	wg.Add(len(dependencies))
+
+// 	for _, dependency := range dependencies {
+// 		go addUpdateRepo(mongoClient, catalog, owner, name, time, timeFrame)
+// 	}
+// }
+
+// func handleResults()
 
 // // ------- insert / update main repo in Mongo if needed ----------
 
@@ -275,7 +288,6 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 }
 
 func QueryGithub(catalog string, owner string, name string, startPoint time.Time) RepoInfo {
-	fmt.Println(os.Getenv("GIT_PAT"))
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
 	)
@@ -294,26 +306,26 @@ func QueryGithub(catalog string, owner string, name string, startPoint time.Time
 	}
 	GetCoreRepoInfo(httpClient, &repoInfo)
 
-	// var wg sync.WaitGroup
-	// wg.Add(4)
-	// go func() {
-	// 	defer wg.Done()
-	// 	GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
-	// }()
-	// go func() {
-	// 	defer wg.Done()
-	// 	GetGithubDependencies(httpClient, &repoInfo)
-	// }()
-	// go func() {
-	// 	defer wg.Done()
-	// 	GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
-	// }()
-	// go func() {
-	// 	defer wg.Done()
-	// 	GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
-	// }()
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	}()
+	go func() {
+		defer wg.Done()
+		GetGithubDependencies(httpClient, &repoInfo)
+	}()
+	go func() {
+		defer wg.Done()
+		GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	}()
+	go func() {
+		defer wg.Done()
+		GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	}()
 
-	// wg.Wait()
+	wg.Wait()
 
 	return repoInfo
 }

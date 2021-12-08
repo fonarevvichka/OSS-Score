@@ -162,3 +162,14 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score 
 
 	return repoScore
 }
+
+func CalculateRepoLicenseScore(repoInfo *RepoInfo) Score {
+
+	// wei
+
+	repoScore := Score{
+		Score:      100,
+		Confidence: 100,
+	}
+	return repoScore
+}
