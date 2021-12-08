@@ -96,8 +96,32 @@ func parseReleases(releases []Release, LatestRelease time.Time, startPoint time.
 func minMaxScale(min float64, max float64, val float64) float64 {
 	return math.Min((val-min)/(max-min), 1)
 }
+func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) Score {
+	score := 0.0
+	confidence := 0.0
+	for _, dependency := range repoInfo.Dependencies {
+		res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
 
-func CalculateActivityScore(mongoClient *mongo.Client, repoInfo *RepoInfo, startPoint time.Time) (Score, Score) {
+		if res.Err() != mongo.ErrNoDocuments { // match in DB
+			var depInfo RepoInfo
+			err := res.Decode(&depInfo)
+
+			if err != nil {
+				log.Fatalln(err)
+			}
+			score += depInfo.RepoActivityScore.Score
+			confidence += depInfo.RepoActivityScore.Confidence
+		}
+	}
+	numDeps := float64(len(repoInfo.Dependencies))
+
+	return Score{
+		Score:      score / numDeps,
+		Confidence: confidence / numDeps,
+	}
+}
+
+func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	// Weights
 	commitWeight := 0.25
 	contributorWeight := 0.25
@@ -105,7 +129,6 @@ func CalculateActivityScore(mongoClient *mongo.Client, repoInfo *RepoInfo, start
 	issueWeight := 0.25
 
 	commitCadenceWeight := 1.0
-	// ageLastCommitWeight := 1 - commitCadenceWeight
 	ageLastReleaseWeight := 0.5
 	releaseCadenceWeight := 1 - ageLastReleaseWeight
 
@@ -137,30 +160,5 @@ func CalculateActivityScore(mongoClient *mongo.Client, repoInfo *RepoInfo, start
 		Confidence: confidence,
 	}
 
-	score = 0.0
-	confidence = 0.0
-
-	collection := mongoClient.Database("OSS-Score").Collection(repoInfo.Catalog) // TODO MAKE DB NAME ENV VAR
-	for _, dependency := range repoInfo.Dependencies {
-		res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
-
-		if res.Err() != mongo.ErrNoDocuments { // match in DB
-			var depInfo RepoInfo
-			err := res.Decode(&depInfo)
-
-			if err != nil {
-				log.Fatalln(err)
-			}
-			score += depInfo.RepoActivityScore.Score
-			confidence += depInfo.RepoActivityScore.Confidence
-		}
-	}
-	numDeps := float64(len(repoInfo.Dependencies))
-
-	depScore := Score{
-		Score:      score / numDeps,
-		Confidence: confidence / numDeps,
-	}
-
-	return repoScore, depScore
+	return repoScore
 }

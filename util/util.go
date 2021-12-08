@@ -163,7 +163,8 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 		wg.Wait()
 	}
 
-	repoScore, dependencyScore := CalculateActivityScore(mongoClient, &repoInfo, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0)) // startpoint hardcoded for now
+	repoScore := CalculateRepoActivityScore(&repoInfo, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
+	dependencyScore := CalculateDependencyActivityScore(collection, &repoInfo, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0)) // startpoint hardcoded for now
 
 	repoInfo.RepoActivityScore = repoScore
 	repoInfo.DependencyActivityScore = dependencyScore
