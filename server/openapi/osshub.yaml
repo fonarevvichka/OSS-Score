@@ -97,7 +97,7 @@ paths:
       tags:
         - developers
       summary: Get the requested score type badge for the passed in repo
-      operationId: getScoreBadge
+      operationId: GetScoreBadge
       description: |
         Get the requested score type badge for the passed in repo
       parameters:

@@ -31,7 +31,7 @@ func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mon
 	return collection.FindOne(ctx, filter)
 }
 
-func GetScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
+func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 	res := GetRepoFromDB(collection, owner, name)
 	var score Score
@@ -66,7 +66,7 @@ func GetScore(mongoClient *mongo.Client, catalog string, owner string, name stri
 	return score, repoInfo.ScoreStatus
 }
 
-func CalculateScore(catalog string, owner string, name string, timeFrame int, level int) (Score, bool) {
+func CalculateScore(catalog string, owner string, name string, timeFrame int, level int) Score {
 	uri := os.Getenv("MONGO_URI")
 	// Create a new mongo_client and connect to the server
 	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
@@ -90,9 +90,10 @@ func CalculateScore(catalog string, owner string, name string, timeFrame int, le
 	return calculateScoreHelper(mongoClient, catalog, owner, name, timeFrame, level)
 }
 
-func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) (Score, bool) {
+//check if repo is in db if yes --> done
+//if
+func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) Score {
 	shelfLife := 7 // Days TODO: make env var
-	infoReady := false
 	filter := bson.D{
 		{"$and",
 			bson.A{
@@ -106,16 +107,18 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 	res := GetRepoFromDB(collection, owner, name)
 
 	if res.Err() == mongo.ErrNoDocuments { // No match in DB
-		fmt.Println("need to do full query")
+		fmt.Println(owner + "/" + name + " need to do full query")
 		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
-		infoReady = true // temp while this is synchronous
+		fmt.Println(owner + "/" + name + "Done querying github")
 		repoInfo.ScoreStatus = 1
 
-		fmt.Println("Inserting Data")
+		fmt.Println(owner + "/" + name + "Inserting Data")
 		_, err := collection.InsertOne(context.TODO(), repoInfo)
 		if err != nil {
+			fmt.Println(repoInfo.Owner + "/" + repoInfo.Name)
 			log.Fatal(err)
 		}
+		fmt.Println(owner + "/" + name + "Data Inserted")
 
 	} else { // Match in DB found
 		err := res.Decode(&repoInfo)
@@ -126,10 +129,9 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		if repoInfo.UpdatedAt.Before(expireDate) {
-			fmt.Println("out of date: need to make partial query")
+			fmt.Println(repoInfo.Owner + "/" + repoInfo.Name + " out of date: need to make partial query")
 
 			repoInfo := queryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull only needed data
-			infoReady = true                                                  // temp while this is synchronous
 
 			insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
 			repoInfo.ScoreStatus = 1
@@ -137,8 +139,6 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 			if err != nil {
 				log.Fatal(err)
 			}
-		} else {
-			infoReady = true
 		}
 	}
 
@@ -146,13 +146,13 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 		level += 1
 		var wg sync.WaitGroup
 		counter := 0
+		fmt.Println("Querying dependencies")
 		for _, dependency := range repoInfo.Dependencies {
-			if counter < 10 {
+			if counter < 10 { // caps concurrent works at 10
 				counter += 1
 				wg.Add(1)
 				go func(catalog string, owner string, name string, timeFrame int, level int) {
 					defer wg.Done()
-					fmt.Println("updating: " + owner + "/" + name)
 					calculateScoreHelper(mongoClient, catalog, owner, name, timeFrame, level)
 				}(dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, level)
 			} else {
@@ -181,7 +181,7 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 	return Score{
 		Score:      (repoScore.Score * repoWeight) + (dependencyScore.Score * dependencyWeight),
 		Confidence: (repoScore.Confidence * repoWeight) + (dependencyScore.Confidence * dependencyWeight),
-	}, infoReady
+	}
 }
 
 func queryGithub(catalog string, owner string, name string, startPoint time.Time) RepoInfo {

@@ -33,7 +33,7 @@ func CalculateScore(c *gin.Context) {
 	})
 }
 
-func GetScore(c *gin.Context) {
+func GetCachedScore(c *gin.Context) {
 	uri := os.Getenv("MONGO_URI")
 	// Create a new mongo_client and connect to the server
 	mongoClient, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
@@ -58,7 +58,7 @@ func GetScore(c *gin.Context) {
 	owner := c.Param("owner")
 	name := c.Param("name")
 	scoreType := c.Param("scoreType")
-	score, scoreStatus := util.GetScore(mongoClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
+	score, scoreStatus := util.GetCachedScore(mongoClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
 	var message string
 	if scoreStatus == 0 {
