@@ -16,6 +16,23 @@ import (
 	"golang.org/x/oauth2"
 )
 
+func getMongoClient() *mongo.Client {
+	uri := os.Getenv("MONGO_URI")
+	// Create a new mongo_client and connect to the server
+	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if err := mongoClient.Ping(context.Background(), readpref.Primary()); err != nil {
+		panic(err)
+	}
+	fmt.Println("Successfully connected and pinged.")
+
+	return mongoClient
+}
+
 func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mongo.SingleResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -66,26 +83,37 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 	return score, repoInfo.ScoreStatus
 }
 
-func CalculateScore(catalog string, owner string, name string, timeFrame int, level int) Score {
-	uri := os.Getenv("MONGO_URI")
-	// Create a new mongo_client and connect to the server
-	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
+func AddUpdateRepo(catalog string, owner string, name string, timeFrame int, level int) {
+	fmt.Println("KISS: Keep it simple stupid")
 
-	if err != nil {
-		log.Fatalln(err)
-		panic(err)
-	}
-	defer func() {
-		if err = mongoClient.Disconnect(context.Background()); err != nil {
-			panic(err)
+	mongoClient := getMongoClient()
+	defer mongoClient.Disconnect(context.TODO())
+
+	shelfLife := 7
+	repoInfo := RepoInfo{}
+
+	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+	res := GetRepoFromDB(collection, owner, name)
+
+	if res.Err() != mongo.ErrNoDocuments { // No data on repo
+		fmt.Println("Not in DB, need to query full history")
+	} else {
+		err := res.Decode(&repoInfo)
+
+		if err != nil {
+			log.Fatalln(err)
 		}
-	}()
 
-	// Ping the primary
-	if err := mongoClient.Ping(context.Background(), readpref.Primary()); err != nil {
-		panic(err)
+		// Repo data out of date, need to update
+		if repoInfo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) {
+			fmt.Println("Need to do partial update")
+		} else {
+			fmt.Println("Data up to date")
+		}
 	}
-	fmt.Println("Successfully connected and pinged.")
+}
+
+func CalculateScore(catalog string, owner string, name string, timeFrame int, level int) Score {
 
 	return calculateScoreHelper(mongoClient, catalog, owner, name, timeFrame, level)
 }

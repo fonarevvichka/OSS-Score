@@ -26,7 +26,8 @@ func CalculateScore(c *gin.Context) {
 	repoName := c.Param("name")
 	// scoreType := c.Param("scoreType")
 
-	go util.CalculateScore(repoCatalog, repoOwner, repoName, 24, 0)
+	go util.AddUpdateRepo(repoCatalog, repoOwner, repoName, 12, 0)
+	// go util.CalculateScore(repoCatalog, repoOwner, repoName, 24, 0)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Score request accepted",
