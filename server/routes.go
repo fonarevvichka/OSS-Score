@@ -20,14 +20,12 @@ func Pong(c *gin.Context) {
 	})
 }
 
-func CalculateScore(c *gin.Context) {
-	repoCatalog := c.Param("catalog")
-	repoOwner := c.Param("owner")
-	repoName := c.Param("name")
-	// scoreType := c.Param("scoreType")
+func QueryProject(c *gin.Context) {
+	catalog := c.Param("catalog")
+	owner := c.Param("owner")
+	name := c.Param("name")
 
-	go util.AddUpdateRepo(repoCatalog, repoOwner, repoName, 12, 0)
-	// go util.CalculateScore(repoCatalog, repoOwner, repoName, 24, 0)
+	util.QueryProject(catalog, owner, name, 12)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Score request accepted",

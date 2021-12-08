@@ -28,6 +28,8 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 	}
 	resp, err := client.Do(postRequest)
 
+	//TODO: NEED TO CHECK STATUS CODES HERE VERY IMPORTANT
+	fmt.Println(resp.Header)
 	if err != nil {
 		log.Fatalln(err)
 	}

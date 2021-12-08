@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -52,7 +53,10 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 	res := GetRepoFromDB(collection, owner, name)
 	var score Score
-	shelfLife := 7 // Days TODO: make env var
+	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
+	if err != nil {
+		log.Fatalln(err)
+	}
 	var repoInfo RepoInfo
 
 	if res.Err() != mongo.ErrNoDocuments { // No match in DB
@@ -83,43 +87,100 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 	return score, repoInfo.ScoreStatus
 }
 
-func AddUpdateRepo(catalog string, owner string, name string, timeFrame int, level int) {
-	fmt.Println("KISS: Keep it simple stupid")
-
-	mongoClient := getMongoClient()
-	defer mongoClient.Disconnect(context.TODO())
-
-	shelfLife := 7
-	repoInfo := RepoInfo{}
+// Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
+func addUpdateRepo(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, repoInfoChan chan RepoInfo, statusChan chan int) {
+	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 	res := GetRepoFromDB(collection, owner, name)
 
-	if res.Err() != mongo.ErrNoDocuments { // No data on repo
-		fmt.Println("Not in DB, need to query full history")
+	repoInfo := RepoInfo{}
+	dataStatus := 0
+
+	if res.Err() == mongo.ErrNoDocuments { // No data on repo
+		dataStatus = 2
+		log.Println(owner + "/" + name + " Not in DB, need to do full query")
+
+		repoInfo = QueryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
+		log.Println(owner + "/" + name + " Done querying github")
 	} else {
 		err := res.Decode(&repoInfo)
-
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		// Repo data out of date, need to update
+		// Repo data expired
 		if repoInfo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) {
-			fmt.Println("Need to do partial update")
-		} else {
-			fmt.Println("Data up to date")
+			dataStatus = 1
+
+			log.Println(owner + "/" + name + " Need to do partial update")
+			repoInfo = QueryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull only needed data
+			log.Println(owner + "/" + name + " Done querying github")
 		}
 	}
+	repoInfoChan <- repoInfo
+	statusChan <- dataStatus
 }
 
-func CalculateScore(catalog string, owner string, name string, timeFrame int, level int) Score {
+func QueryProject(catalog string, owner string, name string, timeFrame int) {
+	repoInfo := QueryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
+	fmt.Println(repoInfo)
+	// mongoClient := getMongoClient()
+	// defer mongoClient.Disconnect(context.TODO())
 
-	return calculateScoreHelper(mongoClient, catalog, owner, name, timeFrame, level)
+	// repoInfoChannel := make(chan RepoInfo)
+	// dataStatusChannel := make(chan int)
+
+	// go addUpdateRepo(mongoClient, catalog, owner, name, timeFrame, repoInfoChannel, dataStatusChannel)
+	// mainRepo := <-repoInfoChannel
+	// dataStatus := <-dataStatusChannel
+
+	// //TEMP FOR NOW!!!
+	// // ------- insert / update main repo in Mongo if needed ----------
+	// collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+	// filter := bson.D{
+	// 	{"$and",
+	// 		bson.A{
+	// 			bson.D{{"owner", owner}},
+	// 			bson.D{{"name", name}},
+	// 		}},
+	// }
+	// if dataStatus == 1 {
+	// 	insertableData := bson.D{primitive.E{Key: "$set", Value: mainRepo}}
+	// 	log.Println(owner + "/" + name + " Updating Data")
+	// 	_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// } else if dataStatus == 2 {
+	// 	_, err := collection.InsertOne(context.TODO(), mainRepo)
+	// 	if err != nil {
+	// 		log.Println(mainRepo.Owner + "/" + mainRepo.Name)
+	// 		log.Fatal(err)
+	// 	}
+	// }
+	//--------------- Dependency Time -----------------//
+	// for _, dependency := range mainRepo.Dependencies {
+
+	// }
+	//--------------- Dependency Time -----------------//
+	log.Println("DONE!")
 }
 
-//check if repo is in db if yes --> done
-//if
+// // ------- insert / update main repo in Mongo if needed ----------
+
+// //NOTE: Only at this point if new data was added
+
+// //------------ Score Calculation Time --------------//
+// fmt.Println("check those deps")
+// //------------ Score Calculation Time --------------//
+// log.Println("Done")
+
+// func CalculateScore(catalog string, owner string, name string, timeFrame int, level int) Score {
+
 func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) Score {
 	shelfLife := 7 // Days TODO: make env var
 	filter := bson.D{
@@ -136,7 +197,7 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 
 	if res.Err() == mongo.ErrNoDocuments { // No match in DB
 		fmt.Println(owner + "/" + name + " need to do full query")
-		repoInfo = queryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
+		repoInfo = QueryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
 		fmt.Println(owner + "/" + name + "Done querying github")
 		repoInfo.ScoreStatus = 1
 
@@ -159,7 +220,7 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 		if repoInfo.UpdatedAt.Before(expireDate) {
 			fmt.Println(repoInfo.Owner + "/" + repoInfo.Name + " out of date: need to make partial query")
 
-			repoInfo := queryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull only needed data
+			repoInfo := QueryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull only needed data
 
 			insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
 			repoInfo.ScoreStatus = 1
@@ -213,7 +274,8 @@ func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner strin
 	}
 }
 
-func queryGithub(catalog string, owner string, name string, startPoint time.Time) RepoInfo {
+func QueryGithub(catalog string, owner string, name string, startPoint time.Time) RepoInfo {
+	fmt.Println(os.Getenv("GIT_PAT"))
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
 	)
@@ -230,29 +292,28 @@ func queryGithub(catalog string, owner string, name string, startPoint time.Time
 			ClosedIssues: make([]ClosedIssue, 0),
 		},
 	}
-
 	GetCoreRepoInfo(httpClient, &repoInfo)
 
-	var wg sync.WaitGroup
-	wg.Add(4)
-	go func() {
-		defer wg.Done()
-		GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
-	}()
-	go func() {
-		defer wg.Done()
-		GetGithubDependencies(httpClient, &repoInfo)
-	}()
-	go func() {
-		defer wg.Done()
-		GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
-	}()
-	go func() {
-		defer wg.Done()
-		GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
-	}()
+	// var wg sync.WaitGroup
+	// wg.Add(4)
+	// go func() {
+	// 	defer wg.Done()
+	// 	GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	// }()
+	// go func() {
+	// 	defer wg.Done()
+	// 	GetGithubDependencies(httpClient, &repoInfo)
+	// }()
+	// go func() {
+	// 	defer wg.Done()
+	// 	GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	// }()
+	// go func() {
+	// 	defer wg.Done()
+	// 	GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+	// }()
 
-	wg.Wait()
+	// wg.Wait()
 
 	return repoInfo
 }
