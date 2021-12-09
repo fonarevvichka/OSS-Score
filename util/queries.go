@@ -64,6 +64,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 	var dependencies []Dependency
 	var data DependencyResponse
 
+	// temp: not iterating over all manifests, only primary one
 	// for hasNextGraphPage {
 	for hasNextDependencyPage {
 		variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"graphCursor\": \"%s\", \"dependencyCursor\": \"%s\"}", repo.Owner, repo.Name, graphCursor, dependencyCursor)
@@ -103,7 +104,10 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 				Name:    node.Node.Repository.Name,
 				Version: node.Node.Requirements,
 			}
-			dependencies = append(dependencies, newDep) //TODO: check for dupes
+			// not pulling enough info out, this shouldn't be needed
+			if !dependencyInSlice(newDep, dependencies) {
+				dependencies = append(dependencies, newDep)
+			}
 		}
 		hasNextDependencyPage = data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.PageInfo.HasNextPage
 		dependencyCursor = data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.PageInfo.EndCursor

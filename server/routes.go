@@ -25,7 +25,7 @@ func QueryProject(c *gin.Context) {
 	owner := c.Param("owner")
 	name := c.Param("name")
 
-	go util.QueryProject(catalog, owner, name, 3)
+	go util.QueryProject(catalog, owner, name, 24)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Score request accepted",
