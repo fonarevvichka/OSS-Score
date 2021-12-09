@@ -90,7 +90,7 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 }
 
 // Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
-func addUpdateRepo(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, channel chan RepoInfoMessage) {
+func addUpdateRepo(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int) RepoInfoMessage {
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
 		log.Fatalln(err)
@@ -123,7 +123,8 @@ func addUpdateRepo(mongoClient *mongo.Client, catalog string, owner string, name
 			log.Println(owner + "/" + name + " Done querying github")
 		}
 	}
-	channel <- RepoInfoMessage{
+
+	return RepoInfoMessage{
 		RepoInfo:   repoInfo,
 		DataStatus: dataStatus,
 	}
@@ -133,10 +134,7 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	mongoClient := getMongoClient()
 	defer mongoClient.Disconnect(context.TODO())
 
-	channel := make(chan RepoInfoMessage)
-
-	go addUpdateRepo(mongoClient, catalog, owner, name, timeFrame, channel)
-	repoInfoMessage := <-channel
+	repoInfoMessage := addUpdateRepo(mongoClient, catalog, owner, name, timeFrame)
 
 	mainRepo := repoInfoMessage.RepoInfo
 	dataStatus := repoInfoMessage.DataStatus
@@ -148,7 +146,7 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	syncRepoWithDB(collection, mainRepo, dataStatus)
 	log.Println("Done with main repo data")
 	//--------------- Dependency Time -----------------//
-	updateDependencies(channel, mongoClient, mainRepo.Dependencies, timeFrame)
+	updateDependencies(mongoClient, &mainRepo, timeFrame)
 	//--------------- Dependency Time -----------------//
 
 	//--------------- Bulk Write Time -----------------//
@@ -177,25 +175,61 @@ func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, dataStatus int)
 	}
 }
 
-func updateDependencies(channel chan RepoInfoMessage, mongoClient *mongo.Client, dependencies []Dependency, timeFrame int) {
+func updateDependencies(client *mongo.Client, mainRepo *RepoInfo, timeFrame int) {
 	var wg sync.WaitGroup
-	// wg.Add(len(dependencies))
 	var repoMessages []RepoInfoMessage
+	dependencies := mainRepo.Dependencies
+
 	counter := 0
 	for _, dependency := range dependencies {
 		counter += 1
 		wg.Add(1)
 
-		go func(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, channel chan RepoInfoMessage) {
+		go func(client *mongo.Client, catalog string, owner string, name string, timeFrame int) {
 			defer wg.Done()
-			go addUpdateRepo(mongoClient, catalog, owner, name, timeFrame, channel)
-			repoMessages = append(repoMessages, <-channel)
-		}(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, channel)
+			repoMessages = append(repoMessages, addUpdateRepo(client, catalog, owner, name, timeFrame))
+		}(client, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame)
 
-		if counter == 5 {
+		if counter == 50 {
 			break
 		}
 	}
+	wg.Wait()
+
+	var newDeps []interface{}
+	var updatedDeps []RepoInfo
+
+	for _, repoMessage := range repoMessages {
+		if repoMessage.DataStatus == 1 {
+			updatedDeps = append(updatedDeps, repoMessage.RepoInfo)
+		} else if repoMessage.DataStatus == 2 {
+			newDeps = append(newDeps, repoMessage.RepoInfo)
+		}
+	}
+
+	//TODO: Investigate BulkWrite operation
+	collection := client.Database("OSS-Score").Collection(mainRepo.Catalog) // TODO MAKE DB NAME ENV VAR
+	if len(newDeps) != 0 {
+		wg.Add(1)
+		go func(collection *mongo.Collection, deps []interface{}) {
+			defer wg.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			collection.InsertMany(ctx, newDeps)
+		}(collection, newDeps)
+	}
+
+	for _, dep := range updatedDeps {
+		wg.Add(1)
+		go func(collection *mongo.Collection, dep RepoInfo) {
+			defer wg.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			collection.UpdateOne(ctx, getRepoFilter(dep.Owner, dep.Name), dep)
+		}(collection, dep)
+
+	}
+
 	wg.Wait()
 }
 
