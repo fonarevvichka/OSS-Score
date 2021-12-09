@@ -195,9 +195,9 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 		}
 
 		// cap on how many deps to query: testing only
-		// if counter == 25 {
-		// 	break
-		// }
+		if counter == 25 {
+			break
+		}
 	}
 	wg.Wait()
 
@@ -215,6 +215,7 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 	log.Println("Done querying all deps")
 	//TODO: Investigate BulkWrite operation
 	if len(newDeps) != 0 {
+		log.Println("inserting new deps")
 		wg.Add(1)
 		go func(collection *mongo.Collection, deps []interface{}) {
 			defer wg.Done()
@@ -256,30 +257,29 @@ func QueryGithub(catalog string, owner string, name string, startPoint time.Time
 		},
 	}
 	httpClient := oauth2.NewClient(context.Background(), src)
-	GetCoreRepoInfo(httpClient, &repoInfo)
 
 	var wg sync.WaitGroup
-	wg.Add(4)
-	// testing add new client to each one
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
-		httpClient := oauth2.NewClient(context.Background(), src)
 		GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
 	go func() {
 		defer wg.Done()
-		httpClient := oauth2.NewClient(context.Background(), src)
 		GetGithubDependencies(httpClient, &repoInfo)
 	}()
 	go func() {
 		defer wg.Done()
-		httpClient := oauth2.NewClient(context.Background(), src)
-		GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+		GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
+
+	GetCoreRepoInfo(httpClient, &repoInfo)
+
+	wg.Add(1)
+	// Commits needs default branch to function
 	go func() {
 		defer wg.Done()
-		httpClient := oauth2.NewClient(context.Background(), src)
-		GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+		GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
 
 	wg.Wait()
