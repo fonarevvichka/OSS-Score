@@ -17,6 +17,16 @@ import (
 	"golang.org/x/oauth2"
 )
 
+func getRepoFilter(owner string, name string) bson.D {
+	return bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"owner", owner}},
+				bson.D{{"name", name}},
+			}},
+	}
+}
+
 func getMongoClient() *mongo.Client {
 	uri := os.Getenv("MONGO_URI")
 	// Create a new mongo_client and connect to the server
@@ -38,15 +48,7 @@ func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mon
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filter := bson.D{
-		{"$and",
-			bson.A{
-				bson.D{{"owner", owner}},
-				bson.D{{"name", name}},
-			}},
-	}
-
-	return collection.FindOne(ctx, filter)
+	return collection.FindOne(ctx, getRepoFilter(owner, name))
 }
 
 func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
@@ -88,7 +90,7 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 }
 
 // Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
-func addUpdateRepo(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, repoInfoChan chan RepoInfo, statusChan chan int) {
+func addUpdateRepo(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, channel chan RepoInfoMessage) {
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
 		log.Fatalln(err)
@@ -121,47 +123,32 @@ func addUpdateRepo(mongoClient *mongo.Client, catalog string, owner string, name
 			log.Println(owner + "/" + name + " Done querying github")
 		}
 	}
-	repoInfoChan <- repoInfo
-	statusChan <- dataStatus
+	channel <- RepoInfoMessage{
+		RepoInfo:   repoInfo,
+		DataStatus: dataStatus,
+	}
 }
 
 func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	mongoClient := getMongoClient()
 	defer mongoClient.Disconnect(context.TODO())
 
-	repoInfoChannel := make(chan RepoInfo)
-	dataStatusChannel := make(chan int)
+	channel := make(chan RepoInfoMessage)
 
-	go addUpdateRepo(mongoClient, catalog, owner, name, timeFrame, repoInfoChannel, dataStatusChannel)
-	mainRepo := <- repoInfoChannel
-	dataStatus := <- dataStatusChannel
+	go addUpdateRepo(mongoClient, catalog, owner, name, timeFrame, channel)
+	repoInfoMessage := <-channel
 
+	mainRepo := repoInfoMessage.RepoInfo
+	dataStatus := repoInfoMessage.DataStatus
 
 	//TEMP FOR NOW!!!
 	// ------- insert / update main repo in Mongo if needed ----------
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-	filter := bson.D{
-		{"$and",
-			bson.A{
-				bson.D{{"owner", owner}},
-				bson.D{{"name", name}},
-			}},
-	}
-	if dataStatus == 1 {
-		insertableData := bson.D{primitive.E{Key: "$set", Value: mainRepo}}
-		log.Println(owner + "/" + name + " Updating Data")
-		_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else if dataStatus == 2 {
-		_, err := collection.InsertOne(context.TODO(), mainRepo)
-		if err != nil {
-			log.Println(mainRepo.Owner + "/" + mainRepo.Name)
-			log.Fatal(err)
-		}
-	}
+
+	syncRepoWithDB(collection, mainRepo, dataStatus)
+	log.Println("Done with main repo data")
 	//--------------- Dependency Time -----------------//
+	updateDependencies(channel, mongoClient, mainRepo.Dependencies, timeFrame)
 	//--------------- Dependency Time -----------------//
 
 	//--------------- Bulk Write Time -----------------//
@@ -172,14 +159,45 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	log.Println("DONE!")
 }
 
-// func updateDependencies(mongoClient *mongo.Client, []Dependency, timeFrame int, repo) {
-// 	var wg sync.WaitGroup
-// 	wg.Add(len(dependencies))
+func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, dataStatus int) {
+	if dataStatus == 1 {
+		insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
+		// log.Println(owner + "/" + name + " Updating Data")
+		filter := getRepoFilter(repo.Owner, repo.Name)
+		_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if dataStatus == 2 {
+		_, err := collection.InsertOne(context.TODO(), repo)
+		if err != nil {
+			log.Println(repo.Owner + "/" + repo.Name)
+			log.Fatal(err)
+		}
+	}
+}
 
-// 	for _, dependency := range dependencies {
-// 		go addUpdateRepo(mongoClient, catalog, owner, name, time, timeFrame)
-// 	}
-// }
+func updateDependencies(channel chan RepoInfoMessage, mongoClient *mongo.Client, dependencies []Dependency, timeFrame int) {
+	var wg sync.WaitGroup
+	// wg.Add(len(dependencies))
+	var repoMessages []RepoInfoMessage
+	counter := 0
+	for _, dependency := range dependencies {
+		counter += 1
+		wg.Add(1)
+
+		go func(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, channel chan RepoInfoMessage) {
+			defer wg.Done()
+			go addUpdateRepo(mongoClient, catalog, owner, name, timeFrame, channel)
+			repoMessages = append(repoMessages, <-channel)
+		}(mongoClient, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, channel)
+
+		if counter == 5 {
+			break
+		}
+	}
+	wg.Wait()
+}
 
 // func handleResults()
 
@@ -196,13 +214,7 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 
 func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) Score {
 	shelfLife := 7 // Days TODO: make env var
-	filter := bson.D{
-		{"$and",
-			bson.A{
-				bson.D{{"owner", owner}},
-				bson.D{{"name", name}},
-			}},
-	}
+	filter := getRepoFilter(owner, name)
 	var repoInfo RepoInfo
 
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR

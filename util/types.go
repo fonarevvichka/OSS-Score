@@ -193,6 +193,11 @@ type RepoInfo struct {
 	Commits      []Commit
 }
 
+type RepoInfoMessage struct {
+	DataStatus int
+	RepoInfo   RepoInfo
+}
+
 type Score struct {
 	Score      float64
 	Confidence float64
