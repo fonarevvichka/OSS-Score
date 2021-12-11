@@ -1,11 +1,13 @@
 package util
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -90,7 +92,7 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 }
 
 // Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
-func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) RepoInfoMessage {
+func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int, licenseMap map[string]int) RepoInfoMessage {
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
 		log.Fatalln(err)
@@ -126,8 +128,15 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 
 	if dataStatus != 0 {
 		repoInfo.RepoActivityScore = CalculateRepoActivityScore(&repoInfo, startPoint)
-		repoInfo.RepoLicenseScore = CalculateRepoLicenseScore(&repoInfo)
+		repoInfo.RepoLicenseScore = CalculateRepoLicenseScore(&repoInfo, licenseMap)
 	}
+
+	log.Println(repoInfo.RepoLicenseScore.Score)
+	log.Println(repoInfo.RepoLicenseScore.Confidence)
+
+	log.Println(repoInfo.License)
+
+	log.Println(licenseMap)
 	return RepoInfoMessage{
 		RepoInfo:   repoInfo,
 		DataStatus: dataStatus,
@@ -139,12 +148,40 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	defer mongoClient.Disconnect(context.TODO())
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 
-	repoInfoMessage := addUpdateRepo(collection, catalog, owner, name, timeFrame)
+	// Get License Score map
+	licenseMap := make(map[string]int)
+
+	licenseFile, err := os.Open("./util/scores/licenseScores.txt")
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer licenseFile.Close()
+
+	scanner := bufio.NewScanner(licenseFile)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		values := strings.Split(line, ",")
+		score, err := strconv.Atoi(values[1])
+		if err != nil {
+			log.Fatalln(err)
+		}
+		licenseMap[values[0]] = score
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Here 1")
+	// get repo info message
+	repoInfoMessage := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
 
 	mainRepo := repoInfoMessage.RepoInfo
 	dataStatus := repoInfoMessage.DataStatus
 
-	// updateDependencies(collection, &mainRepo, timeFrame)
+	// updateDependencies(collection, &mainRepo, timeFrame, licenseMap)
 
 	// startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 	// mainRepo.DependencyActivityScore = CalculateDependencyActivityScore(collection, &mainRepo, startPoint)
@@ -173,7 +210,7 @@ func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, dataStatus int)
 	}
 }
 
-func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFrame int) {
+func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFrame int, licenseMap map[string]int) {
 	var wg sync.WaitGroup
 	var repoMessages []RepoInfoMessage
 	dependencies := mainRepo.Dependencies
@@ -189,7 +226,7 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 
 			go func(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) {
 				defer wg.Done()
-				repoMessages = append(repoMessages, addUpdateRepo(collection, catalog, owner, name, timeFrame))
+				repoMessages = append(repoMessages, addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap))
 			}(collection, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame)
 			counter += 1
 		}
