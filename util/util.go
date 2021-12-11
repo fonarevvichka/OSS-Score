@@ -144,11 +144,11 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	mainRepo := repoInfoMessage.RepoInfo
 	dataStatus := repoInfoMessage.DataStatus
 
-	updateDependencies(collection, &mainRepo, timeFrame)
+	// updateDependencies(collection, &mainRepo, timeFrame)
 
-	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
-	mainRepo.DependencyActivityScore = CalculateDependencyActivityScore(collection, &mainRepo, startPoint)
-	mainRepo.ScoreStatus = 2
+	// startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+	// mainRepo.DependencyActivityScore = CalculateDependencyActivityScore(collection, &mainRepo, startPoint)
+	// mainRepo.ScoreStatus = 2
 	// mainRepo.DependencyLicenseScore = CalculateDependencyLicenseScore(collection, &mainRepo, startPoint)
 	syncRepoWithDB(collection, mainRepo, dataStatus)
 
@@ -259,27 +259,32 @@ func QueryGithub(catalog string, owner string, name string, startPoint time.Time
 	httpClient := oauth2.NewClient(context.Background(), src)
 
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		GetGithubIssues(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+		GetGithubIssuesRest(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		GetGithubDependencies(httpClient, &repoInfo)
 	}()
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
 
-	GetCoreRepoInfo(httpClient, &repoInfo)
-
 	wg.Add(1)
-	// Commits needs default branch to function
 	go func() {
 		defer wg.Done()
-		GetGithubCommits(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+		GetCoreRepoInfo(httpClient, &repoInfo)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		GetGithubCommitsRest(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
 
 	wg.Wait()

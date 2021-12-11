@@ -56,6 +56,15 @@ type CommitResponse struct {
 	}
 }
 
+type CommitResponseRest struct {
+	Commit struct {
+		Author struct {
+			Name string
+			Date time.Time
+		}
+	}
+}
+
 type DependencyResponse struct {
 	Data struct {
 		Repository struct {
@@ -118,6 +127,14 @@ type IssueResponse struct {
 			}
 		}
 	}
+}
+
+type IssueResponseRest struct {
+	State      string
+	Assignees  []interface{}
+	Comments   int
+	Created_at time.Time
+	Closed_at  time.Time
 }
 
 type ReleaseResponse struct {

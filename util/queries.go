@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 )
 
 const GitUrl = "https://api.github.com/graphql"
@@ -119,7 +120,124 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 	repo.Dependencies = append(repo.Dependencies, dependencies...)
 }
 
-func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
+func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) bool {
+	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?", repo.Owner, repo.Name)
+	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
+
+	responseBody := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	// fmt.Println(resp.Status)
+	defer resp.Body.Close()
+
+	issues := []IssueResponseRest{}
+	decoder := json.NewDecoder(resp.Body)
+	if decoder.Decode(&issues) != nil {
+		log.Fatalln(err)
+	}
+
+	// Pull out issue info
+	for _, issueResponse := range issues {
+		if issueResponse.State == "open" {
+			newIssue := OpenIssue{
+				CreateDate: issueResponse.Created_at,
+				Comments:   issueResponse.Comments,
+				Assignees:  len(issueResponse.Assignees),
+			}
+			repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, newIssue)
+		} else {
+			newIssue := ClosedIssue{
+				CreateDate: issueResponse.Created_at,
+				CloseDate:  issueResponse.Closed_at,
+				Comments:   issueResponse.Comments,
+			}
+			repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, newIssue)
+		}
+	}
+
+	return len(issues) == 100
+}
+
+func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) {
+	closedHasNextPage := true
+	openHasNextPage := true
+	closePage := 1
+	openPage := 1
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func(client *http.Client, repo *RepoInfo, state string, page int, startDate string) {
+		defer wg.Done()
+		for closedHasNextPage {
+			closedHasNextPage = getGithubIssuePage(client, repo, state, closePage, startDate)
+			closePage += 1
+		}
+	}(client, repo, "closed", closePage, startDate)
+
+	wg.Add(1)
+	go func(client *http.Client, repo *RepoInfo, state string, page int, startDate string) {
+		defer wg.Done()
+		for openHasNextPage {
+			openHasNextPage = getGithubIssuePage(client, repo, "open", openPage, startDate)
+			openPage += 1
+		}
+	}(client, repo, "open", openPage, startDate)
+
+	wg.Wait()
+}
+
+func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) bool {
+	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits?", repo.Owner, repo.Name)
+	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate)
+
+	responseBody := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
+	commits := []CommitResponseRest{}
+	decoder := json.NewDecoder(resp.Body)
+	if decoder.Decode(&commits) != nil {
+		log.Fatalln(err)
+	}
+
+	for _, commitResponse := range commits {
+		newCommit := Commit{
+			Author:     commitResponse.Commit.Author.Name,
+			PushedDate: commitResponse.Commit.Author.Date,
+		}
+
+		repo.Commits = append(repo.Commits, newCommit)
+	}
+
+	return len(commits) == 100
+}
+
+func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) {
+	hasNextPage := true
+	page := 1
+
+	for hasNextPage {
+		hasNextPage = getGithubCommitsPage(client, repo, page, startDate)
+		page += 1
+	}
+}
+
+// deprecated
+func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate string) {
 	query := importQuery("./util/queries/issues.graphql") //TODO: Make this a an env var probably
 
 	hasNextPage := true
@@ -135,7 +253,6 @@ func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
 		} else {
 			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
 		}
-
 		postBody, _ := json.Marshal(map[string]string{
 			"query":     query,
 			"variables": variables,
@@ -184,6 +301,7 @@ func GetGithubIssues(client *http.Client, repo *RepoInfo, startDate string) {
 	repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, closedIssues...)
 }
 
+// deprecated
 func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
 	query := importQuery("./util/queries/commits.graphql") //TODO: Make this a an env var probably
 
