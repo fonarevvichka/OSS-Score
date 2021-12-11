@@ -131,12 +131,6 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 		repoInfo.RepoLicenseScore = CalculateRepoLicenseScore(&repoInfo, licenseMap)
 	}
 
-	log.Println(repoInfo.RepoLicenseScore.Score)
-	log.Println(repoInfo.RepoLicenseScore.Confidence)
-
-	log.Println(repoInfo.License)
-
-	log.Println(licenseMap)
 	return RepoInfoMessage{
 		RepoInfo:   repoInfo,
 		DataStatus: dataStatus,
@@ -174,7 +168,6 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 		log.Fatal(err)
 	}
 
-	log.Println("Here 1")
 	// get repo info message
 	repoInfoMessage := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
 
