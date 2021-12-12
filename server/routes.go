@@ -14,12 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func Pong(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "ping",
-	})
-}
-
 func QueryProject(c *gin.Context) {
 	catalog := c.Param("catalog")
 	owner := c.Param("owner")
