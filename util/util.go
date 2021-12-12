@@ -216,7 +216,6 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 		} else {
 			wg.Add(1)
 
-			// time.Sleep(1000 * time.Millisecond)
 			go func(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) {
 				defer wg.Done()
 				repoMessages = append(repoMessages, addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap))
@@ -294,11 +293,13 @@ func QueryGithub(catalog string, owner string, name string, startPoint time.Time
 		defer wg.Done()
 		GetGithubIssuesRest(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		GetGithubDependencies(httpClient, &repoInfo)
 	}()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
