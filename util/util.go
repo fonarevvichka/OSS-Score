@@ -174,12 +174,12 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	mainRepo := repoInfoMessage.RepoInfo
 	dataStatus := repoInfoMessage.DataStatus
 
-	// updateDependencies(collection, &mainRepo, timeFrame, licenseMap)
+	updateDependencies(collection, &mainRepo, timeFrame, licenseMap)
 
-	// startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
-	// mainRepo.DependencyActivityScore = CalculateDependencyActivityScore(collection, &mainRepo, startPoint)
-	// mainRepo.ScoreStatus = 2
-	// mainRepo.DependencyLicenseScore = CalculateDependencyLicenseScore(collection, &mainRepo, startPoint)
+	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+	mainRepo.DependencyActivityScore = CalculateDependencyActivityScore(collection, &mainRepo, startPoint)
+	mainRepo.ScoreStatus = 2
+	mainRepo.DependencyLicenseScore = CalculateDependencyLicenseScore(collection, &mainRepo)
 	syncRepoWithDB(collection, mainRepo, dataStatus)
 
 	log.Println("DONE!")
@@ -210,13 +210,13 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 
 	counter := 0
 	for _, dependency := range dependencies {
-		if counter == 50 {
+		if counter == 1 {
 			counter = 0
 			wg.Wait()
 		} else {
-
 			wg.Add(1)
 
+			// time.Sleep(1000 * time.Millisecond)
 			go func(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) {
 				defer wg.Done()
 				repoMessages = append(repoMessages, addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap))
@@ -225,9 +225,9 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 		}
 
 		// cap on how many deps to query: testing only
-		if counter == 25 {
-			break
-		}
+		// if counter == 25 {
+		// 	break
+		// }
 	}
 	wg.Wait()
 

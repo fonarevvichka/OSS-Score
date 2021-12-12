@@ -28,6 +28,11 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 		log.Fatalln(err)
 	}
 	resp, err := client.Do(postRequest)
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Fatalln("Error querying github")
+	}
 
 	//TODO: NEED TO CHECK STATUS CODES HERE VERY IMPORTANT
 	if err != nil {
@@ -82,6 +87,11 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 
 		post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
 		resp, err := client.Do(post_request)
+		if resp.StatusCode != 200 {
+			log.Println(resp.Status)
+			log.Println(resp.Header)
+			log.Fatalln("Error querying github")
+		}
 
 		if err != nil {
 			log.Fatalln(err)
@@ -133,8 +143,12 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	if err != nil {
 		log.Fatalln(err)
 	}
-	// fmt.Println(resp.Status)
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Fatalln("Error querying github")
+	}
 
 	issues := []IssueResponseRest{}
 	decoder := json.NewDecoder(resp.Body)
@@ -207,6 +221,11 @@ func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDa
 		log.Fatalln(err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Fatalln("Error querying github")
+	}
 
 	commits := []CommitResponseRest{}
 	decoder := json.NewDecoder(resp.Body)
@@ -269,6 +288,11 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 			log.Fatalln(err)
 		}
 		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			log.Println(resp.Status)
+			log.Println(resp.Header)
+			log.Fatalln("Error querying github")
+		}
 
 		decoder := json.NewDecoder(resp.Body)
 		if decoder.Decode(&data) != nil {
@@ -334,6 +358,11 @@ func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
 			log.Fatalln(err)
 		}
 		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			log.Println(resp.Status)
+			log.Println(resp.Header)
+			log.Fatalln("Error querying github")
+		}
 
 		decoder := json.NewDecoder(resp.Body)
 		if decoder.Decode(&data) != nil {
@@ -383,6 +412,11 @@ func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) {
 			log.Fatalln(err)
 		}
 		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			log.Println(resp.Status)
+			log.Println(resp.Header)
+			log.Fatalln("Error querying github")
+		}
 
 		decoder := json.NewDecoder(resp.Body)
 		if decoder.Decode(&data) != nil {

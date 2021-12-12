@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"log"
 	"math"
 	"time"
@@ -165,7 +164,6 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score 
 }
 
 func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
-	fmt.Println("Here!")
 	licenseScore := 0
 	confidence := 100
 
@@ -186,11 +184,10 @@ func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Sc
 	return repoScore
 }
 
-func CalculateDependencyLicenseScore(mongoClient *mongo.Client, repoInfo *RepoInfo) Score {
+func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo) Score {
 	score := 0.0
 	confidence := 0.0
 
-	collection := mongoClient.Database("OSS-Score").Collection(repoInfo.Catalog) // TODO MAKE DB NAME ENV VAR
 	for _, dependency := range repoInfo.Dependencies {
 		res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
 
