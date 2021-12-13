@@ -270,8 +270,20 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 }
 
 func QueryGithub(catalog string, owner string, name string, startPoint time.Time) RepoInfo {
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	src1 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_1")},
+	)
+	src2 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_2")},
+	)
+	src3 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_3")},
+	)
+	src4 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_4")},
+	)
+	src5 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_5")},
 	)
 
 	repoInfo := RepoInfo{
@@ -285,37 +297,41 @@ func QueryGithub(catalog string, owner string, name string, startPoint time.Time
 			ClosedIssues: make([]ClosedIssue, 0),
 		},
 	}
-	httpClient := oauth2.NewClient(context.Background(), src)
+	httpClient1 := oauth2.NewClient(context.Background(), src1)
+	httpClient2 := oauth2.NewClient(context.Background(), src2)
+	httpClient3 := oauth2.NewClient(context.Background(), src3)
+	httpClient4 := oauth2.NewClient(context.Background(), src4)
+	httpClient5 := oauth2.NewClient(context.Background(), src5)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		GetGithubIssuesRest(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+		GetGithubIssuesRest(httpClient1, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		GetGithubDependencies(httpClient, &repoInfo)
+		GetGithubDependencies(httpClient2, &repoInfo)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		GetGithubReleases(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+		GetGithubReleases(httpClient3, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		GetCoreRepoInfo(httpClient, &repoInfo)
+		GetCoreRepoInfo(httpClient4, &repoInfo)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		GetGithubCommitsRest(httpClient, &repoInfo, startPoint.Format(time.RFC3339))
+		GetGithubCommitsRest(httpClient5, &repoInfo, startPoint.Format(time.RFC3339))
 	}()
 
 	wg.Wait()
@@ -327,97 +343,9 @@ func dependencyInSlice(dependency Dependency, dependencies []Dependency) bool {
 	for _, elem := range dependencies {
 		if dependency.Catalog == elem.Catalog &&
 			dependency.Owner == elem.Owner &&
-			dependency.Name == elem.Name &&
-			dependency.Version == elem.Version { // NOT SURE IF DEEP COMPARE LIKE THIS IS NEEDED
+			dependency.Name == elem.Name { // NOT SURE IF DEEP COMPARE LIKE THIS IS NEEDED
 			return true
 		}
 	}
 	return false
 }
-
-// func calculateScoreHelper(mongoClient *mongo.Client, catalog string, owner string, name string, timeFrame int, level int) Score {
-// 	shelfLife := 7 // Days TODO: make env var
-// 	filter := getRepoFilter(owner, name)
-// 	var repoInfo RepoInfo
-
-// 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-// 	res := GetRepoFromDB(collection, owner, name)
-
-// 	if res.Err() == mongo.ErrNoDocuments { // No match in DB
-// 		fmt.Println(owner + "/" + name + " need to do full query")
-// 		repoInfo = QueryGithub(catalog, owner, name, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
-// 		fmt.Println(owner + "/" + name + "Done querying github")
-// 		repoInfo.ScoreStatus = 1
-
-// 		fmt.Println(owner + "/" + name + "Inserting Data")
-// 		_, err := collection.InsertOne(context.TODO(), repoInfo)
-// 		if err != nil {
-// 			fmt.Println(repoInfo.Owner + "/" + repoInfo.Name)
-// 			log.Fatal(err)
-// 		}
-// 		fmt.Println(owner + "/" + name + "Data Inserted")
-
-// 	} else { // Match in DB found
-// 		err := res.Decode(&repoInfo)
-
-// 		if err != nil {
-// 			log.Fatalln(err)
-// 		}
-
-// 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
-// 		if repoInfo.UpdatedAt.Before(expireDate) {
-// 			fmt.Println(repoInfo.Owner + "/" + repoInfo.Name + " out of date: need to make partial query")
-
-// 			repoInfo := QueryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull only needed data
-
-// 			insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
-// 			repoInfo.ScoreStatus = 1
-// 			_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
-// 			if err != nil {
-// 				log.Fatal(err)
-// 			}i
-// 		}
-// 	}
-
-// 	if level < 1 {
-// 		level += 1
-// 		var wg sync.WaitGroup
-// 		counter := 0
-// 		fmt.Println("Querying dependencies")
-// 		for _, dependency := range repoInfo.Dependencies {
-// 			if counter < 10 { // caps concurrent works at 10
-// 				counter += 1
-// 				wg.Add(1)
-// 				go func(catalog string, owner string, name string, timeFrame int, level int) {
-// 					defer wg.Done()
-// 					calculateScoreHelper(mongoClient, catalog, owner, name, timeFrame, level)
-// 				}(dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, level)
-// 			} else {
-// 				counter = 0
-// 				wg.Wait()
-// 			}
-// 		}
-// 		wg.Wait()
-// 	}
-
-// 	repoScore := CalculateRepoActivityScore(&repoInfo, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0))
-// 	dependencyScore := CalculateDependencyActivityScore(collection, &repoInfo, time.Now().AddDate(-(timeFrame/12), -(timeFrame%12), 0)) // startpoint hardcoded for now
-
-// 	repoInfo.RepoActivityScore = repoScore
-// 	repoInfo.DependencyActivityScore = dependencyScore
-// 	repoInfo.ScoreStatus = 2
-
-// 	insertableData := bson.D{primitive.E{Key: "$set", Value: repoInfo}}
-// 	_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	repoWeight := 0.75
-// 	dependencyWeight := 1 - repoWeight
-
-// 	return Score{
-// 		Score:      (repoScore.Score * repoWeight) + (dependencyScore.Score * dependencyWeight),
-// 		Confidence: (repoScore.Confidence * repoWeight) + (dependencyScore.Confidence * dependencyWeight),
-//	}
-// }
