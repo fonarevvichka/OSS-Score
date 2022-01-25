@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +14,9 @@ import (
 
 func main() {
 
-	uri := os.Getenv("MONGO_URI")
+	//uri := os.Getenv("MONGO_URI")
+	uri := "mongodb+srv://local-user:oss-score@repos.76o1e.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+
 	// Create a new mongo_client and connect to the server
 	mongoClient, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 
