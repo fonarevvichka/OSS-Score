@@ -1,0 +1,253 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/fonarevvichka/OSSHub/0.0.1
+info:
+  description: API for querying activty and license scores aswell as metrics for OSS Repos
+  version: "0.0.1"
+  title: OSSHub API
+  contact:
+    email: fonarev.vichka@gmail.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: admins
+    description: Secured Admin-only calls
+  - name: developers
+    description: Operations available to regular developers
+paths:
+  /catalog/{catalog}/owner/{owner}/repo/{repo}/type/{scoreType}:
+    parameters:
+      - in: path
+        name: catalog
+        description: The code catalog that houses the repo
+        required: true
+        schema:
+          type: string
+          enum:
+            - github
+            - gitlab
+      - in: path
+        name: owner
+        description: The owner of the github repo
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repo
+        description: The name of the github repo
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: scoreType
+        description: The category of score requested
+        required: true
+        schema:
+          type: string
+          enum:
+            - activity
+            - license
+    get:
+      summary: Get the requested score type for the passed in repo
+      operationId: getOrRequestScore
+      description: |
+        Get the requested score type for the passed in repo
+      tags:
+        - developers
+      responses:
+        '200':
+          description: Score for the repo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Score'
+        '202':
+          description: Score request submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wait'
+        '400':
+          description: bad input parameter
+    post:
+      summary: Request that a score is recalculated for the given repo
+      description: |
+        Request that a score is recalculated for the given repo
+      operationId: getNewScore
+      tags:
+        - developers
+      requestBody:
+        description: Elements that modify our query
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryModifier'
+      responses:
+        '201':
+          description: calculation queued
+        '202':
+          description: calculation already pending
+          
+  /catalog/{catalog}/owner/{owner}/repo/{repo}/badges/{scoreType}:
+    get:
+      tags:
+        - developers
+      summary: Get the requested score type badge for the passed in repo
+      operationId: GetScoreBadge
+      description: |
+        Get the requested score type badge for the passed in repo
+      parameters:
+        - in: path
+          name: catalog
+          required: true
+          description: The code catalog that houses the repo
+          schema:
+            type: string
+            enum:
+              - github
+              - gitlab
+        - in: path
+          name: owner
+          description: The owner of the github repo
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repo
+          description: The name of the github repo
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: scoreType
+          description: The category of score requested
+          required: true
+          schema:
+            type: string
+            enum:
+              - activity
+              - license
+      responses:
+        '200':
+          description: Score for the repo
+          content:
+            image/svg+xml:
+              schema:
+                $ref: '#/components/schemas/Badge'
+        '202':
+          description: Score request submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wait'
+        '400':
+          description: bad input parameter
+          
+  /catalog/{catalog}/owner/{owner}/repo/{repo}/metrics/{metricType}:
+    get:
+      tags:
+        - admins
+      summary: Get all data for the repo and metric 
+      operationId: getRepoMetrics
+      description: |
+        Get all data for the repo and metric
+      parameters:
+        - in: path
+          name: catalog
+          required: true
+          description: The code catalog that houses the repo
+          schema:
+            type: string
+            enum:
+              - github
+              - gitlab
+        - in: path
+          name: owner
+          description: The owner of the github repo
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repo
+          description: The name of the github repo
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: metricType
+          description: The metric type requested
+          required: true
+          schema:
+            type: string
+            enum:
+              - commitCadence
+              - releaseCadence
+              - releaseAge
+              - contributors
+              - issueClosureRate
+              - openIssues
+              - discussions
+              - forks
+      responses:
+        '200':
+          description: Requested metric for the repo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metric'
+        '202':
+          description: Score request submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wait'
+        '400':
+          description: bad input parameter
+
+components:
+  schemas:
+    Metric:
+      type: object
+      properties:
+        current_score:
+          type: number
+        history:
+          type: array
+          items:
+            type: number
+      
+    Score:
+      type: object
+      required: 
+        - score
+        - confidence
+      properties:
+        score:
+          type: number
+          example: 87.2
+        confidence:
+          type: number
+          example: 100
+          
+    QueryModifier:
+      type: object
+      properties:
+        startPoint:
+          type: string
+          example: 2020-07-16T19:00:00Z
+    Wait:
+      type: object
+      required: 
+        - message
+      properties:
+        message: 
+          type: string
+          example: "Score request accepted, score loading"
+    Badge:
+      type: string
+      example: |
+        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="110" height="20" role="img" aria-label="Activity Score: 84"><title>Activity Score: 84</title><linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="r"><rect width="110" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r)"><rect width="87" height="20" fill="#555"/><rect x="87" width="23" height="20" fill="#29d600"/><rect width="110" height="20" fill="url(#s)"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="110"><text aria-hidden="true" x="445" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="770">Activity Score</text><text x="445" y="140" transform="scale(.1)" fill="#fff" textLength="770">Activity Score</text><text aria-hidden="true" x="975" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="130">84</text><text x="975" y="140" transform="scale(.1)" fill="#fff" textLength="130">84</text></g></svg>
