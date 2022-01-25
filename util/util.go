@@ -30,7 +30,7 @@ func getRepoFilter(owner string, name string) bson.D {
 }
 
 func getMongoClient() *mongo.Client {
-	uri := os.Getenv("MONGO_URI")
+	uri := os.Getenv("MONGO_ATLAS_URI")
 	// Create a new mongo_client and connect to the server
 	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 

@@ -27,7 +27,7 @@ func QueryProject(c *gin.Context) {
 }
 
 func GetCachedScore(c *gin.Context) {
-	uri := os.Getenv("MONGO_URI")
+	uri := os.Getenv("MONGO_ATLAS_URI")
 	// Create a new mongo_client and connect to the server
 	mongoClient, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 
