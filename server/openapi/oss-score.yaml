@@ -18,7 +18,7 @@ tags:
   - name: developers
     description: Operations available to regular developers
 paths:
-  /catalog/{catalog}/owner/{owner}/repo/{repo}/scores/{scoreType}:
+  /catalog/{catalog}/owner/{owner}/repo/{repo}/type/{scoreType}:
     parameters:
       - in: path
         name: catalog
