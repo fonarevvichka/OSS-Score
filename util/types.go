@@ -56,6 +56,15 @@ type CommitResponse struct {
 	}
 }
 
+type CommitResponseRest struct {
+	Commit struct {
+		Author struct {
+			Name string
+			Date time.Time
+		}
+	}
+}
+
 type DependencyResponse struct {
 	Data struct {
 		Repository struct {
@@ -120,6 +129,14 @@ type IssueResponse struct {
 	}
 }
 
+type IssueResponseRest struct {
+	State      string
+	Assignees  []interface{}
+	Comments   int
+	Created_at time.Time
+	Closed_at  time.Time
+}
+
 type ReleaseResponse struct {
 	Data struct {
 		Repository struct {
@@ -172,6 +189,7 @@ type RepoInfo struct {
 
 	DefaultBranch string
 
+	ScoreStatus       int //0 - not calcualted, 1 - queued, 2 ready
 	RepoActivityScore Score
 	RepoLicenseScore  Score
 
@@ -190,6 +208,11 @@ type RepoInfo struct {
 	Issues       Issues
 	Dependencies []Dependency
 	Commits      []Commit
+}
+
+type RepoInfoMessage struct {
+	DataStatus int
+	RepoInfo   RepoInfo
 }
 
 type Score struct {

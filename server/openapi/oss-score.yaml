@@ -18,7 +18,7 @@ tags:
   - name: developers
     description: Operations available to regular developers
 paths:
-  /catalog/{catalog}/owner/{owner}/repo/{repo}/scores/{scoreType}:
+  /catalog/{catalog}/owner/{owner}/repo/{repo}/type/{scoreType}:
     parameters:
       - in: path
         name: catalog
@@ -97,7 +97,7 @@ paths:
       tags:
         - developers
       summary: Get the requested score type badge for the passed in repo
-      operationId: getScoreBadge
+      operationId: GetScoreBadge
       description: |
         Get the requested score type badge for the passed in repo
       parameters:
