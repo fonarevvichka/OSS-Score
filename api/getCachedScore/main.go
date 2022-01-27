@@ -30,7 +30,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no scoreType variable in path")
 	}
-	fmt.Println("%s,%s,%s,%s", catalog, owner, name, scoreType)
+	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, scoreType)
 
 	// message := response{Message: "Score not cached"}
 
