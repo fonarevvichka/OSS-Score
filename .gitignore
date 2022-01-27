@@ -5,7 +5,7 @@
 *.so
 *.dylib
 main
-main.zip
+*.zip
 
 # Test binary, built with `go test -c`
 *.test
