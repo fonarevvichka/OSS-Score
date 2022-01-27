@@ -1,0 +1,20 @@
+{
+    "name": "OSS Score",
+    "version": "0.0.1",
+    "description": "Adds Repo Activity and License Scores",
+    "content_scripts": [ {
+      "js": [ "extension.js"],
+      "matches": [ "https://github.com/*" ],
+      "css": ["extension.css"]
+    }],
+    "permissions": [
+      "storage",
+      "contextMenus",
+          "activeTab"
+    ],
+    "optional_permissions": [
+      "http://*/*",
+          "https://*/*"
+      ],
+    "manifest_version": 2
+  }
