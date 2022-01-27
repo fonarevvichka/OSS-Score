@@ -1,30 +1,40 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
-
-type lambdaEvent struct {
-	PathParameters struct {
-		Catalog string
-		Owner   string
-		Name    string
-		Type    string
-	}
-}
 
 type response struct {
 	Message string
 }
 
-func HandleLambdaEvent(event lambdaEvent) (response, error) {
-	catalog := event.PathParameters.Catalog
-	owner := event.PathParameters.Owner
-	name := event.PathParameters.Name
-	Type := event.PathParameters.Type
-	return response{Message: fmt.Sprintf("%s,%s,%s,%s", catalog, owner, name, Type)}, nil
+func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	catalog, found := request.PathParameters["catalog"]
+	if !found {
+		log.Fatalln("no catalog variable in path")
+	}
+	owner, found := request.PathParameters["owner"]
+	if !found {
+		log.Fatalln("no owner variable in path")
+	}
+	name, found := request.PathParameters["name"]
+	if !found {
+		log.Fatalln("no name variable in path")
+	}
+	scoreType, found := request.PathParameters["scoreType"]
+	if !found {
+		log.Fatalln("no scoreType variable in path")
+	}
+	fmt.Println("%s,%s,%s,%s", catalog, owner, name, scoreType)
+
+	// message := response{Message: "Score not cached"}
+
+	return events.APIGatewayProxyResponse{StatusCode: 200, Body: "Score not chaced"}, nil
 }
 
 // func init() {
@@ -32,5 +42,5 @@ func HandleLambdaEvent(event lambdaEvent) (response, error) {
 // }
 
 func main() {
-	lambda.Start(HandleLambdaEvent)
+	lambda.Start(handler)
 }
