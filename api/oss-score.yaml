@@ -6,7 +6,7 @@ servers:
 info:
   description: API for querying activty and license scores aswell as metrics for OSS Repos
   version: "0.0.1"
-  title: OSS-Score API
+  title: OSS-Score
   contact:
     email: fonarev.vichka@gmail.com
   license:
@@ -18,7 +18,7 @@ tags:
   - name: developers
     description: Operations available to regular developers
 paths:
-  /catalog/{catalog}/owner/{owner}/name/{name}/type/{scoreType}:
+  /catalog/{catalog}/owner/{owner}/name/{name}/type/{type}:
     parameters:
       - in: path
         name: catalog
@@ -42,7 +42,7 @@ paths:
         schema:
           type: string
       - in: path
-        name: scoreType
+        name: type
         description: The category of score requested
         required: true
         schema:
@@ -92,7 +92,7 @@ paths:
         '202':
           description: calculation already pending
           
-  /catalog/{catalog}/owner/{owner}/name/{name}/badges/{scoreType}:
+  /catalog/{catalog}/owner/{owner}/name/{name}/badges/{type}:
     get:
       tags:
         - developers
@@ -123,7 +123,7 @@ paths:
           schema:
             type: string
         - in: path
-          name: scoreType
+          name: type
           description: The category of score requested
           required: true
           schema:

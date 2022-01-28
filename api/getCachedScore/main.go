@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -26,15 +27,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no name variable in path")
 	}
-	scoreType, found := request.PathParameters["scoreType"]
+	scoreType, found := request.PathParameters["type"]
 	if !found {
 		log.Fatalln("no scoreType variable in path")
 	}
 	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, scoreType)
 
-	// message := response{Message: "Score not cached"}
-
-	return events.APIGatewayProxyResponse{StatusCode: 200, Body: "Score not chaced"}, nil
+	message, _ := json.Marshal(response{Message: "Score not cached"})
+	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(message)}, nil
 }
 
 // func init() {
