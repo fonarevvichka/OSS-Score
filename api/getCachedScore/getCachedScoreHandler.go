@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-lambda-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/session"
 )
 
 type response struct {
@@ -32,6 +34,17 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, scoreType)
+
+	region := os.Getenv("AWS_REGION")
+	session, err := session.NewSession(&aws.Config{ // Use aws sdk to connect to dynamoDB
+		Region: &region,
+	})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	lambda.
+	svc := invoke.New(session)
 
 	message, _ := json.Marshal(response{Message: "Score not cached"})
 	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(message)}, nil
