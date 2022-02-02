@@ -6,13 +6,24 @@ import (
 	"fmt"
 	"log"
 
-	// "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
 )
 
 type response struct {
 	Message string
+}
+
+func lambdaSession(ctx context.Context) *lambda.Client {
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	return lambda.NewFromConfig(cfg)
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -34,15 +45,16 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, scoreType)
 
-	// region := os.Getenv("AWS_REGION")
-	// session, err := session.NewSession(&aws.Config{ // Use aws sdk to connect to dynamoDB
-	// 	Region: &region,
-	// })
-
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// svc := invoke.New(session)
+	client := lambdaSession(ctx)
+	func_name := "dummy"
+	params := lambda.InvokeInput{
+		FunctionName: &func_name,
+	}
+	_, err := client.Invoke(ctx, &params)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	// lambda.InvokeInput("dummy")
 
 	message, _ := json.Marshal(response{Message: "Score not cached"})
 	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(message)}, nil
