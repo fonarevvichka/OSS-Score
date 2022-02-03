@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
@@ -45,16 +49,37 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, scoreType)
 
-	client := lambdaSession(ctx)
-	func_name := "dummy"
-	params := lambda.InvokeInput{
-		FunctionName: &func_name,
-	}
-	_, err := client.Invoke(ctx, &params)
+	// client := lambdaSession(ctx)
+	// func_name := "dummy"
+	// params := lambda.InvokeInput{
+	// 	FunctionName: &func_name,
+	// }
+
+	// _, err := client.Invoke(ctx, &params)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// lambda.InvokeInput("dummy")
+
+	uri := os.Getenv("MONGO_URI")
+	// Create a new mongo_client and connect to the server
+	mongoClient, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+
 	if err != nil {
 		log.Fatalln(err)
+		panic(err)
 	}
-	// lambda.InvokeInput("dummy")
+	defer func() {
+		if err = mongoClient.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+
+	// Ping the primary
+	if err := mongoClient.Ping(context.TODO(), readpref.Primary()); err != nil {
+		panic(err)
+	}
+	fmt.Println("Successfully connected and pinged.")
 
 	message, _ := json.Marshal(response{Message: "Score not cached"})
 	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(message)}, nil
