@@ -1,7 +1,7 @@
 package main
 
 import (
-	"api/util_v2"
+	util "api/util_v2"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,6 +13,7 @@ import (
 
 type response struct {
 	Message string
+	Score   util.Score
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -34,12 +35,23 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, scoreType)
 
-	message, _ := json.Marshal(response{Message: "Score not cached"})
-	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(message)}, nil
-}
+	mongoClient := util.GetMongoClient()
+	score, scoreStatus := util.GetCachedScore(mongoClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
-func init() {
-	util_v2.GetMongoClient()
+	var message string
+	if scoreStatus == 0 {
+		message = "Score not yet calculated"
+	} else if scoreStatus == 1 {
+		message = "Score calculation in progress"
+	} else {
+		message = "Score ready"
+	}
+	// retrieve score from database
+	//if score not in database send wait / error message
+	//if score in database send score
+
+	response, _ := json.Marshal(response{Message: message, Score: score})
+	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(response)}, nil
 }
 
 func main() {
