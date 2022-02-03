@@ -1,17 +1,14 @@
 package main
 
 import (
+	"api/util_v2"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 type response struct {
@@ -42,25 +39,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 }
 
 func init() {
-	uri := os.Getenv("MONGO_URI")
-	// Create a new mongo_client and connect to the server
-	mongoClient, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
-
-	if err != nil {
-		log.Fatalln(err)
-		panic(err)
-	}
-	defer func() {
-		if err = mongoClient.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
-
-	// Ping the primary
-	if err := mongoClient.Ping(context.TODO(), readpref.Primary()); err != nil {
-		panic(err)
-	}
-	log.Println("Successfully connected and pinged.")
+	util_v2.GetMongoClient()
 }
 
 func main() {
