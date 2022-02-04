@@ -182,6 +182,12 @@ type Commit struct {
 	Author     string
 }
 
+type RepoRequestInfo struct {
+	Name    string
+	Owner   string
+	Catalog string
+}
+
 type RepoInfo struct {
 	Name    string
 	Owner   string

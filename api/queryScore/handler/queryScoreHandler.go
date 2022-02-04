@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 )
 
 type response struct {
@@ -42,9 +43,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	fmt.Printf("%s,%s,%s\n", catalog, owner, name)
 
 	client := lambdaSession(ctx)
-	func_name := "dummy"
+	func_name := "queryScore"
 	params := lambda.InvokeInput{
-		FunctionName: &func_name,
+		FunctionName:   &func_name,
+		InvocationType: types.InvocationTypeEvent,
 	}
 
 	_, err := client.Invoke(ctx, &params)
@@ -52,13 +54,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln(err)
 	}
 
-	message, _ := json.Marshal(response{Message: "Score not cached"})
+	message, _ := json.Marshal(response{Message: "Score request accepted"})
 	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(message)}, nil
 }
-
-// func init() {
-// 	fmt.Println("Should connect to the DB here")
-// }
 
 func main() {
 	runtime.Start(handler)
