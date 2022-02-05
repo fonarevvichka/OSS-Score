@@ -186,6 +186,8 @@ type RepoRequestInfo struct {
 	Name    string
 	Owner   string
 	Catalog string
+
+	TimeFrame int // months
 }
 
 type RepoInfo struct {

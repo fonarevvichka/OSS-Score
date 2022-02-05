@@ -145,7 +145,7 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	// Get License Score map
 	licenseMap := make(map[string]int)
 
-	licenseFile, err := os.Open("./util/scores/licenseScores.txt")
+	licenseFile, err := os.Open("./scores/licenseScores.txt")
 
 	if err != nil {
 		log.Fatalln(err)
