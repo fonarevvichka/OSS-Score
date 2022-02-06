@@ -1,13 +1,19 @@
-import logo from './logo.svg';
+//import logo from './logo.svg';
 import './App.css';
 import {Route, Routes} from "react-router-dom";
-import React, { Component }  from 'react';
+import React  from 'react';
 
 // import {Navbar, Container, Nav, NavDropdown} from 'react-bootstrap'
 
-import Home from './homepage.js';
-import About from './about.js';
-import Navigation from './Navigation.js';
+import Home from './components/Homepage.js';
+import About from './components/About.js';
+import Navigation from './components/Navigation.js';
+import Extension from './components/Extension.js';
+import GenerateScores from './components/GenerateScores.js';
+import Accomplishments from './components/Accomplishments.js';
+import WorkForUs from './components/WorkForUs.js';
+import NotFound from './components/NotFound.js';
+
 
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -19,14 +25,19 @@ function App() {
       {/* Maybe put nav in separate file: https://medium.com/swlh/responsive-navbar-using-react-bootstrap-5e0e0bd33bd6 */}
       < Navigation />
       < Routes >
-        <Route path='/' component={Home}/>
-        <Route path='/about' component={About}/>
-        {/*<Route exact path='/extension' component={Extension}/>
-        <Route exact path='/generate-scores' component={GenerateScores}/>
-        <Route exact path='/accomplishments' component={Accomplishments}/>
-  <Route exact path='/work-for-us' component={WorkForUs}/>*/}
+          <Route exact path='/' element={<Home/>} />
+          <Route exact path='/about' element= {<About/>}/>
+          <Route exact path='/extension' element={<Extension/>}/>
+          <Route exact path='/generate-scores' element={<GenerateScores/>}/>
+          <Route exact path='/accomplishments' element={<Accomplishments/>}/>
+          <Route exact path='/workforus' element={<WorkForUs/>}/>
+          
+          {/* Page Not Found Routes */}
+          <Route path="" element={<NotFound/>}/>
+          <Route path="*" element={<NotFound />} />
+          <Route element={<NotFound />} />
+
       </Routes>
-      < Home />
       {/* <Route exact path="/homepage.js" component={Home} />  */}
       {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
