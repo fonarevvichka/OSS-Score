@@ -80,6 +80,10 @@ header {
     margin-bottom: 5px;
 }
 
+.subheaderTitle {
+    font-style: underline;
+}
+
 .score {
     color: green;
 }
