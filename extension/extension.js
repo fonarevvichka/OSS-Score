@@ -1,4 +1,5 @@
 const basePath = 'https://oss-hub.herokuapp.com/'
+//const basePath = ''
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -28,12 +29,25 @@ async function requestScoreCalculation(path, scoreType) {
 
 function insertScores(scoreDiv, scores) {
     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
-    scoreDiv.innerHTML += 'License: ' + scores.license.score + '&nbsp; | &nbsp; Confidence: ' + scores.license.confidence + '%';
+
+    var colorString1 = "good_score";
+    var colorString2 = "good_score";
+    if (scores.license.score <= 50) {
+        colorString1 = "bad_score";
+    }
+    if (scores.activity.score <= 50) {
+        colorString2 = "bad_score";
+    }
+    scoreDiv.innerHTML += "<span class='" + colorString1 + "'>" + 'License: ' + scores.license.score + "</span>";
+    scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.license.confidence + '%';
     scoreDiv.innerHTML += '<br/><br/>'
-    scoreDiv.innerHTML += 'Activity: ' + scores.activity.score + '&nbsp; | &nbsp; Confidence: ' + scores.activity.confidence + '%';
+    scoreDiv.innerHTML += "<span class='" + colorString2 + "'>" + 'Activity: ' + scores.activity.score + "</span>";
+    scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.activity.confidence + '%';
 }
 
 async function insertScoreSection(path, scoreDiv, scoresPromise) {
+    
+    //inject into correct part of site
     let repoInfo = document.querySelectorAll('.BorderGrid-row');
     let releases = repoInfo[1];
     let parent = releases.parentNode;
@@ -49,6 +63,9 @@ async function insertScoreSection(path, scoreDiv, scoresPromise) {
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
             scoreDiv.innerHTML += scores.message;
 
+
+            // add conditional to replace if message is waiting and add loading
+
             if (scores.message.includes('cached')) {
                 scoreDiv.innerHTML += '<br><br>'
                 scoreDiv.innerHTML += '<button class=requestScore id=requestButton> Request Score </button>'
@@ -59,7 +76,6 @@ async function insertScoreSection(path, scoreDiv, scoresPromise) {
                     //maybe put this in try catch?
                     requestScoreCalculation(path, 'activity');
                     requestScoreCalculation(path, 'license');
-                    
                     scoreDiv.innerHTML += 'Scores Requested';
                     awaitResults(scoreDiv, path);
                 });
@@ -85,17 +101,20 @@ async function awaitResults(scoreDiv, repoPath) {
 }
 
 async function getFakeScores(repoPath) {
-    let scores = {license: null, activity: null, message: null};
-    scores.license = 50;
-    scores.activity = 88;
+    let scores = {license: {score: null, confidence: null}, activity: {score: null, confidence: null}, message: null};
+    let score1 = 50;
+    let score2 = 88;
+    scores.license.score = score1;
+    scores.activity.score = score2;
+    scores.license.confidence = 100;
+    scores.activity.confidence = 100;
     scores.message = "";
     return scores;
 }
 
 async function getScores(repoPath) {
     let scores = {license: null, activity: null, message: null};
-    let promises = [];
-    
+    let promises = [];    
     let licenseRequestUrl = basePath + repoPath + '/license/score';
     promises.push(
         fetch(licenseRequestUrl).then(async (response) => {
@@ -164,12 +183,13 @@ if (splitUrl.length == 2) { // Repo homepage
 }
 
 if (owner != '' && repo != '') {
-    let rowDiv= document.createElement('div');
-    rowDiv.className = 'BorderGrid-row';
-
+    //let rowDiv= document.createElement('div');
+    //rowDiv.className = 'BorderGrid-row';
+ 
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
 
     let path = 'github/' + owner + '/' + repo;
+    //insertScoreSection(path, scoreDiv, getScores(path, scoreDiv));
     insertScoreSection(path, scoreDiv, getFakeScores(path, scoreDiv));
 }
