@@ -26,8 +26,8 @@ button {
   /* CSS FOR LOADING SVG */
 
   .loading {
-    height: 50%;
-    width: 50%;
+    height: 30%;
+    width: 30%;
     display: -webkit-box;
     display: -webkit-flex;
     display: -ms-flexbox;
