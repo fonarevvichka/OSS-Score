@@ -65,6 +65,15 @@ async function insertScoreSection(path, scoreDiv, scoresPromise) {
 
 
             // add conditional to replace if message is waiting and add loading
+            if (scores.message.includes('not yet calculated') || scores.message.includes('in progress')) {
+                scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>";
+                let image_url = chrome.runtime.getURL("images/loading-spinning.gif");
+                //scoreDiv.src = image_url;
+                //scoreDiv.appendChild(document.createElement('img')).src = image_url;
+                scoreDiv.innerHTML += "<svg width='100' height='100'> <circle cx='50' cy='50' r='40' stroke='green' stroke-width='4' fill='yellow' /> </svg>";
+                //scoreDiv.innerHTML += "<img src='" + image_url + "' alt='loading' width='100%'></img>"
+                //awaitResults(scoreDiv, path);
+            }
 
             if (scores.message.includes('cached')) {
                 scoreDiv.innerHTML += '<br><br>'
@@ -108,7 +117,7 @@ async function getFakeScores(repoPath) {
     scores.activity.score = score2;
     scores.license.confidence = 100;
     scores.activity.confidence = 100;
-    scores.message = "";
+    scores.message = "not yet calculated";
     return scores;
 }
 
