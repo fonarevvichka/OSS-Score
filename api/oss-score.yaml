@@ -18,6 +18,48 @@ tags:
   - name: developers
     description: Operations available to regular developers
 paths:
+  /catalog/{catalog}/owner/{owner}/name/{name}:
+    parameters:
+      - in: path
+        name: catalog
+        description: The code catalog that houses the repo
+        required: true
+        schema:
+          type: string
+          enum:
+            - github
+            - gitlab
+      - in: path
+        name: owner
+        description: The owner of the github repo
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: name 
+        description: The name of the github repo
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Request that a score is recalculated for the given repo
+      description: |
+        Request that a score is recalculated for the given repo
+      operationId: getNewScore
+      tags:
+        - developers
+      requestBody:
+        description: Elements that modify our query
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryModifier'
+      responses:
+        '201':
+          description: calculation queued
+        '202':
+          description: calculation already pending
   /catalog/{catalog}/owner/{owner}/name/{name}/type/{type}:
     parameters:
       - in: path
@@ -72,25 +114,6 @@ paths:
                 $ref: '#/components/schemas/Wait'
         '400':
           description: bad input parameter
-    post:
-      summary: Request that a score is recalculated for the given repo
-      description: |
-        Request that a score is recalculated for the given repo
-      operationId: getNewScore
-      tags:
-        - developers
-      requestBody:
-        description: Elements that modify our query
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/QueryModifier'
-      responses:
-        '201':
-          description: calculation queued
-        '202':
-          description: calculation already pending
           
   /catalog/{catalog}/owner/{owner}/name/{name}/badges/{type}:
     get:
