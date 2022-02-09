@@ -6,7 +6,7 @@ import (
 
 	runtime "github.com/aws/aws-lambda-go/lambda"
 
-	util "api/util_v2"
+	"api/util"
 )
 
 func handler(ctx context.Context, repo util.RepoRequestInfo) error {

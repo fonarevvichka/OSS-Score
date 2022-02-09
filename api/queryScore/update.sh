@@ -2,7 +2,7 @@
 cd handler
 rm main lambda.zip
 go build -o main
-cp ../../util_v2/mongo_cert.pem ./mongo_cert.pem
+cp ../../util/mongo_cert.pem ./mongo_cert.pem
 zip -X -r lambda.zip main mongo_cert.pem
 aws lambda update-function-code --function-name queryScoreHandler --zip-file fileb://lambda.zip --architectures "x86_64" > /dev/null
 
@@ -15,9 +15,9 @@ rm mongo_cert.pem
 cd ../processing
 rm main lambda.zip
 go build -o main
-cp ../../util_v2/mongo_cert.pem ./mongo_cert.pem
-cp -r ../../util_v2/queries ./queries
-cp -r ../../util_v2/scores ./scores
+cp ../../util/mongo_cert.pem ./mongo_cert.pem
+cp -r ../../util/queries ./queries
+cp -r ../../util/scores ./scores
 
 zip -X -r lambda.zip main mongo_cert.pem queries scores
 aws lambda update-function-code --function-name queryScore --zip-file fileb://lambda.zip --architectures "x86_64" > /dev/null

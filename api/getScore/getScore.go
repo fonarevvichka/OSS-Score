@@ -1,7 +1,7 @@
 package main
 
 import (
-	util "api/util_v2"
+	"api/util"
 	"context"
 	"encoding/json"
 	"fmt"

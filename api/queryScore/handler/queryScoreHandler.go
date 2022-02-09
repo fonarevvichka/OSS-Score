@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	util "api/util_v2"
+	util "api/util"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
