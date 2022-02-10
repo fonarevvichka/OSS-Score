@@ -127,7 +127,11 @@ async function getScores(owner, repo) {
     let promises = [];    
     let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
     promises.push(
-        fetch(licenseRequestUrl).then(async (response) => {
+        fetch(licenseRequestUrl, {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'},
+            mode: 'cors'
+        }).then(async (response) => {
             if (response.status == 200) {
                 let scorePromise = response.json();
                 await scorePromise.then(score => {
