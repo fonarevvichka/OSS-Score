@@ -123,7 +123,7 @@ async function getFakeScores(owner, repo) {
 async function getScores(owner, repo) {
     let scores = {license: null, activity: null, message: null};
     let promises = [];    
-    let licenseRequestUrl = basePath + '/owner/' + owner + '/repo/' + repo + '/type/license';
+    let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
     promises.push(
         fetch(licenseRequestUrl, {
             method: 'GET',
@@ -150,7 +150,7 @@ async function getScores(owner, repo) {
         })
     );
 
-    let activityRequestUrl = basePath + '/owner/' + owner + '/repo/' + repo + '/type/activity';
+    let activityRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/activity';
     promises.push(
         fetch(activityRequestUrl).then(async (response) => {
             if (response.status == 200) {
