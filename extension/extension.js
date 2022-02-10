@@ -70,6 +70,8 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
         }
         else if (scores.message.includes('Score not yet calculated')) {
             console.log("requesting previously unknown score")
+            //requestScoreCalculation(owner, repo, 'activity');
+            //requestScoreCalculation(owner, repo, 'license');
             //awaitResults(scoreDiv, path);
         }
          else { // NO SCORES
