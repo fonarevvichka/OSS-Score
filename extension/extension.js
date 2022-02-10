@@ -30,6 +30,7 @@ async function requestScoreCalculation(owner, repo, scoreType) {
 }
 
 function insertScores(scoreDiv, scores) {
+    console.error("here")
     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
 
     var colorString1 = "good_score";
@@ -48,7 +49,6 @@ function insertScores(scoreDiv, scores) {
 }
 
 async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
-    
     //inject into correct part of site
     let repoInfo = document.querySelectorAll('.BorderGrid-row');
     let releases = repoInfo[1];
@@ -61,6 +61,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     scoreDiv.innerHTML += loading_gears;
     // let scores = await scoresPromise;
     scoresPromise.then(scores => {
+        console.error(scores.message)
         if (scores.message == 'Score ready') { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
         }
@@ -125,26 +126,24 @@ async function getScores(owner, repo) {
     let promises = [];    
     let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
     promises.push(
-        fetch(licenseRequestUrl, {
-            method: 'GET',
-            headers: {'Content-Type': 'application/json'},
-            mode: 'cors'
-        }).then(async (response) => {
+        fetch(licenseRequestUrl).then(async (response) => {
             if (response.status == 200) {
                 let scorePromise = response.json();
-                await scorePromise.then(score => {
-                    scores.license = score;
+                await scorePromise.then(response => {
+                    scores.license = response.score;
+                    scores.message = 'Score ready'
                 }).catch(err => {
                     console.error(err);
                 });
-            } else {
-                let messagePromise = response.json();
-                await messagePromise.then(message => {
-                    scores.message = message.message;
-                }).catch(err => {
-                    console.error(err);
-                });
-        }
+            }
+            // } else {
+            //     let messagePromise = response.json();
+            //     await messagePromise.then(message => {
+            //         scores.message = message.message;
+            //     }).catch(err => {
+            //         console.error(err);
+            //     });
+        // }
         }).catch(err => {
             console.error(err);
         })
@@ -155,19 +154,21 @@ async function getScores(owner, repo) {
         fetch(activityRequestUrl).then(async (response) => {
             if (response.status == 200) {
                 let scorePromise = response.json();
-                await scorePromise.then(score => {
-                    scores.activity = score;
-                }).catch(err => {
-                    console.error(err);
-                });
-            } else {
-                let messagePromise = response.json();
-                await messagePromise.then(message => {
-                    scores.message = message.message;
+                await scorePromise.then(response => {
+                    scores.activity = response.score;
+                    scores.message = 'Score ready'
                 }).catch(err => {
                     console.error(err);
                 });
             }
+            // } else {
+            //     let messagePromise = response.json();
+            //     await messagePromise.then(message => {
+            //         scores.message = message.message;
+            //     }).catch(err => {
+            //         console.error(err);
+            //     });
+            // }
         }).catch(err => {
             console.error(err);
         })
