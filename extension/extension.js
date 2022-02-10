@@ -1,4 +1,4 @@
-const basePath = 'https://oss-hub.herokuapp.com/'
+const basePath = 'https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/github'
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -6,13 +6,16 @@ function promiseTimeout (time) {
     });
 };
 
-async function requestScoreCalculation(path, scoreType) {
-    fetch(basePath + path + '/' + scoreType + '/score', {
+async function requestScoreCalculation(owner, repo, scoreType) {
+
+    fetch(basePath + '/owner/' + owner + '/repo/' + repo + '/type/' + scoreType, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         mode: 'cors',
     }).then(response=> {
         switch (response.status) {
+            case 200:
+                return 'Request Recieved \n Calculating Scores';
             case 201:
                 return 'Request Recieved \n Calculating Scores';
             case 404:
@@ -44,7 +47,7 @@ function insertScores(scoreDiv, scores) {
     scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.activity.confidence + '%';
 }
 
-async function insertScoreSection(path, scoreDiv, scoresPromise) {
+async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     
     //inject into correct part of site
     let repoInfo = document.querySelectorAll('.BorderGrid-row');
@@ -82,10 +85,10 @@ async function insertScoreSection(path, scoreDiv, scoresPromise) {
                     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
 
                     //maybe put this in try catch?
-                    requestScoreCalculation(path, 'activity');
-                    requestScoreCalculation(path, 'license');
+                    requestScoreCalculation(owner, repo, 'activity');
+                    requestScoreCalculation(owner, repo, 'license');
                     scoreDiv.innerHTML += 'Scores Requested';
-                    awaitResults(scoreDiv, path);
+                    awaitResults(scoreDiv, owner, repo);
                 });
             }
         }
@@ -93,21 +96,21 @@ async function insertScoreSection(path, scoreDiv, scoresPromise) {
 
 }
 
-async function awaitResults(scoreDiv, repoPath) {
+async function awaitResults(scoreDiv, owner, repo) {
     promiseTimeout(2500).then(() => {
         console.log('Requesting Score');
-        getScores(repoPath).then(scores => {
+        getScores(owner, repo).then(scores => {
             message = scores.message;
             if (message == undefined|| message == '') {
                 insertScores(scoreDiv, scores);
             } else {
-                awaitResults(scoreDiv, repoPath);
+                awaitResults(scoreDiv, owner, repo);
             }
         });
     });
 }
 
-async function getFakeScores(repoPath) {
+async function getFakeScores(owner, repo) {
     let scores = {license: {score: null, confidence: null}, activity: {score: null, confidence: null}, message: null};
     let score1 = 50;
     let score2 = 88;
@@ -119,10 +122,10 @@ async function getFakeScores(repoPath) {
     return scores;
 }
 
-async function getScores(repoPath) {
+async function getScores(owner, repo) {
     let scores = {license: null, activity: null, message: null};
     let promises = [];    
-    let licenseRequestUrl = basePath + repoPath + '/license/score';
+    let licenseRequestUrl = basePath + '/owner/' + owner + '/repo/' + repo + '/type/license';
     promises.push(
         fetch(licenseRequestUrl).then(async (response) => {
             if (response.status == 200) {
@@ -145,7 +148,7 @@ async function getScores(repoPath) {
         })
     );
 
-    let activityRequestUrl = basePath + repoPath + '/activity/score';
+    let activityRequestUrl = basePath + '/owner/' + owner + '/repo/' + repo + '/type/activity';
     promises.push(
         fetch(activityRequestUrl).then(async (response) => {
             if (response.status == 200) {
@@ -196,7 +199,6 @@ if (owner != '' && repo != '') {
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
 
-    let path = 'github/' + owner + '/' + repo;
-    //insertScoreSection(path, scoreDiv, getScores(path, scoreDiv));
-    insertScoreSection(path, scoreDiv, getFakeScores(path, scoreDiv));
+    insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
+    // insertScoreSection(owner, repo, scoreDiv, getFakeScores(owner, repo, scoreDiv));
 }
