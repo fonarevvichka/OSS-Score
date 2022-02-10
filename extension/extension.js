@@ -101,7 +101,6 @@ async function awaitResults(scoreDiv, owner, repo) {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
             message = scores.message;
-
             if (message == undefined|| message == '') {
                 insertScores(scoreDiv, scores);
             } else {
