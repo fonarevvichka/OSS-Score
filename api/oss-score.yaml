@@ -170,7 +170,7 @@ paths:
         '400':
           description: bad input parameter
           
-  /catalog/{catalog}/owner/{owner}/name/{name}/metrics/{metricType}:
+  /catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}:
     get:
       tags:
         - admins
@@ -201,7 +201,7 @@ paths:
           schema:
             type: string
         - in: path
-          name: metricType
+          name: metric
           description: The metric type requested
           required: true
           schema:
