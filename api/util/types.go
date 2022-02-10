@@ -224,6 +224,6 @@ type RepoInfoMessage struct {
 }
 
 type Score struct {
-	Score      float64
-	Confidence float64
+	Score      float64 `json:"score"`
+	Confidence float64 `json:"confidence"`
 }

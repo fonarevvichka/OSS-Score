@@ -12,8 +12,8 @@ import (
 )
 
 type response struct {
-	Message string
-	Score   util.Score
+	Message string     `json:"message"`
+	Score   util.Score `json:"score"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
