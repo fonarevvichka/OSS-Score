@@ -30,7 +30,6 @@ async function requestScoreCalculation(owner, repo, scoreType) {
 }
 
 function insertScores(scoreDiv, scores) {
-    console.error("here")
     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
 
     var colorString1 = "good_score";
@@ -61,7 +60,6 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     scoreDiv.innerHTML += loading_gears;
     // let scores = await scoresPromise;
     scoresPromise.then(scores => {
-        console.error(scores.message)
         if (scores.message == 'Score ready') { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
         }
