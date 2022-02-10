@@ -50,7 +50,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		Catalog:   catalog,
 		Owner:     owner,
 		Name:      name,
-		TimeFrame: 6, //temp hardcoded
+		TimeFrame: 12, //temp hardcoded
 	}
 
 	payload, err := json.Marshal(repoInfo)
