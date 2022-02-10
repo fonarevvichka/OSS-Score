@@ -1,5 +1,4 @@
 const basePath = 'https://oss-hub.herokuapp.com/'
-//const basePath = ''
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -99,7 +98,6 @@ async function awaitResults(scoreDiv, repoPath) {
         console.log('Requesting Score');
         getScores(repoPath).then(scores => {
             message = scores.message;
-
             if (message == undefined|| message == '') {
                 insertScores(scoreDiv, scores);
             } else {
