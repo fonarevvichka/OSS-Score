@@ -149,7 +149,7 @@ async function getScores(owner, repo) {
         })
     );
 
-    let activityRequestUrl = basePath + repoPath + 'type/activity';
+    let activityRequestUrl = basePath + '/owner/' + owner + '/repo/' + repo + '/type/activity';
     promises.push(
         fetch(activityRequestUrl).then(async (response) => {
             if (response.status == 200) {
