@@ -89,13 +89,14 @@ func parseReleases(releases []Release, LatestRelease time.Time, startPoint time.
 	// time since start point converted to months
 	timeFrame := time.Since(startPoint).Hours() / 24.0 / 30.0
 
-	return time.Since(LatestRelease).Hours() / 24.0 / 7.0, releaseCounter / timeFrame, 0
+	return time.Since(LatestRelease).Hours() / 24.0 / 7.0, releaseCounter / timeFrame, 100
 
 }
 
 func minMaxScale(min float64, max float64, val float64) float64 {
 	return math.Min((val-min)/(max-min), 1)
 }
+
 func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) Score {
 	score := 0.0
 	confidence := 0.0
