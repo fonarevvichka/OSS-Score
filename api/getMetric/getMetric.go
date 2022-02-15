@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
@@ -52,13 +53,18 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if err != nil {
 			log.Fatalln(err)
 		}
+		timeFrame := 12
+		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
 		switch metric {
 		case "stars":
 			metricValue = float32(repo.Stars)
-		// case "releaseCadence":
-		// 	ageLastRelease, releaseCadence, releaseConfidence := parseReleases(repo.Releases, repo.LatestRelease, startPoint)
-		// 	rel
+		case "releaseCadence":
+			_, releaseCadence, _ := util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+			metricValue = float32(releaseCadence)
+		case "ageLastRelease":
+			ageLastRelease, _, _ := util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+			metricValue = float32(ageLastRelease)
 		default:
 			message = fmt.Sprintf("Metric querying not yet supported for %s", metric)
 		}
