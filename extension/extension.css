@@ -13,18 +13,7 @@ button {
     filter: brightness(115%);
   }
   
-  .bad_score {
-    background-color: darkred;
-    color: white;
-
-  }
-  .good_score {
-    background-color:darkgreen;
-    color: white;
-  }
-
   /* CSS FOR LOADING SVG */
-
   .loading {
     height: 30%;
     width: 30%;

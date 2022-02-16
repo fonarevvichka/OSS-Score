@@ -32,19 +32,11 @@ async function requestScoreCalculation(owner, repo, scoreType) {
 function insertScores(scoreDiv, scores) {
     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
 
-    var colorString1 = "good_score";
-    var colorString2 = "good_score";
-    if (scores.license.score <= 50) {
-        colorString1 = "bad_score";
-    }
-    if (scores.activity.score <= 50) {
-        colorString2 = "bad_score";
-    }
-    scoreDiv.innerHTML += "<span class='" + colorString1 + "'>" + 'License: ' + scores.license.score + "</span>";
-    scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.license.confidence + '%';
+    scoreDiv.innerHTML += 'Activity: ' + scores.activity.score.toFixed(0);
+    scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.activity.confidence.toFixed(0) + '%';
     scoreDiv.innerHTML += '<br/><br/>'
-    scoreDiv.innerHTML += "<span class='" + colorString2 + "'>" + 'Activity: ' + scores.activity.score + "</span>";
-    scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.activity.confidence + '%';
+    scoreDiv.innerHTML += 'License: ' + scores.license.score.toFixed(0);
+    scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.license.confidence.toFixed(0) + '%';
 }
 
 async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
