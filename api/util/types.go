@@ -182,6 +182,14 @@ type Commit struct {
 	Author     string
 }
 
+type RepoRequestInfo struct {
+	Name    string
+	Owner   string
+	Catalog string
+
+	TimeFrame int // months
+}
+
 type RepoInfo struct {
 	Name    string
 	Owner   string
@@ -216,6 +224,6 @@ type RepoInfoMessage struct {
 }
 
 type Score struct {
-	Score      float64
-	Confidence float64
+	Score      float64 `json:"score"`
+	Confidence float64 `json:"confidence"`
 }
