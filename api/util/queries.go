@@ -14,7 +14,7 @@ import (
 const GitUrl = "https://api.github.com/graphql"
 
 func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
-	query := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
+	query := importQuery("./queries/repoInfo.graphql") //TODO: Make this a an env var probably
 	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", repo.Owner, repo.Name)
 
 	postBody, _ := json.Marshal(map[string]string{
@@ -61,7 +61,7 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 }
 
 func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
-	query := importQuery("./util/queries/dependencies.graphql") //TODO: Make this a an env var probably
+	query := importQuery("./queries/dependencies.graphql") //TODO: Make this a an env var probably
 	var graphCursor string
 	var dependencyCursor string
 
@@ -257,7 +257,7 @@ func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string)
 
 // deprecated
 func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate string) {
-	query := importQuery("./util/queries/issues.graphql") //TODO: Make this a an env var probably
+	query := importQuery("./queries/issues.graphql") //TODO: Make this a an env var probably
 
 	hasNextPage := true
 	cursor := "init"
@@ -327,7 +327,7 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 
 // deprecated
 func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
-	query := importQuery("./util/queries/commits.graphql") //TODO: Make this a an env var probably
+	query := importQuery("./queries/commits.graphql") //TODO: Make this a an env var probably
 
 	hasNextPage := true
 	cursor := "init"
@@ -381,7 +381,7 @@ func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
 }
 
 func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) {
-	query := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
+	query := importQuery("./queries/releases.graphql") //TODO: Make this a an env var probably
 
 	hasNextPage := true
 	cursor := "init"

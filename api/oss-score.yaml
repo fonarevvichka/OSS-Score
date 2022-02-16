@@ -6,7 +6,7 @@ servers:
 info:
   description: API for querying activty and license scores aswell as metrics for OSS Repos
   version: "0.0.1"
-  title: OSSHub API
+  title: OSS-Score
   contact:
     email: fonarev.vichka@gmail.com
   license:
@@ -18,7 +18,7 @@ tags:
   - name: developers
     description: Operations available to regular developers
 paths:
-  /catalog/{catalog}/owner/{owner}/repo/{repo}/type/{scoreType}:
+  /catalog/{catalog}/owner/{owner}/name/{name}:
     parameters:
       - in: path
         name: catalog
@@ -36,13 +36,55 @@ paths:
         schema:
           type: string
       - in: path
-        name: repo
+        name: name 
+        description: The name of the github repo
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Request that a score is recalculated for the given repo
+      description: |
+        Request that a score is recalculated for the given repo
+      operationId: getNewScore
+      tags:
+        - developers
+      requestBody:
+        description: Elements that modify our query
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryModifier'
+      responses:
+        '201':
+          description: calculation queued
+        '202':
+          description: calculation already pending
+  /catalog/{catalog}/owner/{owner}/name/{name}/type/{type}:
+    parameters:
+      - in: path
+        name: catalog
+        description: The code catalog that houses the repo
+        required: true
+        schema:
+          type: string
+          enum:
+            - github
+            - gitlab
+      - in: path
+        name: owner
+        description: The owner of the github repo
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: name 
         description: The name of the github repo
         required: true
         schema:
           type: string
       - in: path
-        name: scoreType
+        name: type
         description: The category of score requested
         required: true
         schema:
@@ -72,27 +114,8 @@ paths:
                 $ref: '#/components/schemas/Wait'
         '400':
           description: bad input parameter
-    post:
-      summary: Request that a score is recalculated for the given repo
-      description: |
-        Request that a score is recalculated for the given repo
-      operationId: getNewScore
-      tags:
-        - developers
-      requestBody:
-        description: Elements that modify our query
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/QueryModifier'
-      responses:
-        '201':
-          description: calculation queued
-        '202':
-          description: calculation already pending
           
-  /catalog/{catalog}/owner/{owner}/repo/{repo}/badges/{scoreType}:
+  /catalog/{catalog}/owner/{owner}/name/{name}/badges/{type}:
     get:
       tags:
         - developers
@@ -117,13 +140,13 @@ paths:
           schema:
             type: string
         - in: path
-          name: repo
+          name: name
           description: The name of the github repo
           required: true
           schema:
             type: string
         - in: path
-          name: scoreType
+          name: type
           description: The category of score requested
           required: true
           schema:
@@ -147,7 +170,7 @@ paths:
         '400':
           description: bad input parameter
           
-  /catalog/{catalog}/owner/{owner}/repo/{repo}/metrics/{metricType}:
+  /catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}:
     get:
       tags:
         - admins
@@ -172,13 +195,13 @@ paths:
           schema:
             type: string
         - in: path
-          name: repo
+          name: name 
           description: The name of the github repo
           required: true
           schema:
             type: string
         - in: path
-          name: metricType
+          name: metric
           description: The metric type requested
           required: true
           schema:
