@@ -55,7 +55,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if err != nil {
 			log.Fatalln(err)
 		}
-		timeFrame := 12
+		timeFrame := 6
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
 		switch metric {
