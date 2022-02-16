@@ -11,7 +11,7 @@ import (
 // issues:
 // pull out all issues that are < X years old
 // of those closed issues calc avg issue closure time
-func parseIssues(issues Issues, startPoint time.Time) (float64, int) {
+func ParseIssues(issues Issues, startPoint time.Time) (float64, int) {
 	var totalClosureTime float64
 	var issueCounter float64 = 0
 	for _, closedIssue := range issues.ClosedIssues {
@@ -35,7 +35,7 @@ func parseIssues(issues Issues, startPoint time.Time) (float64, int) {
 //NET: individual contributors and commit cadence, last commit
 
 // Return: commit cadence, contributors, confidence
-func parseCommits(commits []Commit, startPoint time.Time) (float64, int, int) {
+func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, int) {
 	if len(commits) == 0 {
 		return 0, 0, 0
 	}
@@ -133,8 +133,8 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score 
 	ageLastReleaseWeight := 0.5
 	releaseCadenceWeight := 1 - ageLastReleaseWeight
 
-	avgIssueClosureTime, issueConfidence := parseIssues(repoInfo.Issues, startPoint)
-	commitCadence, contributors, commitConfidence := parseCommits(repoInfo.Commits, startPoint)
+	avgIssueClosureTime, issueConfidence := ParseIssues(repoInfo.Issues, startPoint)
+	commitCadence, contributors, commitConfidence := ParseCommits(repoInfo.Commits, startPoint)
 	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repoInfo.Releases, repoInfo.LatestRelease, startPoint)
 
 	// NEEDS MORE RESEARCH FOR ACTUAL VALUES

@@ -14,8 +14,9 @@ import (
 )
 
 type response struct {
-	Message string
-	Metric  float32
+	Message    string  `json:"message"`
+	Metric     float64 `json:"metric"`
+	Confidence int     `json:"confidence"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -44,8 +45,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	res := util.GetRepoFromDB(collection, owner, name)
 
 	var repo util.RepoInfo
-	var metricValue float32
-	message := ""
+	var metricValue float64
+	var confidence int
+	var message string
 
 	if res.Err() != mongo.ErrNoDocuments { // match in DB
 		err := res.Decode(&repo)
@@ -58,13 +60,20 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 		switch metric {
 		case "stars":
-			metricValue = float32(repo.Stars)
+			metricValue = float64(repo.Stars)
+			confidence = 100
 		case "releaseCadence":
-			_, releaseCadence, _ := util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
-			metricValue = float32(releaseCadence)
+			_, metricValue, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
 		case "ageLastRelease":
-			ageLastRelease, _, _ := util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
-			metricValue = float32(ageLastRelease)
+			metricValue, _, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+		case "commitCadence":
+			metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
+		case "contributors":
+			_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
+			metricValue = float64(contributors)
+			confidence = 100
+		case "issueClosureTime":
+			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
 		default:
 			message = fmt.Sprintf("Metric querying not yet supported for %s", metric)
 		}
@@ -72,7 +81,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		message = "Score not available"
 	}
 
-	response, _ := json.Marshal(response{Message: message, Metric: metricValue})
+	response, _ := json.Marshal(response{Message: message, Metric: metricValue, Confidence: confidence})
 	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(response)}, nil
 }
 
