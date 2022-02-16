@@ -4,7 +4,6 @@ import (
 	"api/util"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -33,7 +32,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no scoreType variable in path")
 	}
-	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, scoreType)
 
 	mongoClient := util.GetMongoClient()
 	score, scoreStatus := util.GetCachedScore(mongoClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS

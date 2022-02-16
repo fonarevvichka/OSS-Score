@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"api/util"
@@ -42,7 +41,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no name variable in path")
 	}
-	fmt.Printf("%s,%s,%s\n", catalog, owner, name)
 
 	client := lambdaSession(ctx)
 	func_name := "queryScore"
