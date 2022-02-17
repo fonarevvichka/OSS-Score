@@ -4,6 +4,8 @@
 *.dll
 *.so
 *.dylib
+main
+*.zip
 
 # Test binary, built with `go test -c`
 *.test
@@ -16,4 +18,9 @@
 
 # IDE files
 .idea/
+
+#npm files
 node_modules
+
+# certs
+*.pem

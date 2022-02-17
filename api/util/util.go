@@ -29,7 +29,7 @@ func getRepoFilter(owner string, name string) bson.D {
 	}
 }
 
-func getMongoClient() *mongo.Client {
+func GetMongoClient() *mongo.Client {
 	uri := os.Getenv("MONGO_URI")
 	// Create a new mongo_client and connect to the server
 	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
@@ -138,14 +138,14 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 }
 
 func QueryProject(catalog string, owner string, name string, timeFrame int) {
-	mongoClient := getMongoClient()
+	mongoClient := GetMongoClient()
 	defer mongoClient.Disconnect(context.TODO())
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 
 	// Get License Score map
 	licenseMap := make(map[string]int)
 
-	licenseFile, err := os.Open("./util/scores/licenseScores.txt")
+	licenseFile, err := os.Open("./scores/licenseScores.txt")
 
 	if err != nil {
 		log.Fatalln(err)
