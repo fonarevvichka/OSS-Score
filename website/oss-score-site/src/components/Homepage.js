@@ -3,7 +3,7 @@ import React, {useState} from 'react'
 
 import './Homepage.css';
 
-
+/* functional component for homepage */
 export default function Home(props) {
     // const {register, handleSubmit} = useForm();
 
@@ -14,6 +14,7 @@ export default function Home(props) {
     //     console.log(data)
     // }
 
+    /* function for parsing name and author */
     const getNameAuthor = (url) => {
         let newUrl = url.replace('https://github.com/', '');
 
@@ -33,6 +34,7 @@ export default function Home(props) {
         return [owner, repo];
     }
 
+    /* function for flattenning JSON */
     const flattenJSON = (obj = {}, res = {}) => {
         // base case: when it is not an object
         // base case: when it is an object with a score and a confidence
@@ -85,6 +87,10 @@ export default function Home(props) {
 
     const handleSubmit = (evt) => {
         evt.preventDefault();
+
+        if(document.getElementById("head2head").style.display === 'none') {
+            document.getElementById("head2head").style.display = 'block'
+        }
 
         // First do website validation
 
@@ -219,7 +225,7 @@ export default function Home(props) {
 
     return (
         <div className="Home">
-            <img src="../../../images/logo1.png" alt="OSS-SCORE"></img>
+            <img src="images/logo1.png" alt="OSS-SCORE"></img>
             <header>OSS-SCORE</header>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
@@ -238,7 +244,7 @@ export default function Home(props) {
                     <button class="compare-button" type="submit" value="Submit">Compare</button>
                 </div>
             </form>
-            <div class="head2head">
+            <div class="head2head" id="head2head">
                 <div class="repo1">
                     <div class="repo-header">
                         <div class="stat-subHeader">Name</div>
@@ -253,7 +259,7 @@ export default function Home(props) {
                     </div>
 
                     <div class="repo-header">
-                        <div class="subheaderTitle">Activity Score</div>
+                        <div class="subheaderTitle">Activity Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Activity Score</div>
                             <div class="score" id="activityScore1">0</div>
@@ -267,7 +273,7 @@ export default function Home(props) {
                         </div>
 
                         <div class="repo-subheader">
-                            <div class="stat-Header">contributor Score</div>
+                            <div class="stat-Header">Contributor Score</div>
                             <div class="score" id="contributorScore1">0</div>
                             <div class="confidence" id="contributorConfScore1">Confidence: 0</div>
                         </div>
@@ -293,7 +299,7 @@ export default function Home(props) {
                         </div>
                     </div>
                     <div class="repo-licence-score">
-                        <div class="subheaderTitle">License Score</div>
+                        <div class="subheaderTitle">License Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">License Score</div>
                             <div class="score" id="licenseScore1">0</div>
@@ -301,7 +307,7 @@ export default function Home(props) {
                         </div>
                     </div>
                     <div class="repo-dependency-score">
-                        <div class="subheaderTitle">Dependency Score</div>
+                        <div class="subheaderTitle">Dependency Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Dependency Activity Score</div>
                             <div class="score" id="dependencyActivityScore1">0</div>
@@ -329,7 +335,7 @@ export default function Home(props) {
                     </div>
                     
                     <div class="repo-header">
-                        <div class="subheaderTitle">Activity Score</div>
+                        <div class="subheaderTitle">Activity Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Activity Score</div>
                             <div class="score" id="activityScore2">0</div>
@@ -343,7 +349,7 @@ export default function Home(props) {
                         </div>
                         
                         <div class="repo-subheader">
-                            <div class="stat-Header">contributor Score</div>
+                            <div class="stat-Header">Contributor Score</div>
                             <div class="score" id="contributorScore2">0</div>
                             <div class="confidence" id="contributorConfScore2">Confidence: 0</div>
                         </div>
@@ -369,7 +375,7 @@ export default function Home(props) {
                         </div>
                     </div>
                     <div class="repo-licence-score">
-                        <div class="subheaderTitle">License Score</div>
+                        <div class="subheaderTitle">License Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">License Score</div>
                             <div class="score" id="licenseScore2">0</div>
@@ -377,7 +383,7 @@ export default function Home(props) {
                         </div>
                     </div>
                     <div class="repo-dependency-score">
-                        <div class="subheaderTitle">Dependency Score</div>
+                        <div class="subheaderTitle">Dependency Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Dependency Activity Score</div>
                             <div class="score" id="dependencyActivityScore2">0</div>

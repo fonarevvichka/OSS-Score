@@ -13,7 +13,7 @@ const Navigation = () => {
                         <Nav.Link class="nav-link" href="/about">About</Nav.Link>
                         <Nav.Link class="nav-link" href="/extension">Extension</Nav.Link>
                         <Nav.Link class="nav-link" href="/generate-scores">How We Generate Score</Nav.Link>
-                        <Nav.Link class="nav-link" href="/accomplishments">Accomplishments</Nav.Link>
+                        <Nav.Link class="nav-link" href="/categories">Categories</Nav.Link>
                         <Nav.Link class="nav-link" href="/workforus">Work For Us</Nav.Link>
                     </Nav>
                 </Container>

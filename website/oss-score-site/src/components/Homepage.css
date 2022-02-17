@@ -8,9 +8,6 @@ header {
     border-style: solid;
     border-width: 1.5px;
     border-color: #000000
-    /* border-color: #cc0000; */
-    /* outline-color: red; */
-    
 }
 
 .searchbar {
@@ -31,6 +28,10 @@ header {
 
 .compare-button {
     padding: 3px;
+}
+
+#head2head {
+    
 }
 
 .stat-Header, .stat-subHeader, .stat {
@@ -81,7 +82,7 @@ header {
 }
 
 .subheaderTitle {
-    font-style: underline;
+    text-decoration: underline;
 }
 
 .score {
