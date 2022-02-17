@@ -1,3 +1,4 @@
+import { data } from 'jquery';
 import React, {useState} from 'react'
 //import { useForm } from 'react-hook-form';
 
@@ -52,6 +53,31 @@ export default function Home(props) {
         };
         
         return res;
+    }
+
+    const componentDidMount = (owner_name, repo_name) => {
+
+        let catalog_name = 'github'
+        let metric_name = 'none'
+        // GET request using fetch with error handling
+        fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/' + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/' + metric_name)
+            .then(async response => {
+                const data = await response.json();
+
+                // check for error response
+                if (!response.ok) {
+                    // get error message from body or default to response statusText
+                    const error = (data && data.message) || response.statusText;
+                    return Promise.reject(error);
+                }
+
+                // this.setState({ totalReactPackages: data.total })
+            })
+            .catch(error => {
+                this.setState({ errorMessage: error.toStrin() });
+                console.error('There was an error!', error);
+            });
+        return data;
     }
 
     // const testing_git = () => {
@@ -131,9 +157,12 @@ export default function Home(props) {
         document.getElementById("repoName2").innerHTML = name2;
         document.getElementById("repoAuthor2").innerHTML = owner2;
         
+
+
         // Here: call the api to get metrics for inputs.search1 and inputs.search2
-        
-        //alert(`Submitting Repos: ${inputs.search1} and ${inputs.search2}`)
+
+        componentDidMount()        
+
 
         // Sample JSON object
 
