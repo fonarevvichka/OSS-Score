@@ -1,0 +1,25 @@
+query ($name: String!, $owner: String!, $branch: String!, $cursor: String, $startDate: GitTimestamp) {
+  repository(owner: $owner, name: $name) {
+    ref(qualifiedName: $branch) {
+      target {
+        ... on Commit {
+          history (first: 100, after: $cursor, since: $startDate) {
+            edges {
+              node {
+                commitUrl
+                pushedDate
+                author {
+                  name
+                }
+              }
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+          }
+        }
+      }
+    }
+  }
+}
