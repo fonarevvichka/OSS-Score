@@ -13,10 +13,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type response struct {
+type singleMetricRepsone struct {
 	Message    string  `json:"message"`
 	Metric     float64 `json:"metric"`
 	Confidence int     `json:"confidence"`
+}
+
+type allMetricsResponse struct {
+	Stars            singleMetricRepsone `json:"stars"`
+	ReleaseCadence   singleMetricRepsone `json:"releaseCadence"`
+	AgeLastRelease   singleMetricRepsone `json:"ageLastRelease"`
+	CommitCadence    singleMetricRepsone `json:"commitCadence"`
+	Contributors     singleMetricRepsone `json:"contributors"`
+	IssueClosureTime singleMetricRepsone `json:"issueClosureTime"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -49,13 +58,15 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	var confidence int
 	var message string
 
+	var allMetrics allMetricsResponse
+
 	if res.Err() != mongo.ErrNoDocuments { // match in DB
 		err := res.Decode(&repo)
 
 		if err != nil {
 			log.Fatalln(err)
 		}
-		timeFrame := 12
+		timeFrame := 6
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
 		switch metric {
@@ -74,6 +85,44 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			confidence = 100
 		case "issueClosureTime":
 			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+		case "all":
+			metricValue = float64(repo.Stars)
+			allMetrics.Stars = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: 100,
+			}
+
+			_, metricValue, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+			allMetrics.ReleaseCadence = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			metricValue, _, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+			allMetrics.AgeLastRelease = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
+			allMetrics.CommitCadence = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
+			metricValue = float64(contributors)
+			allMetrics.Contributors = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: 100,
+			}
+
+			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+			allMetrics.IssueClosureTime = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
 		default:
 			message = fmt.Sprintf("Metric querying not yet supported for %s", metric)
 		}
@@ -81,7 +130,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		message = "Score not available"
 	}
 
-	response, _ := json.Marshal(response{Message: message, Metric: metricValue, Confidence: confidence})
+	var response []byte
+
+	if metric == "all" {
+		response, _ = json.Marshal(allMetrics)
+	} else {
+		response, _ = json.Marshal(singleMetricRepsone{Message: message, Metric: metricValue, Confidence: confidence})
+	}
+
 	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(response)}, nil
 }
 
