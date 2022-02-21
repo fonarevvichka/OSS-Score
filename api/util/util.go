@@ -56,7 +56,11 @@ func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mon
 func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 	res := GetRepoFromDB(collection, owner, name)
-	var score Score
+
+	var combinedScore Score
+	var repoScore Score
+	var depScore Score
+
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
 		log.Fatalln(err)
@@ -70,25 +74,27 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 			log.Fatalln(err)
 		}
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
+		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+
 		if repoInfo.UpdatedAt.After(expireDate) && repoInfo.ScoreStatus == 2 {
 			repoWeight := 0.75
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
-				score = Score{
-					Score:      (repoInfo.RepoActivityScore.Score * repoWeight) + (repoInfo.DependencyActivityScore.Score * dependencyWeight),
-					Confidence: (repoInfo.RepoActivityScore.Confidence * repoWeight) + (repoInfo.DependencyActivityScore.Confidence * dependencyWeight),
-				}
+				repoScore = CalculateActivityScore(&repoInfo, startPoint)
+				depScore = CalculateDependencyActivityScore(collection, &repoInfo, startPoint)
 			} else if scoreType == "license" {
-				score = Score{
-					Score:      (repoInfo.RepoLicenseScore.Score * repoWeight) + (repoInfo.DependencyLicenseScore.Score * dependencyWeight),
-					Confidence: (repoInfo.RepoLicenseScore.Confidence * repoWeight) + (repoInfo.DependencyLicenseScore.Confidence * dependencyWeight),
-				}
-
+				licenseMap := getLicenseMap()
+				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
+				depScore = CalculateDependencyLicenseScore(collection, &repoInfo, licenseMap)
+			}
+			combinedScore = Score{
+				Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
+				Confidence: (repoScore.Confidence * repoWeight) + (depScore.Confidence * dependencyWeight),
 			}
 		}
 	}
 
-	return score, repoInfo.ScoreStatus
+	return combinedScore, repoInfo.ScoreStatus
 }
 
 // Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
@@ -127,8 +133,8 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	}
 
 	if dataStatus != 0 {
-		repoInfo.RepoActivityScore = CalculateRepoActivityScore(&repoInfo, startPoint)
-		repoInfo.RepoLicenseScore = CalculateRepoLicenseScore(&repoInfo, licenseMap)
+		repoInfo.RepoActivityScore = CalculateActivityScore(&repoInfo, startPoint)
+		repoInfo.RepoLicenseScore = CalculateLicenseScore(&repoInfo, licenseMap)
 	}
 
 	return RepoInfoMessage{
@@ -137,11 +143,7 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	}
 }
 
-func QueryProject(catalog string, owner string, name string, timeFrame int) {
-	mongoClient := GetMongoClient()
-	defer mongoClient.Disconnect(context.TODO())
-	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-
+func getLicenseMap() map[string]int {
 	// Get License Score map
 	licenseMap := make(map[string]int)
 
@@ -168,13 +170,23 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 		log.Fatal(err)
 	}
 
+	return licenseMap
+}
+
+func QueryProject(catalog string, owner string, name string, timeFrame int) {
+	mongoClient := GetMongoClient()
+	defer mongoClient.Disconnect(context.TODO())
+	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+
+	licenseMap := getLicenseMap()
+
 	// get repo info message
 	repoInfoMessage := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
 
 	mainRepo := repoInfoMessage.RepoInfo
 	dataStatus := repoInfoMessage.DataStatus
 
-	updateDependencies(collection, &mainRepo, timeFrame, licenseMap)
+	// updateDependencies(collection, &mainRepo, timeFrame, licenseMap)
 
 	// startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 	// mainRepo.DependencyActivityScore = CalculateDependencyActivityScore(collection, &mainRepo, startPoint)

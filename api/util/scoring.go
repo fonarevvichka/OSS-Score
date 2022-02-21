@@ -90,7 +90,6 @@ func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.
 	timeFrame := time.Since(startPoint).Hours() / 24.0 / 30.0
 
 	return time.Since(LatestRelease).Hours() / 24.0 / 7.0, releaseCounter / timeFrame, 100
-
 }
 
 func minMaxScale(min float64, max float64, val float64) float64 {
@@ -100,6 +99,8 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) Score {
 	score := 0.0
 	confidence := 0.0
+	depsWithScores := 0
+
 	for _, dependency := range repoInfo.Dependencies {
 		res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
 
@@ -110,19 +111,32 @@ func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *Re
 			if err != nil {
 				log.Fatalln(err)
 			}
-			score += depInfo.RepoActivityScore.Score
-			confidence += depInfo.RepoActivityScore.Confidence
+
+			individualScore := CalculateActivityScore(&depInfo, startPoint)
+			score += individualScore.Score
+			confidence += individualScore.Confidence
+
+			depsWithScores++
 		}
 	}
-	numDeps := float64(len(repoInfo.Dependencies))
+	totalDeps := len(repoInfo.Dependencies)
+
+	if depsWithScores != 0 {
+		score /= float64(depsWithScores)
+		confidence /= float64(depsWithScores)
+		confidence *= (float64(depsWithScores) / float64(totalDeps))
+	} else {
+		score = 100
+		confidence = 0
+	}
 
 	return Score{
-		Score:      score / numDeps,
-		Confidence: confidence / numDeps,
+		Score:      score,
+		Confidence: confidence,
 	}
 }
 
-func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
+func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	// Weights
 	commitWeight := 0.25
 	contributorWeight := 0.25
@@ -156,6 +170,7 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score 
 		(issueWeight * issue_score)
 
 	confidence := ((contributorWeight + commitWeight) * float64(commitConfidence)) + (issueWeight * float64(issueConfidence)) + (releaseWeight * float64(releaseConfidence))
+
 	repoScore := Score{
 		Score:      100 * score,
 		Confidence: confidence,
@@ -164,7 +179,7 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score 
 	return repoScore
 }
 
-func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
+func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
 	licenseScore := 0
 	confidence := 100
 
@@ -174,6 +189,7 @@ func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Sc
 
 	// Zero confidence if we can't find the license
 	if licenseScore == 0 {
+		licenseScore = 100
 		confidence = 0
 	}
 
@@ -185,9 +201,10 @@ func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Sc
 	return repoScore
 }
 
-func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo) Score {
+func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) Score {
 	score := 0.0
 	confidence := 0.0
+	depsWithScores := 0
 
 	for _, dependency := range repoInfo.Dependencies {
 		res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
@@ -199,17 +216,28 @@ func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *Rep
 			if err != nil {
 				log.Fatalln(err)
 			}
-			score += depInfo.RepoLicenseScore.Score
-			confidence += depInfo.RepoLicenseScore.Confidence
+
+			individualScore := CalculateLicenseScore(&depInfo, licenseMap)
+
+			score += float64(individualScore.Score)
+			confidence += float64(individualScore.Confidence)
+
+			depsWithScores++
 		}
 	}
 
-	numDeps := float64(len(repoInfo.Dependencies))
+	totalDeps := float64(len(repoInfo.Dependencies))
 
-	depScore := Score{
-		Score:      score / numDeps,
-		Confidence: confidence / numDeps,
+	if depsWithScores != 0 {
+		score /= float64(depsWithScores)
+		confidence /= float64(depsWithScores) * (float64(depsWithScores) / float64(totalDeps))
+	} else {
+		score = 100
+		confidence = 0
 	}
 
-	return depScore
+	return Score{
+		Score:      score,
+		Confidence: confidence,
+	}
 }
