@@ -81,7 +81,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	queueURL := result.QueueUrl
-	fmt.Println(queueURL)
 	timeFrame := "6"
 	sMInput := &sqs.SendMessageInput{
 		MessageGroupId: aws.String("handler"),

@@ -229,7 +229,6 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 	var repoMessages []RepoInfoMessage
 	dependencies := mainRepo.Dependencies
 	for _, dependency := range dependencies {
-		fmt.Println(dependency.Name)
 		repoMessages = append(repoMessages, addUpdateRepo(collection, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, licenseMap))
 
 		// cap on how many deps to query: testing only
