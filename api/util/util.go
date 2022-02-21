@@ -103,6 +103,7 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	repoInfo := RepoInfo{}
 	dataStatus := 0
 	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+	log.Println("Investigating" + owner + "/" + name)
 
 	if res.Err() == mongo.ErrNoDocuments { // No data on repo
 		dataStatus = 2
@@ -204,31 +205,17 @@ func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, dataStatus int)
 }
 
 func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFrame int, licenseMap map[string]int) {
-	var wg sync.WaitGroup
 	var repoMessages []RepoInfoMessage
 	dependencies := mainRepo.Dependencies
-
-	counter := 0
 	for _, dependency := range dependencies {
-		if counter == 1 {
-			counter = 0
-			wg.Wait()
-		} else {
-			wg.Add(1)
-
-			go func(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) {
-				defer wg.Done()
-				repoMessages = append(repoMessages, addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap))
-			}(collection, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame)
-			counter += 1
-		}
+		fmt.Println(dependency.Name)
+		repoMessages = append(repoMessages, addUpdateRepo(collection, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, licenseMap))
 
 		// cap on how many deps to query: testing only
 		// if counter == 25 {
 		// 	break
 		// }
 	}
-	wg.Wait()
 
 	var newDeps []interface{}
 	var updatedDeps []RepoInfo
@@ -243,6 +230,7 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 
 	log.Println("Done querying all deps")
 	//TODO: Investigate BulkWrite operation
+	var wg sync.WaitGroup
 	if len(newDeps) != 0 {
 		log.Println("inserting new deps")
 		wg.Add(1)
