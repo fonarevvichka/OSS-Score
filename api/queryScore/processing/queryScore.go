@@ -3,7 +3,6 @@ package main
 import (
 	"api/util"
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 
@@ -46,11 +45,6 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if err != nil {
 			log.Fatalln("error converting time frame to int")
 		}
-
-		fmt.Println(catalog)
-		fmt.Println(owner)
-		fmt.Println(name)
-		fmt.Println(timeFrame)
 
 		util.QueryProject(catalog, owner, name, timeFrame)
 	}
