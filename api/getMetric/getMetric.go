@@ -137,7 +137,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		response, _ = json.Marshal(singleMetricRepsone{Message: message, Metric: metricValue, Confidence: confidence})
 	}
 
-	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(response)}, nil
+	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(response)}
+	resp.Headers["Access-Control-Allow-Origin"] = "*"
+	return resp, nil
 }
 
 func main() {
