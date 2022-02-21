@@ -83,7 +83,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		QueueUrl:    queueURL,
 	}
 
-	log.Println(sMInput)
 	_, err = client.SendMessage(ctx, sMInput)
 	if err != nil {
 		fmt.Println("Got an error sending the message:")
