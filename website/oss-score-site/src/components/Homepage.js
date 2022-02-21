@@ -55,10 +55,24 @@ export default function Home(props) {
         return res;
     }
 
+
+    async function getAllUsers(owner_name, repo_name) {
+        let catalog_name = 'github'
+        let metric_name = 'all'
+        try {
+            const response = await fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/' + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/' + metric_name);
+            return await response.json();
+        } catch (error) {
+            return [];
+        }
+
+    }
+
+
     const componentDidMount = (owner_name, repo_name) => {
 
         let catalog_name = 'github'
-        let metric_name = 'none'
+        let metric_name = 'all'
         // GET request using fetch with error handling
         fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/' + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/' + metric_name)
             .then(async response => {
@@ -70,7 +84,7 @@ export default function Home(props) {
                     const error = (data && data.message) || response.statusText;
                     return Promise.reject(error);
                 }
-
+ 
                 // this.setState({ totalReactPackages: data.total })
             })
             .catch(error => {
@@ -161,29 +175,35 @@ export default function Home(props) {
 
         // Here: call the api to get metrics for inputs.search1 and inputs.search2
 
-        componentDidMount()        
+
+
+
+        let scores1 = getAllUsers(owner1, name1)  
+        console.log(scores1)
+        let scores2 = getAllUsers(owner2, name2)     
+        console.log(scores2)
 
 
         // Sample JSON object
 
         // JSON object names must be the same as the id's in the html
-        let scores1 = {
-            "overallScore": {"score": 90, "confidence": 80},
-            "activityScore": {
-                "activityScore": {"score": 75, "confidence": 50},
-                "commitScore": {"score": 75, "confidence": 12},
-                "contributorScore": {"score": 85, "confidence": 62},
-                "releaseScore": {
-                    "releaseScore":{"score": 20, "confidence": 1},
-                    "ageLastReleaseScore":{"score":3, "confidence": 100},
-                    "releaseCadenceScore": { "score": 40, "confidence": 10 }
-                    },
-                "issueScore": {"score":99, "confidence": 99}
-            },
-            "licenseScore": {"score": 3, "confidence": 100},
-            "dependencyActivityScore": {"score": 100, "confidence": 2},
-            "dependencyLicenseScore": {"score": 3, "confidence": 100},
-        }
+        // let scores1 = {
+        //     "overallScore": {"score": 90, "confidence": 80},
+        //     "activityScore": {
+        //         "activityScore": {"score": 75, "confidence": 50},
+        //         "commitScore": {"score": 75, "confidence": 12},
+        //         "contributorScore": {"score": 85, "confidence": 62},
+        //         "releaseScore": {
+        //             "releaseScore":{"score": 20, "confidence": 1},
+        //             "ageLastReleaseScore":{"score":3, "confidence": 100},
+        //             "releaseCadenceScore": { "score": 40, "confidence": 10 }
+        //             },
+        //         "issueScore": {"score":99, "confidence": 99}
+        //     },
+        //     "licenseScore": {"score": 3, "confidence": 100},
+        //     "dependencyActivityScore": {"score": 100, "confidence": 2},
+        //     "dependencyLicenseScore": {"score": 3, "confidence": 100},
+        // }
 
         // console.log(flattenJSON(scores));
 
@@ -205,19 +225,19 @@ export default function Home(props) {
         //     "dependencyLicenseScore": { "score": 3, "confidence": 100 }
         // }
 
-        let scores2 = {
-            "overallScore": { "score": 100, "confidence": 80 },
-            "activityScore": { "score": 75, "confidence":90 },
-            "commitScore": { "score": 99, "confidence": 82 },
-            "contributorScore": { "score": 8, "confidence": 100 },
-            "releaseScore": { "score": 20, "confidence": 100 },
-            "ageLastReleaseScore": { "score": 70, "confidence": 100 },
-            "releaseCadenceScore": { "score": 80, "confidence": 10 },
-            "issueScore": { "score": 45, "confidence": 99 },
-            "licenseScore": { "score": 3, "confidence": 100 },
-            "dependencyActivityScore": { "score": 100, "confidence": 2 },
-            "dependencyLicenseScore": { "score": 3, "confidence": 100 }
-        }
+        // let scores2 = {
+        //     "overallScore": { "score": 100, "confidence": 80 },
+        //     "activityScore": { "score": 75, "confidence":90 },
+        //     "commitScore": { "score": 99, "confidence": 82 },
+        //     "contributorScore": { "score": 8, "confidence": 100 },
+        //     "releaseScore": { "score": 20, "confidence": 100 },
+        //     "ageLastReleaseScore": { "score": 70, "confidence": 100 },
+        //     "releaseCadenceScore": { "score": 80, "confidence": 10 },
+        //     "issueScore": { "score": 45, "confidence": 99 },
+        //     "licenseScore": { "score": 3, "confidence": 100 },
+        //     "dependencyActivityScore": { "score": 100, "confidence": 2 },
+        //     "dependencyLicenseScore": { "score": 3, "confidence": 100 }
+        // }
 
 
         scores1 = flattenJSON(scores1)
