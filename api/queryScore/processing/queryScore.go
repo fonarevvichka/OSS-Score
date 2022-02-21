@@ -1,22 +1,60 @@
 package main
 
 import (
+	"api/util"
 	"context"
 	"fmt"
+	"log"
+	"strconv"
 
+	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
-	// "github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
-type message struct {
-	Records []types.Message
+type SQSEvent struct {
+	Records []SQSMessage `json:"Records"`
 }
 
-func handler(ctx context.Context, messageOutput types.ReceiveMessageOutput) error {
-	fmt.Println(messageOutput)
-	// fmt.Println(messageOutput.Messages[0])
-	// util.QueryProject(repo.Catalog, repo.Owner, repo.Name, repo.TimeFrame)
+type SQSMessage struct {
+	MessageId              string            `json:"messageId"` //nolint: stylecheck
+	ReceiptHandle          string            `json:"receiptHandle"`
+	Body                   string            `json:"body"`
+	Md5OfBody              string            `json:"md5OfBody"`
+	Md5OfMessageAttributes string            `json:"md5OfMessageAttributes"`
+	Attributes             map[string]string `json:"attributes"`
+	MessageAttributes      map[string]string `json:"messageAttributes"`
+	EventSourceARN         string            `json:"eventSourceARN"`
+	EventSource            string            `json:"eventSource"`
+	AWSRegion              string            `json:"awsRegion"`
+}
+
+type SQSMessageAttribute struct {
+	StringValue      *string  `json:"stringValue,omitempty"`
+	BinaryValue      []byte   `json:"binaryValue,omitempty"`
+	StringListValues []string `json:"stringListValues"`
+	BinaryListValues [][]byte `json:"binaryListValues"`
+	DataType         string   `json:"dataType"`
+}
+
+func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
+	for _, message := range sqsEvent.Records {
+		catalog := *message.MessageAttributes["catalog"].StringValue
+		owner := *message.MessageAttributes["owner"].StringValue
+		name := *message.MessageAttributes["name"].StringValue
+		timeFrame, err := strconv.Atoi(*message.MessageAttributes["timeFrame"].StringValue)
+
+		if err != nil {
+			log.Fatalln("error converting time frame to int")
+		}
+
+		fmt.Println(catalog)
+		fmt.Println(owner)
+		fmt.Println(name)
+		fmt.Println(timeFrame)
+
+		util.QueryProject(catalog, owner, name, timeFrame)
+	}
+
 	return nil
 }
 

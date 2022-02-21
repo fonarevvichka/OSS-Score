@@ -29,8 +29,6 @@ func sqsSession(ctx context.Context) *sqs.Client {
 	return sqs.NewFromConfig(cfg)
 }
 
-
-
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	queueName := os.Getenv("QUERY_QUEUE")
 	catalog, found := request.PathParameters["catalog"]
@@ -84,31 +82,32 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	queueURL := result.QueueUrl
 	fmt.Println(queueURL)
-
+	timeFrame := "6"
 	sMInput := &sqs.SendMessageInput{
 		MessageGroupId: aws.String("handler"),
 		MessageAttributes: map[string]types.MessageAttributeValue{
 			"catalog": {
 				DataType:    aws.String("String"),
-				StringValue: aws.String(catalog),
+				StringValue: &catalog,
 			},
 			"owner": {
 				DataType:    aws.String("String"),
-				StringValue: aws.String(owner),
+				StringValue: &owner,
 			},
 			"name": {
 				DataType:    aws.String("String"),
-				StringValue: aws.String(name),
+				StringValue: &name,
 			},
 			"timeFrame": {
-				DataType:    aws.String("Number"),
-				StringValue: aws.String("6"), // temp hardcoded
+				DataType:    aws.String("String"),
+				StringValue: &timeFrame, // temp hardcoded
 			},
 		},
 		MessageBody: aws.String("Repo to be queried"),
 		QueueUrl:    queueURL,
 	}
 
+	log.Println(sMInput)
 	_, err = client.SendMessage(ctx, sMInput)
 	if err != nil {
 		fmt.Println("Got an error sending the message:")
