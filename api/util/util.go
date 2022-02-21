@@ -235,15 +235,13 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 			counter = 0
 			wg.Wait()
 		} else {
-			if dependency.Owner != "" && dependency.Name != "" {
-				wg.Add(1)
+			wg.Add(1)
 
-				go func(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) {
-					defer wg.Done()
-					repoMessages = append(repoMessages, addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap))
-				}(collection, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame)
-				counter += 1
-			}
+			go func(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) {
+				defer wg.Done()
+				repoMessages = append(repoMessages, addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap))
+			}(collection, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame)
+			counter += 1
 		}
 
 		// cap on how many deps to query: testing only
