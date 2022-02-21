@@ -45,30 +45,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	client := sqsSession(ctx)
-	// client := lambdaSession(ctx)
-	// func_name := "queryScore"
-	// repoInfo := util.RepoRequestInfo{
-	// 	Catalog:   catalog,
-	// 	Owner:     owner,
-	// 	Name:      name,
-	// 	TimeFrame: 6, //temp hardcoded
-	// }
-
-	// payload, err := json.Marshal(repoInfo)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-
-	// params := lambda.InvokeInput{
-	// 	FunctionName:   &func_name,
-	// 	Payload:        payload,
-	// 	InvocationType: types.InvocationTypeEvent,
-	// }
-
-	// _, invoke_err := client.Invoke(ctx, &params)
-	// if invoke_err != nil {
-	// 	log.Fatalln(err)
-	// }
+	
 	gQInput := &sqs.GetQueueUrlInput{
 		QueueName: &queueName,
 	}
