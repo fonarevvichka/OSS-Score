@@ -45,7 +45,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no metric variable in path")
 	}
-	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, metric)
 
 	mongoClient := util.GetMongoClient()
 	defer mongoClient.Disconnect(context.TODO())
@@ -85,6 +84,22 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			confidence = 100
 		case "issueClosureTime":
 			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+		case "repoActivityScore":
+			score := util.CalculateRepoActivityScore(&repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "dependencyActivityScore":
+			score := util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "repoLicenseScore":
+			score := util.CalculateRepoLicenseScore(&repo, )
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "dependencyActivityScore":
+			score := util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
 		case "all":
 			metricValue = float64(repo.Stars)
 			allMetrics.Stars = singleMetricRepsone{
