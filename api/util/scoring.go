@@ -3,6 +3,7 @@ package util
 import (
 	"log"
 	"math"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -97,30 +98,44 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 }
 
 func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) Score {
+	var wg sync.WaitGroup
+
 	score := 0.0
 	confidence := 0.0
 	depsWithScores := 0
+	counter := 0
 
 	for _, dependency := range repoInfo.Dependencies {
-		res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
-
-		if res.Err() != mongo.ErrNoDocuments { // match in DB
-			var depInfo RepoInfo
-			err := res.Decode(&depInfo)
-
-			if err != nil {
-				log.Fatalln(err)
-			}
-
-			individualScore := CalculateActivityScore(&depInfo, startPoint)
-			score += individualScore.Score
-			confidence += individualScore.Confidence
-
-			depsWithScores++
+		counter++
+		if counter == 99 {
+			wg.Wait()
+			counter = 0
 		}
+
+		wg.Add(1)
+		go func(collection *mongo.Collection, dependency Dependency, startPoint time.Time) {
+			defer wg.Done()
+			res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
+
+			if res.Err() != mongo.ErrNoDocuments { // match in DB
+				var depInfo RepoInfo
+				err := res.Decode(&depInfo)
+
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				individualScore := CalculateActivityScore(&depInfo, startPoint)
+				score += individualScore.Score
+				confidence += individualScore.Confidence
+
+				depsWithScores++
+			}
+		}(collection, dependency, startPoint)
 	}
 	totalDeps := len(repoInfo.Dependencies)
 
+	wg.Wait()
 	if depsWithScores != 0 {
 		score /= float64(depsWithScores)
 		confidence /= float64(depsWithScores)
