@@ -78,8 +78,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     scoresPromise.then(scores => {
         if (scores.message == 'Score ready') { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
-        }
-        else if (scores.message == 'Score not yet calculated') {
+        } else if (scores.message == 'Score not yet calculated') {
             console.log("requesting previously unknown score");
             //scoreDiv.innerHTML += "not yet calculated";
             requestScores(owner, repo)
@@ -87,8 +86,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
                     //scoreDiv.innerHTML += message;
                     awaitResults(scoreDiv, owner, repo);
                 });
-        }
-         else { // NO SCORES
+        } else { // NO SCORES
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>";
             scoreDiv.innerHTML += scores.message;
 
@@ -108,21 +106,6 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
             }*/
         }
     });
-
-}
-
-
-
-async function getFakeScores(owner, repo) {
-    let scores = {license: {score: null, confidence: null}, activity: {score: null, confidence: null}, message: null};
-    let score1 = 50;
-    let score2 = 88;
-    scores.license.score = score1;
-    scores.activity.score = score2;
-    scores.license.confidence = 100;
-    scores.activity.confidence = 100;
-    scores.message = "not yet calculated";
-    return scores;
 }
 
 async function getScores(owner, repo) {
@@ -212,12 +195,8 @@ if (splitUrl.length == 2) { // Repo homepage
 }
 
 if (owner != '' && repo != '') {
-    //let rowDiv= document.createElement('div');
-    //rowDiv.className = 'BorderGrid-row';
- 
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
 
     insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
-    // insertScoreSection(owner, repo, scoreDiv, getFakeScores(owner, repo, scoreDiv));
 }
