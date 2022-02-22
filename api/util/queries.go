@@ -116,7 +116,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 				Version: node.Node.Requirements,
 			}
 			// not pulling enough info out, this shouldn't be needed
-			if !dependencyInSlice(newDep, dependencies) {
+			if !dependencyInSlice(newDep, dependencies) && newDep.Name != "" && newDep.Owner != "" {
 				dependencies = append(dependencies, newDep)
 			}
 		}
