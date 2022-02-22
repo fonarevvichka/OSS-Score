@@ -45,7 +45,7 @@ export default function Home(props) {
         for (var key in obj) {
             if (typeof obj[key] !== 'object') {
                 res[key] = obj[key];
-            } else if (obj[key].hasOwnProperty('score') && obj[key].hasOwnProperty('confidence')) {
+            } else if (obj[key].hasOwnProperty('message') && obj[key].hasOwnProperty('metric') && obj[key].hasOwnProperty('confidence')) {
                 res[key] = obj[key];
             } else {
                 flattenJSON(obj[key], res);
@@ -56,43 +56,46 @@ export default function Home(props) {
     }
 
 
-    async function getAllUsers(owner_name, repo_name) {
+    const getMetrics = async (owner_name, repo_name) => {
         let catalog_name = 'github'
         let metric_name = 'all'
         try {
-            const response = await fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/' + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/' + metric_name);
-            return await response.json();
+            let response = await fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/'
+                    + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/'
+                    + metric_name)
+            
+            return response.json()
         } catch (error) {
+            console.log(error)
             return [];
         }
-
     }
 
 
-    const componentDidMount = (owner_name, repo_name) => {
+    // const componentDidMount = (owner_name, repo_name) => {
 
-        let catalog_name = 'github'
-        let metric_name = 'all'
-        // GET request using fetch with error handling
-        fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/' + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/' + metric_name)
-            .then(async response => {
-                const data = await response.json();
+    //     let catalog_name = 'github'
+    //     let metric_name = 'all'
+    //     // GET request using fetch with error handling
+    //     fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/' + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/' + metric_name)
+    //         .then(async response => {
+    //             const data = await response.json();
 
-                // check for error response
-                if (!response.ok) {
-                    // get error message from body or default to response statusText
-                    const error = (data && data.message) || response.statusText;
-                    return Promise.reject(error);
-                }
+    //             // check for error response
+    //             if (!response.ok) {
+    //                 // get error message from body or default to response statusText
+    //                 const error = (data && data.message) || response.statusText;
+    //                 return Promise.reject(error);
+    //             }
  
-                // this.setState({ totalReactPackages: data.total })
-            })
-            .catch(error => {
-                this.setState({ errorMessage: error.toStrin() });
-                console.error('There was an error!', error);
-            });
-        return data;
-    }
+    //             // this.setState({ totalReactPackages: data.total })
+    //         })
+    //         .catch(error => {
+    //             this.setState({ errorMessage: error.toStrin() });
+    //             console.error('There was an error!', error);
+    //         });
+    //     return data;
+    // }
 
     // const testing_git = () => {
         // note: based on playing around with repo name, only non-alphanumeric characters is -, _, and .
@@ -125,10 +128,10 @@ export default function Home(props) {
     //}
 
 
-    const handleSubmit = (evt) => {
+    const handleSubmit = async (evt) => {
         evt.preventDefault();
 
-        if(document.getElementById("head2head").style.display === 'none') {
+        if (document.getElementById("head2head").style.display === 'none') {
             document.getElementById("head2head").style.display = 'block'
         }
 
@@ -176,11 +179,10 @@ export default function Home(props) {
         // Here: call the api to get metrics for inputs.search1 and inputs.search2
 
 
-
-
-        let scores1 = getAllUsers(owner1, name1)  
+        let scores1 = await getMetrics(owner1, name1)
+        let scores2 = await getMetrics(owner2, name2)
+        
         console.log(scores1)
-        let scores2 = getAllUsers(owner2, name2)     
         console.log(scores2)
 
 
@@ -240,32 +242,32 @@ export default function Home(props) {
         // }
 
 
-        scores1 = flattenJSON(scores1)
-        scores2 = flattenJSON(scores2)
-
+        // scores1 = flattenJSON(scores1)
+        // console.log(scores1)
+        // scores2 = flattenJSON(scores2)
+        // console.log(scores2)
 
         // Once we have metrics: call component to display metrics
 
         // Iterate through to put scores in
-        var scoreElems = document.getElementsByClassName("score");
+        var metricElems = document.getElementsByClassName("metric");
         var confidenceElems = document.getElementsByClassName("confidence")
 
-        for (var i = 0; i < scoreElems.length; i++) {
-            var scoreId = scoreElems[i].id
-            scoreId = scoreId.slice(0, -1)
+        for (var i = 0; i < metricElems.length; i++) {
+            var metricId = metricElems[i].id
+            metricId = metricId.slice(0, -1)
+            console.log(metricId)
 
             //alert(scoreId)
             if (i < (scoreElems.length / num_repos)) {
-                scoreElems[i].innerHTML = scores1[scoreId].score
-                confidenceElems[i].innerHTML = scores1[scoreId].confidence
+                metricElems[i].innerHTML = scores1[metricId].metric
+                confidenceElems[i].innerHTML = scores1[metricId].confidence
             }
             else {
-                scoreElems[i].innerHTML = scores2[scoreId].score
+                scoreElems[i].innerHTML = scores2[scoreId].metric
                 confidenceElems[i].innerHTML = scores2[scoreId].confidence
             }
         }
-
-
 
 
 
@@ -274,7 +276,7 @@ export default function Home(props) {
 
     return (
         <div className="Home">
-            <img src="images/logo1.png" alt="OSS-SCORE"></img>
+            <img src="../images/logo1.png" alt="OSS-SCORE"></img>
             <header>OSS-SCORE</header>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
@@ -301,71 +303,81 @@ export default function Home(props) {
                         <div class="stat-subHeader">Author</div>
                         <div class="repo-name" id="repoAuthor1">None</div>
                     </div>
-                    <div class="repo-header">
+                    {/* <div class="repo-header">
                         <div class="stat-Header">Overall Score</div>
-                        <div class="score" id="overallScore1">0</div>
+                        <div class="metric" id="overallScore1">0</div>
                         <div class="confidence" id="overallConfScore1">Confidence: 0</div>
-                    </div>
+                    </div> */}
 
                     <div class="repo-header">
                         <div class="subheaderTitle">Activity Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Activity Score</div>
-                            <div class="score" id="activityScore1">0</div>
-                            <div class="confidence" id="activityConfScore1">Confidence: 0</div>
+                            <div class="metric" id="repoActivityScore1">0</div>
+                            <div class="confidence" id="repoActivityConfScore1">Confidence: 0</div>
                         </div>
 
-                        <div class="repo-subheader">
-                            <div class="stat-Header">Commit Score</div>
-                            <div class="score" id="commitScore1">0</div>
-                            <div class="confidence" id="commitConfScore1">Confidence: 0</div>
-                        </div>
 
                         <div class="repo-subheader">
-                            <div class="stat-Header">Contributor Score</div>
-                            <div class="score" id="contributorScore1">0</div>
-                            <div class="confidence" id="contributorConfScore1">Confidence: 0</div>
+                            <div class="stat-Header">Issue Closure Time</div>
+                            <div class="metric" id="issueClosureTime1">0</div>
+                            <div class="confidence" id="issueClosureTimeConf1">Confidence: 0</div>
                         </div>
+                        
+                        <div class="repo-subheader">
+                            <div class="stat-Header">Commit Cadence</div>
+                            <div class="metric" id="commitCadence1">0</div>
+                            <div class="confidence" id="commitCadenceConf1">Confidence: 0</div>
+                        </div>
+
 
                         <div class="repo-subheader">
                             <div class="stat-Header">Release Score</div>
-                            <div class="score" id="releaseScore1">0</div>
-                            <div class="confidence" id="releaseConfScore1">Confidence: 0</div>
+                            {/* <div class="metric" id="releaseScore1">0</div>
+                            <div class="confidence" id="releaseConfScore1">Confidence: 0</div> */}
                             <div class="stat-subheader">
-                                <div class="scoreLabel">Age Last Release Score</div>
-                                <div class="score" id="ageLastReleaseScore1">0</div>
-                                <div class="confidence" id="ageLastReleaseConfScore1">Confidence: 0</div>
-                                <div class="scoreLabel">Release Cadence Score</div>
-                                <div class="score" id="releaseCadenceScore1">0</div>
-                                <div class="confidence" id="releaseCadenceConfScore1">Confidence: 0</div>
+                                <div class="scoreLabel">Age Last Release</div>
+                                <div class="metric" id="ageLastRelease1">0</div>
+                                <div class="confidence" id="ageLastReleaseConf1">Confidence: 0</div>
+                                <div class="scoreLabel">Release Cadence</div>
+                                <div class="metric" id="releaseCadence1">0</div>
+                                <div class="confidence" id="releaseCadenceConf1">Confidence: 0</div>
                             </div>
                         </div>
 
                         <div class="repo-subheader">
-                            <div class="stat-Header">Issue Closure Time Score</div>
-                            <div class="score" id="issueScore1">0</div>
-                            <div class="confidence" id="issueConfScore1">Confidence: 0</div>
+                            <div class="stat-Header">Contributors</div>
+                            <div class="metric" id="contributors1">0</div>
+                            <div class="confidence" id="contributorsConf1">Confidence: 0</div>
                         </div>
                     </div>
                     <div class="repo-licence-score">
                         <div class="subheaderTitle">License Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">License Score</div>
-                            <div class="score" id="licenseScore1">0</div>
-                            <div class="confidence" id="licenseConfScore1">Confidence: 0</div>
+                            <div class="metric" id="repoLicenseScore1">0</div>
+                            <div class="confidence" id="repoLicenseConfScore1">Confidence: 0</div>
                         </div>
                     </div>
                     <div class="repo-dependency-score">
                         <div class="subheaderTitle">Dependency Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Dependency Activity Score</div>
-                            <div class="score" id="dependencyActivityScore1">0</div>
+                            <div class="metric" id="dependencyActivityScore1">0</div>
                             <div class="confidence" id="dependencyActivityConfScore1">Confidence: 0</div>
                         </div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Dependency License Score</div>
-                            <div class="score" id="dependencyLicenseScore1">0</div>
+                            <div class="metric" id="dependencyLicenseScore1">0</div>
                             <div class="confidence" id="dependencyLicenseConfScore1">Confidence: 0</div>
+                        </div>
+                    </div>
+                    <div class="repo-stars">
+                        <div class="subheaderTitle">Stars</div>
+                        <div class="repo-subheader">
+                            <div class="stat-Header">Stars</div>
+                            <div class="metric" id="stars1">0</div>
+                            <div class="confidence" id="stars1">Confidence: 0</div>
                         </div>
                     </div>
                 </div>
@@ -379,7 +391,7 @@ export default function Home(props) {
                     </div>
                     <div class="repo-header">
                         <div class="stat-Header">Overall Score</div>
-                        <div class="score" id="overallScore2">0</div>
+                        <div class="metric" id="overallScore2">0</div>
                         <div class="confidence" id="overallConfScore2">Confidence: 0</div>
                     </div>
                     
@@ -387,39 +399,39 @@ export default function Home(props) {
                         <div class="subheaderTitle">Activity Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Activity Score</div>
-                            <div class="score" id="activityScore2">0</div>
+                            <div class="metric" id="activityScore2">0</div>
                             <div class="confidence" id="activityConfScore2">Confidence: 0</div>
                         </div>
                         
                         <div class="repo-subheader">
                             <div class="stat-Header">Commit Score</div>
-                            <div class="score" id="commitScore2">0</div>
+                            <div class="metric" id="commitScore2">0</div>
                             <div class="confidence" id="commitConfScore2">Confidence: 0</div>
                         </div>
                         
                         <div class="repo-subheader">
                             <div class="stat-Header">Contributor Score</div>
-                            <div class="score" id="contributorScore2">0</div>
+                            <div class="metric" id="contributorScore2">0</div>
                             <div class="confidence" id="contributorConfScore2">Confidence: 0</div>
                         </div>
                         
                         <div class="repo-subheader">
                             <div class="stat-Header">Release Score</div>
-                            <div class="score" id="releaseScore2">0</div>
+                            <div class="metric" id="releaseScore2">0</div>
                             <div class="confidence" id="releaseConfScore2">Confidence: 0</div>
                             <div class="stat-subheader">
                             <div class="scoreLabel">Age Last Release Score</div>
-                                <div class="score" id="ageLastReleaseScore2">0</div>
+                                <div class="metric" id="ageLastReleaseScore2">0</div>
                                 <div class="confidence" id="ageLastReleaseConfScore2">Confidence: 0</div>
                                 <div class="scoreLabel">Release Cadence Score</div>
-                                <div class="score" id="releaseCadenceScore2">0</div>
+                                <div class="metric" id="releaseCadenceScore2">0</div>
                                 <div class="confidence" id="releaseCadenceConfScore2">Confidence: 0</div>
                             </div>
                         </div>
                         
                         <div class="repo-subheader">
                             <div class="stat-Header">Issue Closure Time Score</div>
-                            <div class="score" id="issueScore2">0</div>
+                            <div class="metric" id="issueScore2">0</div>
                             <div class="confidence" id="issueConfScore2">Confidence: 0</div>
                         </div>
                     </div>
@@ -427,7 +439,7 @@ export default function Home(props) {
                         <div class="subheaderTitle">License Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">License Score</div>
-                            <div class="score" id="licenseScore2">0</div>
+                            <div class="metric" id="licenseScore2">0</div>
                             <div class="confidence" id="licenseConfScore2">Confidence: 0</div>
                         </div>
                     </div>
@@ -435,13 +447,21 @@ export default function Home(props) {
                         <div class="subheaderTitle">Dependency Scores</div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Dependency Activity Score</div>
-                            <div class="score" id="dependencyActivityScore2">0</div>
+                            <div class="metric" id="dependencyActivityScore2">0</div>
                             <div class="confidence" id="dependencyActivityConfScore2">Confidence: 0</div>
                         </div>
                         <div class="repo-subheader">
                             <div class="stat-Header">Dependency License Score</div>
-                            <div class="score" id="dependencyLicenseScore2">0</div>
+                            <div class="metric" id="dependencyLicenseScore2">0</div>
                             <div class="confidence" id="dependencyLicenseConfScore2">Confidence: 0</div>
+                        </div>
+                    </div>
+                    <div class="repo-stars">
+                        <div class="subheaderTitle">Stars</div>
+                        <div class="repo-subheader">
+                            <div class="stat-Header">Stars</div>
+                            <div class="metric" id="stars2">0</div>
+                            <div class="confidence" id="stars2">Confidence: 0</div>
                         </div>
                     </div>
                 </div>
