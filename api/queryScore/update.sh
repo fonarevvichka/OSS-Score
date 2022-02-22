@@ -4,4 +4,6 @@ cd handler
 cd ../processing
 ./update.sh
 
+cd ../dependency
+./update.sh
 cd ..

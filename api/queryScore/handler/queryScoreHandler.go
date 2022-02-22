@@ -1,6 +1,7 @@
 package main
 
 import (
+	"api/util"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,22 +12,12 @@ import (
 	runtime "github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
 type response struct {
 	Message string
-}
-
-func sqsSession(ctx context.Context) *sqs.Client {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	return sqs.NewFromConfig(cfg)
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -44,8 +35,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no name variable in path")
 	}
 
-	client := sqsSession(ctx)
-	
+	client := util.GetSqsSession(ctx)
+
 	gQInput := &sqs.GetQueueUrlInput{
 		QueueName: &queueName,
 	}

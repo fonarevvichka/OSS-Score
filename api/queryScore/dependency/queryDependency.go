@@ -20,8 +20,8 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if err != nil {
 			log.Fatalln("Error converting time frame to int")
 		}
-		
-		util.QueryProject(catalog, owner, name, timeFrame)
+
+		util.QueryProject(catalog, owner, name, timeFrame, ctx)
 	}
 
 	return nil
