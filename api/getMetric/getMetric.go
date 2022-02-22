@@ -26,6 +26,10 @@ type allMetricsResponse struct {
 	CommitCadence    singleMetricRepsone `json:"commitCadence"`
 	Contributors     singleMetricRepsone `json:"contributors"`
 	IssueClosureTime singleMetricRepsone `json:"issueClosureTime"`
+	RepoActivityScore singleMetricRepsone `json:"repoActivityScore"`
+	DependencyActivityScore singleMetricRepsone `json:"dependencyActivityScore"`
+	RepoLicenseScore singleMetricRepsone `json:"repoLicenseScore"`
+	DependencyLicenseScore singleMetricRepsone `json:"dependencyLicenseScore"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -84,7 +88,30 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			confidence = 100
 		case "issueClosureTime":
 			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+		case "repoActivityScore":
+			score := util.CalculateActivityScore(&repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "dependencyActivityScore":
+			score := util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "repoLicenseScore":
+			licenseMap := util.GetLicenseMap()
+			score := util.CalculateLicenseScore(&repo, licenseMap)
+
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "dependencyLicenseScore":
+			licenseMap := util.GetLicenseMap()
+			score := util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+
+			metricValue = score.Score
+			confidence = int(score.Confidence)
 		case "all":
+			licenseMap := util.GetLicenseMap()
+			var score util.Score
+
 			metricValue = float64(repo.Stars)
 			allMetrics.Stars = singleMetricRepsone{
 				Metric:     metricValue,
@@ -119,6 +146,38 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
 			allMetrics.IssueClosureTime = singleMetricRepsone{
 				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateActivityScore(&repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.RepoActivityScore = singleMetricRepsone{
+				Metric: metricValue,
+				Confidence: confidence,
+			}
+			
+			score = util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.DependencyActivityScore = singleMetricRepsone{
+				Metric: metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateLicenseScore(&repo, licenseMap)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.RepoLicenseScore = singleMetricRepsone{
+				Metric: metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.DependencyLicenseScore = singleMetricRepsone{
+				Metric: metricValue,
 				Confidence: confidence,
 			}
 
