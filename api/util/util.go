@@ -11,6 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,14 +23,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func getRepoFilter(owner string, name string) bson.D {
-	return bson.D{
-		{"$and",
-			bson.A{
-				bson.D{{"owner", owner}},
-				bson.D{{"name", name}},
-			}},
+func GetSqsSession(ctx context.Context) *sqs.Client {
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		panic(err)
 	}
+
+	return sqs.NewFromConfig(cfg)
 }
 
 func GetMongoClient() *mongo.Client {
@@ -46,6 +49,35 @@ func GetMongoClient() *mongo.Client {
 	return mongoClient
 }
 
+func getRepoFilter(owner string, name string) bson.D {
+	return bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"owner", owner}},
+				bson.D{{"name", name}},
+			}},
+	}
+}
+
+func getManyRepoFilter(repos []NameOwner) bson.D {
+	var filters bson.A
+	for _, repo := range repos {
+		currFilter := bson.D{
+			{"$and",
+				bson.A{
+					bson.D{{"owner", repo.Owner}},
+					bson.D{{"name", repo.Name}},
+				}},
+		}
+
+		filters = append(filters, currFilter)
+	}
+
+	return bson.D{
+		{"$or", filters},
+	}
+}
+
 func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mongo.SingleResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -53,10 +85,39 @@ func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mon
 	return collection.FindOne(ctx, getRepoFilter(owner, name))
 }
 
+func GetReposFromDB(collection *mongo.Collection, repos []NameOwner) []RepoInfo {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cur, err := collection.Find(ctx, getManyRepoFilter(repos))
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	var deps []RepoInfo
+
+	for cur.Next(context.TODO()) {
+		var dep RepoInfo
+		err := cur.Decode(&dep)
+
+		if err != nil {
+			log.Fatal("Error on Decoding the document", err)
+		}
+		deps = append(deps, dep)
+	}
+
+	return deps
+}
+
 func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 	res := GetRepoFromDB(collection, owner, name)
-	var score Score
+
+	var combinedScore Score
+	var repoScore Score
+	var depScore Score
+
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
 		log.Fatalln(err)
@@ -70,25 +131,27 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 			log.Fatalln(err)
 		}
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
+		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+
 		if repoInfo.UpdatedAt.After(expireDate) && repoInfo.ScoreStatus == 2 {
 			repoWeight := 0.75
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
-				score = Score{
-					Score:      (repoInfo.RepoActivityScore.Score * repoWeight) + (repoInfo.DependencyActivityScore.Score * dependencyWeight),
-					Confidence: (repoInfo.RepoActivityScore.Confidence * repoWeight) + (repoInfo.DependencyActivityScore.Confidence * dependencyWeight),
-				}
+				repoScore = CalculateActivityScore(&repoInfo, startPoint)
+				depScore = CalculateDependencyActivityScore(collection, &repoInfo, startPoint)
 			} else if scoreType == "license" {
-				score = Score{
-					Score:      (repoInfo.RepoLicenseScore.Score * repoWeight) + (repoInfo.DependencyLicenseScore.Score * dependencyWeight),
-					Confidence: (repoInfo.RepoLicenseScore.Confidence * repoWeight) + (repoInfo.DependencyLicenseScore.Confidence * dependencyWeight),
-				}
-
+				licenseMap := getLicenseMap()
+				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
+				depScore = CalculateDependencyLicenseScore(collection, &repoInfo, licenseMap)
+			}
+			combinedScore = Score{
+				Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
+				Confidence: (repoScore.Confidence * repoWeight) + (depScore.Confidence * dependencyWeight),
 			}
 		}
 	}
 
-	return score, repoInfo.ScoreStatus
+	return combinedScore, repoInfo.ScoreStatus
 }
 
 // Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
@@ -103,7 +166,6 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	repoInfo := RepoInfo{}
 	dataStatus := 0
 	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
-	log.Println("Investigating" + owner + "/" + name)
 
 	if res.Err() == mongo.ErrNoDocuments { // No data on repo
 		dataStatus = 2
@@ -128,8 +190,8 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	}
 
 	if dataStatus != 0 {
-		repoInfo.RepoActivityScore = CalculateRepoActivityScore(&repoInfo, startPoint)
-		repoInfo.RepoLicenseScore = CalculateRepoLicenseScore(&repoInfo, licenseMap)
+		repoInfo.RepoActivityScore = CalculateActivityScore(&repoInfo, startPoint)
+		repoInfo.RepoLicenseScore = CalculateLicenseScore(&repoInfo, licenseMap)
 	}
 
 	return RepoInfoMessage{
@@ -138,11 +200,7 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	}
 }
 
-func QueryProject(catalog string, owner string, name string, timeFrame int) {
-	mongoClient := GetMongoClient()
-	defer mongoClient.Disconnect(context.TODO())
-	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-
+func getLicenseMap() map[string]int {
 	// Get License Score map
 	licenseMap := make(map[string]int)
 
@@ -169,21 +227,78 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 		log.Fatal(err)
 	}
 
+	return licenseMap
+}
+
+func SubmitDependencies(ctx context.Context, catalog string, owner string, name string) error {
+	queueName := os.Getenv("QUERY_QUEUE")
+	fmt.Println(queueName)
+	client := GetSqsSession(ctx)
+
+	gQInput := &sqs.GetQueueUrlInput{
+		QueueName: &queueName,
+	}
+
+	result, err := client.GetQueueUrl(ctx, gQInput)
+	if err != nil {
+		log.Println("Got an error getting the queue URL:")
+		log.Println(err)
+		return err
+	}
+
+	queueURL := result.QueueUrl
+	timeFrame := "6"
+
+	sMInput := &sqs.SendMessageInput{
+		MessageAttributes: map[string]types.MessageAttributeValue{
+			"catalog": {
+				DataType:    aws.String("String"),
+				StringValue: &catalog,
+			},
+			"owner": {
+				DataType:    aws.String("String"),
+				StringValue: &owner,
+			},
+			"name": {
+				DataType:    aws.String("String"),
+				StringValue: &name,
+			},
+			"timeFrame": {
+				DataType:    aws.String("String"),
+				StringValue: &timeFrame, // temp hardcoded
+			},
+		},
+		MessageBody: aws.String("Repo to be queried"),
+		QueueUrl:    queueURL,
+	}
+
+	_, err = client.SendMessage(ctx, sMInput)
+	if err != nil {
+		fmt.Println("Got an error sending the message:")
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func QueryProject(catalog string, owner string, name string, timeFrame int, ctx context.Context) RepoInfo {
+	mongoClient := GetMongoClient()
+	defer mongoClient.Disconnect(ctx)
+	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+
+	licenseMap := getLicenseMap()
+
 	// get repo info message
 	repoInfoMessage := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
 
 	mainRepo := repoInfoMessage.RepoInfo
 	dataStatus := repoInfoMessage.DataStatus
 
-	updateDependencies(collection, &mainRepo, timeFrame, licenseMap)
-
-	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
-	mainRepo.DependencyActivityScore = CalculateDependencyActivityScore(collection, &mainRepo, startPoint)
 	mainRepo.ScoreStatus = 2
-	mainRepo.DependencyLicenseScore = CalculateDependencyLicenseScore(collection, &mainRepo)
 	syncRepoWithDB(collection, mainRepo, dataStatus)
 
-	log.Println("DONE!")
+	return mainRepo
 }
 
 func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, dataStatus int) {
@@ -208,7 +323,6 @@ func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFr
 	var repoMessages []RepoInfoMessage
 	dependencies := mainRepo.Dependencies
 	for _, dependency := range dependencies {
-		fmt.Println(dependency.Name)
 		repoMessages = append(repoMessages, addUpdateRepo(collection, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, licenseMap))
 
 		// cap on how many deps to query: testing only

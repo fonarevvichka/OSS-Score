@@ -45,7 +45,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no metric variable in path")
 	}
-	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, metric)
 
 	mongoClient := util.GetMongoClient()
 	defer mongoClient.Disconnect(context.TODO())

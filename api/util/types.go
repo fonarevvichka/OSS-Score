@@ -227,3 +227,8 @@ type Score struct {
 	Score      float64 `json:"score"`
 	Confidence float64 `json:"confidence"`
 }
+
+type NameOwner struct {
+	Owner string
+	Name  string
+}
