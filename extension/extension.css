@@ -14,7 +14,7 @@ button {
   }
   
   /* CSS FOR LOADING SVG */
-  .loading {
+  .loading-extension {
     height: 30%;
     width: 30%;
     display: -webkit-box;
@@ -30,14 +30,14 @@ button {
         -ms-flex-align: center;
             align-items: center; }
   
-  .machine {
+  .machine-extension {
     width: 60vmin;
     fill: black; }
   
-  .small-shadow, .medium-shadow, .large-shadow {
+  .small-shadow-extension, .medium-shadow-extension, .large-shadow-extension {
     fill: rgba(0, 0, 0, 0.05); }
   
-  .small {
+  .small-extension {
     -webkit-animation: counter-rotation 2.5s infinite linear;
        -moz-animation: counter-rotation 2.5s infinite linear;
          -o-animation: counter-rotation 2.5s infinite linear;
@@ -46,7 +46,7 @@ button {
         -ms-transform-origin: 100.136px 225.345px;
             transform-origin: 100.136px 225.345px; }
   
-  .small-shadow {
+  .small-shadow-extension {
     -webkit-animation: counter-rotation 2.5s infinite linear;
        -moz-animation: counter-rotation 2.5s infinite linear;
          -o-animation: counter-rotation 2.5s infinite linear;
@@ -55,7 +55,7 @@ button {
         -ms-transform-origin: 110.136px 235.345px;
             transform-origin: 110.136px 235.345px; }
   
-  .medium {
+  .medium-extension {
     -webkit-animation: rotation 3.75s infinite linear;
        -moz-animation: rotation 3.75s infinite linear;
          -o-animation: rotation 3.75s infinite linear;
@@ -64,7 +64,7 @@ button {
         -ms-transform-origin: 254.675px 379.447px;
             transform-origin: 254.675px 379.447px; }
   
-  .medium-shadow {
+  .medium-shadow-extension {
     -webkit-animation: rotation 3.75s infinite linear;
        -moz-animation: rotation 3.75s infinite linear;
          -o-animation: rotation 3.75s infinite linear;
@@ -73,7 +73,7 @@ button {
         -ms-transform-origin: 264.675px 389.447px;
             transform-origin: 264.675px 389.447px; }
   
-  .large {
+  .large-extension {
     -webkit-animation: counter-rotation 5s infinite linear;
        -moz-animation: counter-rotation 5s infinite linear;
          -o-animation: counter-rotation 5s infinite linear;
@@ -82,7 +82,7 @@ button {
         -ms-transform-origin: 461.37px 173.694px;
             transform-origin: 461.37px 173.694px; }
   
-  .large-shadow {  
+  .large-shadow-extension {  
     -webkit-animation: counter-rotation 5s infinite linear;
        -moz-animation: counter-rotation 5s infinite linear;
          -o-animation: counter-rotation 5s infinite linear;
