@@ -140,7 +140,7 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 				repoScore = CalculateActivityScore(&repoInfo, startPoint)
 				depScore = CalculateDependencyActivityScore(collection, &repoInfo, startPoint)
 			} else if scoreType == "license" {
-				licenseMap := getLicenseMap()
+				licenseMap := GetLicenseMap()
 				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
 				depScore = CalculateDependencyLicenseScore(collection, &repoInfo, licenseMap)
 			}
@@ -200,7 +200,7 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	}
 }
 
-func getLicenseMap() map[string]int {
+func GetLicenseMap() map[string]int {
 	// Get License Score map
 	licenseMap := make(map[string]int)
 
@@ -287,7 +287,7 @@ func QueryProject(catalog string, owner string, name string, timeFrame int, ctx 
 	defer mongoClient.Disconnect(ctx)
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 
-	licenseMap := getLicenseMap()
+	licenseMap := GetLicenseMap()
 
 	// get repo info message
 	repoInfoMessage := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
