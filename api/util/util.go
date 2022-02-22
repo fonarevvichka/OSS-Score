@@ -32,16 +32,6 @@ func GetSqsSession(ctx context.Context) *sqs.Client {
 	return sqs.NewFromConfig(cfg)
 }
 
-func getRepoFilter(owner string, name string) bson.D {
-	return bson.D{
-		{"$and",
-			bson.A{
-				bson.D{{"owner", owner}},
-				bson.D{{"name", name}},
-			}},
-	}
-}
-
 func GetMongoClient() *mongo.Client {
 	uri := os.Getenv("MONGO_URI")
 	// Create a new mongo_client and connect to the server
@@ -59,11 +49,65 @@ func GetMongoClient() *mongo.Client {
 	return mongoClient
 }
 
+func getRepoFilter(owner string, name string) bson.D {
+	return bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"owner", owner}},
+				bson.D{{"name", name}},
+			}},
+	}
+}
+
+func getManyRepoFilter(repos []NameOwner) bson.D {
+	var filters bson.A
+	for _, repo := range repos {
+		currFilter := bson.D{
+			{"$and",
+				bson.A{
+					bson.D{{"owner", repo.Owner}},
+					bson.D{{"name", repo.Name}},
+				}},
+		}
+
+		filters = append(filters, currFilter)
+	}
+
+	return bson.D{
+		{"$or", filters},
+	}
+}
+
 func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mongo.SingleResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	return collection.FindOne(ctx, getRepoFilter(owner, name))
+}
+
+func GetReposFromDB(collection *mongo.Collection, repos []NameOwner) []RepoInfo {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cur, err := collection.Find(ctx, getManyRepoFilter(repos))
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	var deps []RepoInfo
+
+	for cur.Next(context.TODO()) {
+		var dep RepoInfo
+		err := cur.Decode(&dep)
+
+		if err != nil {
+			log.Fatal("Error on Decoding the document", err)
+		}
+		deps = append(deps, dep)
+	}
+
+	return deps
 }
 
 func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {

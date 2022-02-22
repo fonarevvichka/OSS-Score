@@ -103,39 +103,32 @@ func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *Re
 	score := 0.0
 	confidence := 0.0
 	depsWithScores := 0
-	counter := 0
+	var repos []NameOwner
 
 	for _, dependency := range repoInfo.Dependencies {
-		counter++
-		if counter == 99 {
-			wg.Wait()
-			counter = 0
-		}
+		repos = append(repos, NameOwner{
+			Owner: dependency.Owner,
+			Name:  dependency.Name,
+		})
+	}
+	deps := GetReposFromDB(collection, repos)
 
+	for _, dep := range deps {
 		wg.Add(1)
-		go func(collection *mongo.Collection, dependency Dependency, startPoint time.Time) {
+		go func(collection *mongo.Collection, dep RepoInfo, startPoint time.Time) {
 			defer wg.Done()
-			res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
 
-			if res.Err() != mongo.ErrNoDocuments { // match in DB
-				var depInfo RepoInfo
-				err := res.Decode(&depInfo)
+			individualScore := CalculateActivityScore(&dep, startPoint)
+			score += individualScore.Score
+			confidence += individualScore.Confidence
 
-				if err != nil {
-					log.Fatalln(err)
-				}
-
-				individualScore := CalculateActivityScore(&depInfo, startPoint)
-				score += individualScore.Score
-				confidence += individualScore.Confidence
-
-				depsWithScores++
-			}
-		}(collection, dependency, startPoint)
+			depsWithScores++
+		}(collection, dep, startPoint)
 	}
 	totalDeps := len(repoInfo.Dependencies)
 
 	wg.Wait()
+
 	if depsWithScores != 0 {
 		score /= float64(depsWithScores)
 		confidence /= float64(depsWithScores)
