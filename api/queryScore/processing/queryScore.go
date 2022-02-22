@@ -18,9 +18,9 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		timeFrame, err := strconv.Atoi(*message.MessageAttributes["timeFrame"].StringValue)
 
 		if err != nil {
-			log.Fatalln("error converting time frame to int")
+			log.Fatalln("Error converting time frame to int")
 		}
-
+		
 		util.QueryProject(catalog, owner, name, timeFrame)
 	}
 

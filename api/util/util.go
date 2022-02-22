@@ -187,22 +187,6 @@ func QueryProject(catalog string, owner string, name string, timeFrame int) {
 	mainRepo := repoInfoMessage.RepoInfo
 	dataStatus := repoInfoMessage.DataStatus
 
-	// updateDependencies(collection, &mainRepo, timeFrame, licenseMap)
-
-	// startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
-	// mainRepo.DependencyActivityScore = CalculateDependencyActivityScore(collection, &mainRepo, startPoint)
-	// mainRepo.DependencyLicenseScore = CalculateDependencyLicenseScore(collection, &mainRepo)
-
-	//  TEMP MAX SCORE, 0 confidence before deps are calculated
-	mainRepo.DependencyActivityScore = Score{
-		Score:      100,
-		Confidence: 0,
-	}
-
-	mainRepo.DependencyLicenseScore = Score{
-		Score:      100,
-		Confidence: 0,
-	}
 	mainRepo.ScoreStatus = 2
 	syncRepoWithDB(collection, mainRepo, dataStatus)
 }
