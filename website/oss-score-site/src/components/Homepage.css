@@ -4,6 +4,9 @@ header {
     padding: 6px;
 }
 
+
+/*** form css ***/
+
 #search1, #search2 {
     border-style: solid;
     border-width: 1.5px;
@@ -30,36 +33,14 @@ header {
     padding: 3px;
 }
 
-#head2head {
-    
-}
-
-.stat-Header, .stat-subHeader, .stat {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-
-.repo1, .repo2 {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    margin-left: 20px;
-    margin-right: 20px;
-    padding: 5px;
-    border-width: 2px;
-    border-style: solid;
-    border-radius: 7px;
-    text-align: center;
-    flex: 1;
-}
+/*** head2head ***/
 
 .head2head {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    margin-left: 20%;
-    margin-right: 20%;
+    margin-left: 15%;
+    margin-right: 15%;
     margin-bottom: 20px;
     margin-top: 20px;
 }
@@ -68,25 +49,63 @@ header {
     padding: 10px;
 }
 
-.repo-header {
+.repo1-stats, .repo2-stats {
+    text-align: center;
+    flex: 1;
+    
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 20px;
+    margin-right: 20px;
+
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 7px;
+}
+
+.basic-info-display, .metrics-display {
     margin-top: 10px;
     margin-bottom: 10px;
 }
 
-.repo-subheader {
+.basic-info-title {
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.basic-info {
+    font-size: 24px;
+}
+
+.metric-category {
+    font-weight: bold;
+    font-size: 22px;
+}
+
+.metric-container {
     border-style: solid;
     border-radius: 7px;
-    text-align: center;
+
     margin-top: 5px;
     margin-bottom: 5px;
 }
 
-.subheaderTitle {
+.metric-container-title {
+    font-size: 20px;
     text-decoration: underline;
+}
+
+.submetric-container {
+    
+}
+
+.submetric-container-title {
+    font-size: 18px;
 }
 
 .metric {
     color: green;
+    font-size: 18px;
 }
 
 .confidence {
