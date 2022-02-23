@@ -34,7 +34,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	mongoClient := util.GetMongoClient()
-	score, scoreStatus := util.GetCachedScore(mongoClient, catalog, owner, name, scoreType, 6) // TEMP HARDCODED TO 12 MONTHS
+	score, scoreStatus := util.GetCachedScore(mongoClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
 	var message string
 	if scoreStatus == 0 {

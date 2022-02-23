@@ -97,6 +97,13 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 }
 
 func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) Score {
+	if len(repoInfo.Dependencies) == 0 {
+		return Score{
+			Score:      100,
+			Confidence: 100,
+		}
+	}
+
 	var wg sync.WaitGroup
 	score := 0.0
 	confidence := 0.0
@@ -109,6 +116,7 @@ func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *Re
 			Name:  dependency.Name,
 		})
 	}
+
 	deps := GetReposFromDB(collection, repos)
 
 	for _, dep := range deps {
@@ -208,6 +216,13 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 }
 
 func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) Score {
+	if len(repoInfo.Dependencies) == 0 {
+		return Score{
+			Score:      100,
+			Confidence: 100,
+		}
+	}
+
 	var wg sync.WaitGroup
 	score := 0.0
 	confidence := 0.0
