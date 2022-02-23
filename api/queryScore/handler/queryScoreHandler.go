@@ -35,6 +35,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no name variable in path")
 	}
 
+	log.Println("Ready to submit request for ", owner, "/", name)
 	client := util.GetSqsSession(ctx)
 
 	gQInput := &sqs.GetQueueUrlInput{
@@ -82,7 +83,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	message, _ := json.Marshal(response{Message: "Score request accepted"})
-	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(message)}, nil
+	resp := events.APIGatewayProxyResponse{StatusCode: 202, Headers: make(map[string]string), Body: string(message)}
+	resp.Headers["Access-Control-Allow-Methods"] = "OPTIONS,POST,GET"
+	resp.Headers["Access-Control-Allow-Headers"] = "Content-Type"
+	resp.Headers["Access-Control-Allow-Origin"] = "*"
+
+	return resp, nil
 }
 
 func main() {
