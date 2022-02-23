@@ -247,7 +247,7 @@ func SubmitDependencies(ctx context.Context, catalog string, owner string, name 
 	}
 
 	queueURL := result.QueueUrl
-	timeFrame := "6"
+	timeFrame := "12"
 
 	sMInput := &sqs.SendMessageInput{
 		MessageAttributes: map[string]types.MessageAttributeValue{
