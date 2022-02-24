@@ -23,6 +23,7 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			log.Fatalln("Error converting time frame to int")
 		}
 
+		util.UpdateScoreState(ctx, catalog, owner, name, 2)
 		repo = util.QueryProject(catalog, owner, name, timeFrame, ctx)
 	}
 
