@@ -20,12 +20,16 @@ type singleMetricRepsone struct {
 }
 
 type allMetricsResponse struct {
-	Stars            singleMetricRepsone `json:"stars"`
-	ReleaseCadence   singleMetricRepsone `json:"releaseCadence"`
-	AgeLastRelease   singleMetricRepsone `json:"ageLastRelease"`
-	CommitCadence    singleMetricRepsone `json:"commitCadence"`
-	Contributors     singleMetricRepsone `json:"contributors"`
-	IssueClosureTime singleMetricRepsone `json:"issueClosureTime"`
+	Stars                   singleMetricRepsone `json:"stars"`
+	ReleaseCadence          singleMetricRepsone `json:"releaseCadence"`
+	AgeLastRelease          singleMetricRepsone `json:"ageLastRelease"`
+	CommitCadence           singleMetricRepsone `json:"commitCadence"`
+	Contributors            singleMetricRepsone `json:"contributors"`
+	IssueClosureTime        singleMetricRepsone `json:"issueClosureTime"`
+	RepoActivityScore       singleMetricRepsone `json:"repoActivityScore"`
+	DependencyActivityScore singleMetricRepsone `json:"dependencyActivityScore"`
+	RepoLicenseScore        singleMetricRepsone `json:"repoLicenseScore"`
+	DependencyLicenseScore  singleMetricRepsone `json:"dependencyLicenseScore"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -45,7 +49,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no metric variable in path")
 	}
-	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, metric)
 
 	mongoClient := util.GetMongoClient()
 	defer mongoClient.Disconnect(context.TODO())
@@ -66,7 +69,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if err != nil {
 			log.Fatalln(err)
 		}
-		timeFrame := 6
+		timeFrame := 12
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
 		switch metric {
@@ -85,7 +88,30 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			confidence = 100
 		case "issueClosureTime":
 			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+		case "repoActivityScore":
+			score := util.CalculateActivityScore(&repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "dependencyActivityScore":
+			score := util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "repoLicenseScore":
+			licenseMap := util.GetLicenseMap()
+			score := util.CalculateLicenseScore(&repo, licenseMap)
+
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "dependencyLicenseScore":
+			licenseMap := util.GetLicenseMap()
+			score := util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+
+			metricValue = score.Score
+			confidence = int(score.Confidence)
 		case "all":
+			licenseMap := util.GetLicenseMap()
+			var score util.Score
+
 			metricValue = float64(repo.Stars)
 			allMetrics.Stars = singleMetricRepsone{
 				Metric:     metricValue,
@@ -123,6 +149,38 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				Confidence: confidence,
 			}
 
+			score = util.CalculateActivityScore(&repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.RepoActivityScore = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.DependencyActivityScore = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateLicenseScore(&repo, licenseMap)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.RepoLicenseScore = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.DependencyLicenseScore = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
 		default:
 			message = fmt.Sprintf("Metric querying not yet supported for %s", metric)
 		}
@@ -138,7 +196,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		response, _ = json.Marshal(singleMetricRepsone{Message: message, Metric: metricValue, Confidence: confidence})
 	}
 
-	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(response)}, nil
+	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(response)}
+	resp.Headers["Access-Control-Allow-Origin"] = "*"
+	return resp, nil
 }
 
 func main() {

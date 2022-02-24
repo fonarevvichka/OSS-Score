@@ -1,35 +1,27 @@
 package main
 
 import (
+	"api/util"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-
-	"api/util"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/lambda"
-	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
 type response struct {
 	Message string
 }
 
-func lambdaSession(ctx context.Context) *lambda.Client {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	return lambda.NewFromConfig(cfg)
-}
-
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	queueName := os.Getenv("QUERY_QUEUE")
 	catalog, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
@@ -42,35 +34,62 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no name variable in path")
 	}
-	fmt.Printf("%s,%s,%s\n", catalog, owner, name)
 
-	client := lambdaSession(ctx)
-	func_name := "queryScore"
-	repoInfo := util.RepoRequestInfo{
-		Catalog:   catalog,
-		Owner:     owner,
-		Name:      name,
-		TimeFrame: 6, //temp hardcoded
+	client := util.GetSqsSession(ctx)
+
+	gQInput := &sqs.GetQueueUrlInput{
+		QueueName: &queueName,
 	}
 
-	payload, err := json.Marshal(repoInfo)
+	result, err := client.GetQueueUrl(ctx, gQInput)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Got an error getting the queue URL:")
+		log.Println(err)
+		return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Error while getting the queue URL")}, err
 	}
 
-	params := lambda.InvokeInput{
-		FunctionName:   &func_name,
-		Payload:        payload,
-		InvocationType: types.InvocationTypeEvent,
+	queueURL := result.QueueUrl
+	messageBody := fmt.Sprintf("%s/%s", owner, name)
+	sMInput := &sqs.SendMessageInput{
+		MessageGroupId: aws.String(messageBody),
+		MessageAttributes: map[string]types.MessageAttributeValue{
+			"catalog": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(catalog),
+			},
+			"owner": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(owner),
+			},
+			"name": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(name),
+			},
+			"timeFrame": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String("12"), // temp hardcoded
+			},
+		},
+		MessageBody: aws.String(messageBody),
+		QueueUrl:    queueURL,
 	}
 
-	_, invoke_err := client.Invoke(ctx, &params)
-	if invoke_err != nil {
-		log.Fatalln(err)
+	_, err = client.SendMessage(ctx, sMInput)
+	if err != nil {
+		fmt.Println("Got an error sending the message:")
+		fmt.Println(err)
+		return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Got an error sending the message:")}, err
 	}
 
-	message, _ := json.Marshal(response{Message: "Score request accepted"})
-	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(message)}, nil
+	util.UpdateScoreState(ctx, catalog, owner, name, 1)
+
+	message, _ := json.Marshal(response{Message: "Score calculation request queued"})
+	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(message)}
+	resp.Headers["Access-Control-Allow-Methods"] = "OPTIONS,POST,GET"
+	resp.Headers["Access-Control-Allow-Headers"] = "Content-Type"
+	resp.Headers["Access-Control-Allow-Origin"] = "*"
+
+	return resp, nil
 }
 
 func main() {

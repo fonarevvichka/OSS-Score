@@ -1,8 +1,8 @@
 package util
 
 import (
-	"log"
 	"math"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -90,7 +90,6 @@ func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.
 	timeFrame := time.Since(startPoint).Hours() / 24.0 / 30.0
 
 	return time.Since(LatestRelease).Hours() / 24.0 / 7.0, releaseCounter / timeFrame, 100
-
 }
 
 func minMaxScale(min float64, max float64, val float64) float64 {
@@ -98,31 +97,60 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 }
 
 func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) Score {
-	score := 0.0
-	confidence := 0.0
-	for _, dependency := range repoInfo.Dependencies {
-		res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
-
-		if res.Err() != mongo.ErrNoDocuments { // match in DB
-			var depInfo RepoInfo
-			err := res.Decode(&depInfo)
-
-			if err != nil {
-				log.Fatalln(err)
-			}
-			score += depInfo.RepoActivityScore.Score
-			confidence += depInfo.RepoActivityScore.Confidence
+	if len(repoInfo.Dependencies) == 0 {
+		return Score{
+			Score:      100,
+			Confidence: 100,
 		}
 	}
-	numDeps := float64(len(repoInfo.Dependencies))
+
+	var wg sync.WaitGroup
+	score := 0.0
+	confidence := 0.0
+	depsWithScores := 0
+
+	var repos []NameOwner
+	for _, dependency := range repoInfo.Dependencies {
+		repos = append(repos, NameOwner{
+			Owner: dependency.Owner,
+			Name:  dependency.Name,
+		})
+	}
+
+	deps := GetReposFromDB(collection, repos)
+
+	for _, dep := range deps {
+		wg.Add(1)
+		go func(collection *mongo.Collection, dep RepoInfo, startPoint time.Time) {
+			defer wg.Done()
+
+			individualScore := CalculateActivityScore(&dep, startPoint)
+			score += individualScore.Score
+			confidence += individualScore.Confidence
+
+			depsWithScores++
+		}(collection, dep, startPoint)
+	}
+	totalDeps := len(repoInfo.Dependencies)
+
+	wg.Wait()
+
+	if depsWithScores != 0 {
+		score /= float64(depsWithScores)
+		confidence /= float64(depsWithScores)
+		confidence *= (float64(depsWithScores) / float64(totalDeps))
+	} else {
+		score = 100
+		confidence = 0
+	}
 
 	return Score{
-		Score:      score / numDeps,
-		Confidence: confidence / numDeps,
+		Score:      score,
+		Confidence: confidence,
 	}
 }
 
-func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
+func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	// Weights
 	commitWeight := 0.25
 	contributorWeight := 0.25
@@ -156,6 +184,7 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score 
 		(issueWeight * issue_score)
 
 	confidence := ((contributorWeight + commitWeight) * float64(commitConfidence)) + (issueWeight * float64(issueConfidence)) + (releaseWeight * float64(releaseConfidence))
+
 	repoScore := Score{
 		Score:      100 * score,
 		Confidence: confidence,
@@ -164,7 +193,7 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score 
 	return repoScore
 }
 
-func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
+func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
 	licenseScore := 0
 	confidence := 100
 
@@ -174,6 +203,7 @@ func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Sc
 
 	// Zero confidence if we can't find the license
 	if licenseScore == 0 {
+		licenseScore = 100
 		confidence = 0
 	}
 
@@ -185,31 +215,54 @@ func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Sc
 	return repoScore
 }
 
-func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo) Score {
-	score := 0.0
-	confidence := 0.0
-
-	for _, dependency := range repoInfo.Dependencies {
-		res := GetRepoFromDB(collection, dependency.Owner, dependency.Name)
-
-		if res.Err() != mongo.ErrNoDocuments { // match in DB
-			var depInfo RepoInfo
-			err := res.Decode(&depInfo)
-
-			if err != nil {
-				log.Fatalln(err)
-			}
-			score += depInfo.RepoLicenseScore.Score
-			confidence += depInfo.RepoLicenseScore.Confidence
+func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) Score {
+	if len(repoInfo.Dependencies) == 0 {
+		return Score{
+			Score:      100,
+			Confidence: 100,
 		}
 	}
 
-	numDeps := float64(len(repoInfo.Dependencies))
+	var wg sync.WaitGroup
+	score := 0.0
+	confidence := 0.0
+	depsWithScores := 0
 
-	depScore := Score{
-		Score:      score / numDeps,
-		Confidence: confidence / numDeps,
+	var repos []NameOwner
+	for _, dependency := range repoInfo.Dependencies {
+		repos = append(repos, NameOwner{
+			Owner: dependency.Owner,
+			Name:  dependency.Name,
+		})
+	}
+	deps := GetReposFromDB(collection, repos)
+
+	for _, dep := range deps {
+		wg.Add(1)
+		go func(collection *mongo.Collection, dep RepoInfo) {
+			defer wg.Done()
+
+			individualScore := CalculateLicenseScore(&dep, licenseMap)
+			score += individualScore.Score
+			confidence += individualScore.Confidence
+
+			depsWithScores++
+		}(collection, dep)
+	}
+	totalDeps := len(repoInfo.Dependencies)
+
+	wg.Wait()
+
+	if depsWithScores != 0 {
+		score /= float64(depsWithScores)
+		confidence /= float64(depsWithScores) * (float64(depsWithScores) / float64(totalDeps))
+	} else {
+		score = 100
+		confidence = 0
 	}
 
-	return depScore
+	return Score{
+		Score:      score,
+		Confidence: confidence,
+	}
 }
