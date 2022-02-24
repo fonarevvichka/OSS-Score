@@ -40,7 +40,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if scoreStatus == 0 {
 		message = "Score not yet calculated"
 	} else if scoreStatus == 1 {
-		message = "Score calculation in progress"
+		message = "Score calculation queued"
+	} else if scoreStatus == 2 {
+		message = "Score calculation in progres"
 	} else {
 		message = "Score ready"
 	}

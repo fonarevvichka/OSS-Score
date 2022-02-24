@@ -124,7 +124,7 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 	}
 	var repoInfo RepoInfo
 
-	if res.Err() != mongo.ErrNoDocuments { // No match in DB
+	if res.Err() != mongo.ErrNoDocuments { // Match in DB
 		err := res.Decode(&repoInfo)
 
 		if err != nil {
@@ -133,7 +133,7 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-		if repoInfo.UpdatedAt.After(expireDate) && repoInfo.ScoreStatus == 2 {
+		if repoInfo.UpdatedAt.After(expireDate) && repoInfo.Status == 3 {
 			repoWeight := 0.75
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
@@ -151,7 +151,7 @@ func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, nam
 		}
 	}
 
-	return combinedScore, repoInfo.ScoreStatus
+	return combinedScore, repoInfo.Status
 }
 
 // Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
@@ -164,11 +164,12 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	res := GetRepoFromDB(collection, owner, name)
 
 	repoInfo := RepoInfo{}
-	dataStatus := 0
+	insert := false
+
 	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
 	if res.Err() == mongo.ErrNoDocuments { // No data on repo
-		dataStatus = 2
+		insert = true
 		log.Println(owner + "/" + name + " Not in DB, need to do full query")
 
 		repoInfo = QueryGithub(catalog, owner, name, startPoint)
@@ -181,22 +182,19 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 
 		// Repo data expired
 		if repoInfo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) {
-			dataStatus = 1
 
 			log.Println(owner + "/" + name + " Need to do partial update")
-			repoInfo = QueryGithub(catalog, owner, name, repoInfo.UpdatedAt) // pull only needed data
+			if repoInfo.UpdatedAt.After(startPoint) {
+				startPoint = repoInfo.UpdatedAt
+			}
+			repoInfo = QueryGithub(catalog, owner, name, startPoint) // pull only needed data
 			log.Println(owner + "/" + name + " Done querying github")
 		}
 	}
 
-	if dataStatus != 0 {
-		repoInfo.RepoActivityScore = CalculateActivityScore(&repoInfo, startPoint)
-		repoInfo.RepoLicenseScore = CalculateLicenseScore(&repoInfo, licenseMap)
-	}
-
 	return RepoInfoMessage{
-		RepoInfo:   repoInfo,
-		DataStatus: dataStatus,
+		RepoInfo: repoInfo,
+		Insert:   insert,
 	}
 }
 
@@ -282,6 +280,34 @@ func SubmitDependencies(ctx context.Context, catalog string, owner string, name 
 	return nil
 }
 
+func UpdateScoreState(ctx context.Context, catalog string, owner string, name string, status int) {
+	mongoClient := GetMongoClient()
+	defer mongoClient.Disconnect(ctx)
+	collection := mongoClient.Database("OSS-Score").Collection(catalog)
+	res := GetRepoFromDB(collection, owner, name)
+
+	var repo RepoInfo
+	new := false
+
+	if res.Err() == mongo.ErrNoDocuments { // No match in DB
+		repo = RepoInfo{ // this is bad, will break, need to get repo from db first
+			Catalog: catalog,
+			Owner:   owner,
+			Name:    name,
+			Status:  status,
+		}
+		new = true
+	} else {
+		err := res.Decode(&repo)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		repo.Status = status
+	}
+
+	syncRepoWithDB(collection, repo, new)
+}
+
 func QueryProject(catalog string, owner string, name string, timeFrame int, ctx context.Context) RepoInfo {
 	mongoClient := GetMongoClient()
 	defer mongoClient.Disconnect(ctx)
@@ -293,82 +319,29 @@ func QueryProject(catalog string, owner string, name string, timeFrame int, ctx 
 	repoInfoMessage := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
 
 	mainRepo := repoInfoMessage.RepoInfo
-	dataStatus := repoInfoMessage.DataStatus
+	insert := repoInfoMessage.Insert
 
-	mainRepo.ScoreStatus = 2
-	syncRepoWithDB(collection, mainRepo, dataStatus)
+	mainRepo.Status = 3
+	syncRepoWithDB(collection, mainRepo, insert)
 
 	return mainRepo
 }
 
-func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, dataStatus int) {
-	if dataStatus == 1 {
-		insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
-		// log.Println(owner + "/" + name + " Updating Data")
-		filter := getRepoFilter(repo.Owner, repo.Name)
-		_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else if dataStatus == 2 {
+func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, new bool) {
+	if new {
 		_, err := collection.InsertOne(context.TODO(), repo)
 		if err != nil {
 			log.Println(repo.Owner + "/" + repo.Name)
 			log.Fatal(err)
 		}
-	}
-}
-
-func updateDependencies(collection *mongo.Collection, mainRepo *RepoInfo, timeFrame int, licenseMap map[string]int) {
-	var repoMessages []RepoInfoMessage
-	dependencies := mainRepo.Dependencies
-	for _, dependency := range dependencies {
-		repoMessages = append(repoMessages, addUpdateRepo(collection, dependency.Catalog, dependency.Owner, dependency.Name, timeFrame, licenseMap))
-
-		// cap on how many deps to query: testing only
-		// if counter == 25 {
-		// 	break
-		// }
-	}
-
-	var newDeps []interface{}
-	var updatedDeps []RepoInfo
-
-	for _, repoMessage := range repoMessages {
-		if repoMessage.DataStatus == 1 {
-			updatedDeps = append(updatedDeps, repoMessage.RepoInfo)
-		} else if repoMessage.DataStatus == 2 {
-			newDeps = append(newDeps, repoMessage.RepoInfo)
+	} else {
+		insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
+		filter := getRepoFilter(repo.Owner, repo.Name)
+		_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
-
-	log.Println("Done querying all deps")
-	//TODO: Investigate BulkWrite operation
-	var wg sync.WaitGroup
-	if len(newDeps) != 0 {
-		log.Println("inserting new deps")
-		wg.Add(1)
-		go func(collection *mongo.Collection, deps []interface{}) {
-			defer wg.Done()
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			defer cancel()
-			collection.InsertMany(ctx, newDeps)
-		}(collection, newDeps)
-	}
-
-	for _, dep := range updatedDeps {
-		wg.Add(1)
-		//TODO: Should use syncRepoWithDB
-		go func(collection *mongo.Collection, dep RepoInfo) {
-			defer wg.Done()
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			collection.UpdateOne(ctx, getRepoFilter(dep.Owner, dep.Name), dep)
-		}(collection, dep)
-
-	}
-
-	wg.Wait()
 }
 
 func QueryGithub(catalog string, owner string, name string, startPoint time.Time) RepoInfo {
