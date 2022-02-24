@@ -50,28 +50,28 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	queueURL := result.QueueUrl
-	timeFrame := "12"
+	messageBody := fmt.Sprintf("%s/%s", owner, name)
 	sMInput := &sqs.SendMessageInput{
-		MessageGroupId: aws.String("handler"),
+		MessageGroupId: aws.String(messageBody),
 		MessageAttributes: map[string]types.MessageAttributeValue{
 			"catalog": {
 				DataType:    aws.String("String"),
-				StringValue: &catalog,
+				StringValue: aws.String(catalog),
 			},
 			"owner": {
 				DataType:    aws.String("String"),
-				StringValue: &owner,
+				StringValue: aws.String(owner),
 			},
 			"name": {
 				DataType:    aws.String("String"),
-				StringValue: &name,
+				StringValue: aws.String(name),
 			},
 			"timeFrame": {
 				DataType:    aws.String("String"),
-				StringValue: &timeFrame, // temp hardcoded
+				StringValue: aws.String("12"), // temp hardcoded
 			},
 		},
-		MessageBody: aws.String("Repo to be queried"),
+		MessageBody: aws.String(messageBody),
 		QueueUrl:    queueURL,
 	}
 
@@ -82,7 +82,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Got an error sending the message:")}, err
 	}
 
-	message, _ := json.Marshal(response{Message: "Score request accepted"})
+	util.UpdateScoreState(ctx, catalog, owner, name, 1)
+
+	message, _ := json.Marshal(response{Message: "Score calculation request queued"})
 	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(message)}
 	resp.Headers["Access-Control-Allow-Methods"] = "OPTIONS,POST,GET"
 	resp.Headers["Access-Control-Allow-Headers"] = "Content-Type"
