@@ -110,8 +110,7 @@ func GetReposFromDB(collection *mongo.Collection, repos []NameOwner) []RepoInfo 
 	return deps
 }
 
-func GetCachedScore(mongoClient *mongo.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
-	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+func GetScore(collection *mongo.Collection, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
 	res := GetRepoFromDB(collection, owner, name)
 
 	var combinedScore Score
@@ -280,10 +279,7 @@ func SubmitDependencies(ctx context.Context, catalog string, owner string, name 
 	return nil
 }
 
-func UpdateScoreState(ctx context.Context, catalog string, owner string, name string, status int) {
-	mongoClient := GetMongoClient()
-	defer mongoClient.Disconnect(ctx)
-	collection := mongoClient.Database("OSS-Score").Collection(catalog)
+func UpdateScoreState(collection *mongo.Collection, catalog string, owner string, name string, status int) {
 	res := GetRepoFromDB(collection, owner, name)
 
 	var repo RepoInfo
@@ -308,11 +304,7 @@ func UpdateScoreState(ctx context.Context, catalog string, owner string, name st
 	syncRepoWithDB(collection, repo, new)
 }
 
-func QueryProject(catalog string, owner string, name string, timeFrame int, ctx context.Context) RepoInfo {
-	mongoClient := GetMongoClient()
-	defer mongoClient.Disconnect(ctx)
-	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-
+func QueryProject(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) RepoInfo {
 	licenseMap := GetLicenseMap()
 
 	// get repo info message
