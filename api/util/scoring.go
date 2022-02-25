@@ -218,8 +218,8 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) Score {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
-			Score:      100,
-			Confidence: 100,
+			Score: 100,
+			// Confidence: 100,
 		}
 	}
 

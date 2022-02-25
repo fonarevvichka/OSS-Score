@@ -2,19 +2,26 @@ package util
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"sync"
+
+	"golang.org/x/sync/errgroup"
 )
 
 const GitUrl = "https://api.github.com/graphql"
 
-func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
-	query := importQuery("./queries/repoInfo.graphql") //TODO: Make this a an env var probably
+func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
+	query, err := importQuery("./queries/repoInfo.graphql") //TODO: Make this a an env var probably
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
 	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", repo.Owner, repo.Name)
 
 	postBody, _ := json.Marshal(map[string]string{
@@ -25,26 +32,32 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 
 	postRequest, err := http.NewRequest("POST", GitUrl, responseBody)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return err
 	}
+
 	resp, err := client.Do(postRequest)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
 	if resp.StatusCode != 200 {
 		log.Println(resp.Status)
 		log.Println(resp.Header)
-		log.Fatalln("Error querying github")
+		log.Println(resp.Body)
+		log.Println("Error querying github for core repo info")
+		return fmt.Errorf("failed to query github: core repo info\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
 	}
 
-	//TODO: NEED TO CHECK STATUS CODES HERE VERY IMPORTANT
-	if err != nil {
-		log.Fatalln(err)
-	}
 	defer resp.Body.Close()
 
 	var data RepoInfoResponse
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&data)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return err
 	}
 
 	var languages []string
@@ -58,10 +71,17 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) {
 	repo.Stars = data.Data.Repository.StargazerCount
 	repo.DefaultBranch = data.Data.Repository.DefaultBranchRef.Name
 	repo.Languages = append(repo.Languages, languages...)
+
+	return nil
 }
 
-func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
-	query := importQuery("./queries/dependencies.graphql") //TODO: Make this a an env var probably
+func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
+	query, err := importQuery("./queries/dependencies.graphql")
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
 	var graphCursor string
 	var dependencyCursor string
 
@@ -82,26 +102,32 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 
 		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 
 		post_request.Header.Add("Accept", "application/vnd.github.hawkgirl-preview+json")
 		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
 		if resp.StatusCode != 200 {
 			log.Println(resp.Status)
 			log.Println(resp.Header)
-			log.Fatalln("Error querying github")
+			log.Println(resp.Body)
+			log.Println("Error querying github for dependencies")
+			return fmt.Errorf("failed to query github: dependencies\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
 		}
 
-		if err != nil {
-			log.Fatalln(err)
-		}
 		defer resp.Body.Close()
 
 		decoder := json.NewDecoder(resp.Body)
 		err = decoder.Decode(&data)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 
 		if data.Data.Repository.DependencyGraphManifests.TotalCount == 0 {
@@ -128,32 +154,41 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) {
 	// }
 
 	repo.Dependencies = append(repo.Dependencies, dependencies...)
+
+	return nil
 }
 
-func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) bool {
+func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?", repo.Owner, repo.Name)
 	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
 
 	responseBody := bytes.NewBuffer(make([]byte, 0))
 	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return false, err
 	}
+
 	resp, err := client.Do(request)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return false, err
 	}
+
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		log.Println(resp.Status)
 		log.Println(resp.Header)
-		log.Fatalln("Error querying github")
+		log.Println(resp.Body)
+		log.Println("Error querying github for issue page")
+		return false, fmt.Errorf("failed to query github: issue page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
 	}
 
 	issues := []IssueResponseRest{}
 	decoder := json.NewDecoder(resp.Body)
 	if decoder.Decode(&issues) != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return false, err
 	}
 
 	// Pull out issue info
@@ -175,62 +210,74 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 		}
 	}
 
-	return len(issues) == 100
+	return len(issues) == 100, nil
 }
 
-func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) {
+func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) error {
+	errs, _ := errgroup.WithContext(context.Background())
 	closedHasNextPage := true
 	openHasNextPage := true
 	closePage := 1
 	openPage := 1
 
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func(client *http.Client, repo *RepoInfo, state string, page int, startDate string) {
-		defer wg.Done()
+	errs.Go(func() error {
+		var err error
 		for closedHasNextPage {
-			closedHasNextPage = getGithubIssuePage(client, repo, state, closePage, startDate)
+			closedHasNextPage, err = getGithubIssuePage(client, repo, "closed", closePage, startDate)
+			if err != nil {
+				return err
+			}
 			closePage += 1
 		}
-	}(client, repo, "closed", closePage, startDate)
+		return nil
+	})
 
-	wg.Add(1)
-	go func(client *http.Client, repo *RepoInfo, state string, page int, startDate string) {
-		defer wg.Done()
+	errs.Go(func() error {
+		var err error
 		for openHasNextPage {
-			openHasNextPage = getGithubIssuePage(client, repo, "open", openPage, startDate)
+			openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
+			if err != nil {
+				return err
+			}
 			openPage += 1
 		}
-	}(client, repo, "open", openPage, startDate)
+		return nil
+	})
 
-	wg.Wait()
+	return errs.Wait()
 }
 
-func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) bool {
+func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) (bool, error) {
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits?", repo.Owner, repo.Name)
 	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate)
 
 	responseBody := bytes.NewBuffer(make([]byte, 0))
 	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return false, err
 	}
+
 	resp, err := client.Do(request)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return false, err
 	}
+
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		log.Println(resp.Status)
 		log.Println(resp.Header)
-		log.Fatalln("Error querying github")
+		log.Println(resp.Body)
+		log.Println("Error querying github for core commit page")
+		return false, fmt.Errorf("failed to query github: commit page\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
 	}
 
 	commits := []CommitResponseRest{}
 	decoder := json.NewDecoder(resp.Body)
 	if decoder.Decode(&commits) != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return false, err
 	}
 
 	for _, commitResponse := range commits {
@@ -242,22 +289,57 @@ func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDa
 		repo.Commits = append(repo.Commits, newCommit)
 	}
 
-	return len(commits) == 100
+	return len(commits) == 100, nil
 }
 
-func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) {
+func CheckRepoAccess(client *http.Client, owner string, name string) (bool, error) {
+	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
+
+	responseBody := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrl, responseBody)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) error {
 	hasNextPage := true
+	var err error
 	page := 1
 
 	for hasNextPage {
-		hasNextPage = getGithubCommitsPage(client, repo, page, startDate)
+		hasNextPage, err = getGithubCommitsPage(client, repo, page, startDate)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 		page += 1
 	}
+
+	return nil
 }
 
 // deprecated
-func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate string) {
-	query := importQuery("./queries/issues.graphql") //TODO: Make this a an env var probably
+func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
+	query, err := importQuery("./queries/issues.graphql") //TODO: Make this a an env var probably
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 
 	hasNextPage := true
 	cursor := "init"
@@ -280,24 +362,31 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 
 		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 
 		resp, err := client.Do(post_request)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 		defer resp.Body.Close()
+
 		if resp.StatusCode != 200 {
 			log.Println(resp.Status)
 			log.Println(resp.Header)
-			log.Fatalln("Error querying github")
+			log.Println(resp.Body)
+			log.Println("Error querying github for issues")
+			return fmt.Errorf("failed to query github: issues\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
 		}
 
 		decoder := json.NewDecoder(resp.Body)
 		if decoder.Decode(&data) != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
+
 		for _, node := range data.Data.Repository.Issues.Edges {
 			if node.Node.Closed {
 				issue := ClosedIssue{
@@ -323,11 +412,17 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 
 	repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, openIssues...)
 	repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, closedIssues...)
+
+	return nil
 }
 
 // deprecated
-func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
-	query := importQuery("./queries/commits.graphql") //TODO: Make this a an env var probably
+func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
+	query, err := importQuery("./queries/commits.graphql") //TODO: Make this a an env var probably
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 
 	hasNextPage := true
 	cursor := "init"
@@ -350,23 +445,29 @@ func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
 
 		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 
 		resp, err := client.Do(post_request)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 		defer resp.Body.Close()
+
 		if resp.StatusCode != 200 {
 			log.Println(resp.Status)
 			log.Println(resp.Header)
-			log.Fatalln("Error querying github")
+			log.Println(resp.Body)
+			log.Println("Error querying github for commits")
+			return fmt.Errorf("failed to query github: commits\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
 		}
 
 		decoder := json.NewDecoder(resp.Body)
 		if decoder.Decode(&data) != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 
 		for _, node := range data.Data.Repository.Ref.Target.History.Edges {
@@ -378,10 +479,16 @@ func GetGithubCommits(client *http.Client, repo *RepoInfo, startDate string) {
 		hasNextPage = data.Data.Repository.Ref.Target.History.PageInfo.HasNextPage
 		cursor = data.Data.Repository.Ref.Target.History.PageInfo.EndCursor
 	}
+
+	return nil
 }
 
-func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) {
-	query := importQuery("./queries/releases.graphql") //TODO: Make this a an env var probably
+func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) error {
+	query, err := importQuery("./queries/releases.graphql") //TODO: Make this a an env var probably
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 
 	hasNextPage := true
 	cursor := "init"
@@ -404,23 +511,29 @@ func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) {
 
 		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 
 		resp, err := client.Do(post_request)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 		defer resp.Body.Close()
+
 		if resp.StatusCode != 200 {
 			log.Println(resp.Status)
 			log.Println(resp.Header)
-			log.Fatalln("Error querying github")
+			log.Println(resp.Body)
+			log.Println("Error querying github for releases")
+			return fmt.Errorf("failed to query github: releases\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
 		}
 
 		decoder := json.NewDecoder(resp.Body)
 		if decoder.Decode(&data) != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return err
 		}
 
 		for _, node := range data.Data.Repository.Releases.Edges {
@@ -431,14 +544,17 @@ func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) {
 		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
 		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
 	}
+
+	return nil
 }
 
 // Takes file path and reads in the query from it
-func importQuery(filename string) string {
+func importQuery(filename string) (string, error) {
 	file, err := os.Open(filename)
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return "", err
 	}
 
 	defer file.Close()
@@ -446,8 +562,9 @@ func importQuery(filename string) string {
 	query, err := ioutil.ReadAll(file)
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return "", err
 	}
 
-	return string(query[:]) // converts byte array to string
+	return string(query[:]), nil // converts byte array to string
 }
