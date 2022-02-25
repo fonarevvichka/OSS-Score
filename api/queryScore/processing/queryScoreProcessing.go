@@ -25,7 +25,7 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 
 		mongoClient := util.GetMongoClient()
-		defer mongoClient.Disconnect(context.TODO())
+		defer mongoClient.Disconnect(ctx)
 		collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 		util.UpdateScoreState(collection, catalog, owner, name, 2)
 		repo, err = util.QueryProject(collection, catalog, owner, name, timeFrame)

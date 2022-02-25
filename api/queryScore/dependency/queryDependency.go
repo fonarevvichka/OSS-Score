@@ -12,7 +12,7 @@ import (
 
 func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	mongoClient := util.GetMongoClient()
-	defer mongoClient.Disconnect(context.TODO())
+	defer mongoClient.Disconnect(ctx)
 	for _, message := range sqsEvent.Records {
 		catalog := *message.MessageAttributes["catalog"].StringValue
 		owner := *message.MessageAttributes["owner"].StringValue
