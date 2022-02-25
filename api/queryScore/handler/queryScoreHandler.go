@@ -82,7 +82,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Got an error sending the message:")}, err
 	}
 
-	util.UpdateScoreState(ctx, catalog, owner, name, 1)
+	mongoClient := util.GetMongoClient()
+	defer mongoClient.Disconnect(context.TODO())
+	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+	util.UpdateScoreState(collection, catalog, owner, name, 1)
 
 	message, _ := json.Marshal(response{Message: "Score calculation request queued"})
 	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(message)}
