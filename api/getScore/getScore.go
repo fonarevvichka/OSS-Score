@@ -52,8 +52,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	//if score in database send score
 
 	response, _ := json.Marshal(response{Message: message, Score: score})
-	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(response)}
-	resp.Headers["Access-Control-Allow-Origin"] = "*"
+	resp := events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Access-Control-Allow-Methods": "GET",
+		},
+		Body: string(response)}
 
 	return resp, nil
 }
