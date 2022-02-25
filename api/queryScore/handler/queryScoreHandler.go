@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
+	"golang.org/x/oauth2"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -33,6 +34,24 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	name, found := request.PathParameters["name"]
 	if !found {
 		log.Fatalln("no name variable in path")
+	}
+
+	// CHECK IF REPO IS VALID AND PUBLIC
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	)
+	httpClient := oauth2.NewClient(ctx, src)
+
+	valid, err := util.CheckRepoAccess(httpClient, owner, name)
+
+	if !valid {
+		message, _ := json.Marshal(response{Message: "Could not access repo, check that it was inputted correctly and is public"})
+		resp := events.APIGatewayProxyResponse{StatusCode: 406, Headers: make(map[string]string), Body: string(message)} //TODO: UPDATE STATUS CODE
+		resp.Headers["Access-Control-Allow-Methods"] = "OPTIONS,POST,GET"
+		resp.Headers["Access-Control-Allow-Headers"] = "Content-Type"
+		resp.Headers["Access-Control-Allow-Origin"] = "*"
+
+		return resp, err
 	}
 
 	client := util.GetSqsSession(ctx)
