@@ -51,7 +51,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	mongoClient := util.GetMongoClient()
-	defer mongoClient.Disconnect(context.TODO())
+	defer mongoClient.Disconnect(ctx)
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 
 	res := util.GetRepoFromDB(collection, owner, name)
