@@ -46,12 +46,15 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	if !valid {
 		message, _ := json.Marshal(response{Message: "Could not access repo, check that it was inputted correctly and is public"})
-		resp := events.APIGatewayProxyResponse{StatusCode: 406, Headers: make(map[string]string), Body: string(message)} //TODO: UPDATE STATUS CODE
-		resp.Headers["Access-Control-Allow-Methods"] = "OPTIONS,POST,GET"
-		resp.Headers["Access-Control-Allow-Headers"] = "Content-Type"
-		resp.Headers["Access-Control-Allow-Origin"] = "*"
-
-		return resp, err
+		return events.APIGatewayProxyResponse{
+			StatusCode: 406,
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Methods": "POST",
+			},
+			Body: string(message),
+		}, err
 	}
 
 	client := util.GetSqsSession(ctx)
@@ -64,7 +67,15 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if err != nil {
 		log.Println("Got an error getting the queue URL:")
 		log.Println(err)
-		return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Error while getting the queue URL")}, err
+		return events.APIGatewayProxyResponse{
+			StatusCode: 503,
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Methods": "POST",
+			},
+			Body: string("Error while getting the queue URL"),
+		}, err
 	}
 
 	queueURL := result.QueueUrl
