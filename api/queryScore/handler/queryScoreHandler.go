@@ -105,11 +105,16 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 	util.UpdateScoreState(collection, catalog, owner, name, 1)
 
-	message, _ := json.Marshal(response{Message: "Score calculation request queued"})
-	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(message)}
-	resp.Headers["Access-Control-Allow-Methods"] = "OPTIONS,POST,GET"
-	resp.Headers["Access-Control-Allow-Headers"] = "Content-Type"
-	resp.Headers["Access-Control-Allow-Origin"] = "*"
+	response, _ := json.Marshal(response{Message: "Score calculation request queued"})
+	resp := events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Access-Control-Allow-Methods": "POST",
+		},
+		Body: string(response),
+	}
 
 	return resp, nil
 }
