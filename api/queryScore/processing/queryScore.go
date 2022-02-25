@@ -20,14 +20,19 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		timeFrame, err := strconv.Atoi(*message.MessageAttributes["timeFrame"].StringValue)
 
 		if err != nil {
-			log.Fatalln("Error converting time frame to int")
+			log.Println("Error converting time frame to int")
+			return err
 		}
 
 		mongoClient := util.GetMongoClient()
 		defer mongoClient.Disconnect(context.TODO())
 		collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 		util.UpdateScoreState(collection, catalog, owner, name, 2)
-		repo = util.QueryProject(collection, catalog, owner, name, timeFrame)
+		repo, err = util.QueryProject(collection, catalog, owner, name, timeFrame)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 	}
 
 	for _, dependency := range repo.Dependencies {

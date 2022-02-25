@@ -96,6 +96,49 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 	return math.Min((val-min)/(max-min), 1)
 }
 
+func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
+	// Weights
+	commitWeight := 0.25
+	contributorWeight := 0.25
+	releaseWeight := 0.25
+	issueWeight := 0.25
+
+	commitCadenceWeight := 1.0
+	ageLastReleaseWeight := 0.5
+	releaseCadenceWeight := 1 - ageLastReleaseWeight
+
+	avgIssueClosureTime, issueConfidence := ParseIssues(repoInfo.Issues, startPoint)
+	commitCadence, contributors, commitConfidence := ParseCommits(repoInfo.Commits, startPoint)
+	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repoInfo.Releases, repoInfo.LatestRelease, startPoint)
+
+	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
+	issueClosureTimeScore := 1 - minMaxScale(0, 176, avgIssueClosureTime)
+	commitCadenceScore := minMaxScale(0, 2, commitCadence)
+	contributorScore := minMaxScale(0, 10, float64(contributors))
+	ageLastReleaseScore := 1 - minMaxScale(0, 26, ageLastRelease)
+	releaseCadenceScore := minMaxScale(0, 0.33, releaseCadence)
+
+	// Scores
+	commit_score := (commitCadenceWeight * commitCadenceScore) // + (ageLastCommitWeight * ageLastCommit)
+	contributer_score := contributorScore
+	release_score := (ageLastReleaseWeight * ageLastReleaseScore) + (releaseCadenceWeight * releaseCadenceScore)
+	issue_score := issueClosureTimeScore
+
+	score := (commitWeight * commit_score) +
+		(contributorWeight * contributer_score) +
+		(releaseWeight * release_score) +
+		(issueWeight * issue_score)
+
+	confidence := ((contributorWeight + commitWeight) * float64(commitConfidence)) + (issueWeight * float64(issueConfidence)) + (releaseWeight * float64(releaseConfidence))
+
+	repoScore := Score{
+		Score:      100 * score,
+		Confidence: confidence,
+	}
+
+	return repoScore
+}
+
 func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) Score {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
@@ -150,49 +193,6 @@ func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *Re
 	}
 }
 
-func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
-	// Weights
-	commitWeight := 0.25
-	contributorWeight := 0.25
-	releaseWeight := 0.25
-	issueWeight := 0.25
-
-	commitCadenceWeight := 1.0
-	ageLastReleaseWeight := 0.5
-	releaseCadenceWeight := 1 - ageLastReleaseWeight
-
-	avgIssueClosureTime, issueConfidence := ParseIssues(repoInfo.Issues, startPoint)
-	commitCadence, contributors, commitConfidence := ParseCommits(repoInfo.Commits, startPoint)
-	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repoInfo.Releases, repoInfo.LatestRelease, startPoint)
-
-	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
-	issueClosureTimeScore := 1 - minMaxScale(0, 176, avgIssueClosureTime)
-	commitCadenceScore := minMaxScale(0, 2, commitCadence)
-	contributorScore := minMaxScale(0, 10, float64(contributors))
-	ageLastReleaseScore := 1 - minMaxScale(0, 26, ageLastRelease)
-	releaseCadenceScore := minMaxScale(0, 0.33, releaseCadence)
-
-	// Scores
-	commit_score := (commitCadenceWeight * commitCadenceScore) // + (ageLastCommitWeight * ageLastCommit)
-	contributer_score := contributorScore
-	release_score := (ageLastReleaseWeight * ageLastReleaseScore) + (releaseCadenceWeight * releaseCadenceScore)
-	issue_score := issueClosureTimeScore
-
-	score := (commitWeight * commit_score) +
-		(contributorWeight * contributer_score) +
-		(releaseWeight * release_score) +
-		(issueWeight * issue_score)
-
-	confidence := ((contributorWeight + commitWeight) * float64(commitConfidence)) + (issueWeight * float64(issueConfidence)) + (releaseWeight * float64(releaseConfidence))
-
-	repoScore := Score{
-		Score:      100 * score,
-		Confidence: confidence,
-	}
-
-	return repoScore
-}
-
 func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
 	licenseScore := 0
 	confidence := 100
@@ -218,8 +218,8 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) Score {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
-			Score:      100,
-			Confidence: 100,
+			Score: 100,
+			// Confidence: 100,
 		}
 	}
 
@@ -255,7 +255,8 @@ func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *Rep
 
 	if depsWithScores != 0 {
 		score /= float64(depsWithScores)
-		confidence /= float64(depsWithScores) * (float64(depsWithScores) / float64(totalDeps))
+		confidence /= float64(depsWithScores)
+		confidence *= (float64(depsWithScores) / float64(totalDeps))
 	} else {
 		score = 100
 		confidence = 0
