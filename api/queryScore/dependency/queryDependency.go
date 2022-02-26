@@ -11,6 +11,8 @@ import (
 )
 
 func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
+	mongoClient := util.GetMongoClient()
+	defer mongoClient.Disconnect(context.TODO())
 	for _, message := range sqsEvent.Records {
 		catalog := *message.MessageAttributes["catalog"].StringValue
 		owner := *message.MessageAttributes["owner"].StringValue
@@ -21,7 +23,8 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			log.Fatalln("Error converting time frame to int")
 		}
 
-		util.QueryProject(catalog, owner, name, timeFrame, ctx)
+		collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+		util.QueryProject(collection, catalog, owner, name, timeFrame)
 	}
 
 	return nil
