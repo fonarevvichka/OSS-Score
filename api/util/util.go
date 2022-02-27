@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -21,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"golang.org/x/oauth2"
+	"golang.org/x/sync/errgroup"
 )
 
 func GetSqsSession(ctx context.Context) *sqs.Client {
@@ -154,10 +154,11 @@ func GetScore(collection *mongo.Collection, catalog string, owner string, name s
 }
 
 // Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
-func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int, licenseMap map[string]int) RepoInfoMessage {
+func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int, licenseMap map[string]int) (RepoInfoMessage, error) {
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return RepoInfoMessage{}, err
 	}
 
 	res := GetRepoFromDB(collection, owner, name)
@@ -171,12 +172,17 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 		insert = true
 		log.Println(owner + "/" + name + " Not in DB, need to do full query")
 
-		repoInfo = QueryGithub(catalog, owner, name, startPoint)
+		repoInfo, err = QueryGithub(catalog, owner, name, startPoint)
+		if err != nil {
+			log.Println(err)
+			return RepoInfoMessage{}, err
+		}
 		log.Println(owner + "/" + name + " Done querying github")
 	} else {
 		err := res.Decode(&repoInfo)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return RepoInfoMessage{}, err
 		}
 
 		// Repo data expired
@@ -186,7 +192,11 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 			if repoInfo.UpdatedAt.After(startPoint) {
 				startPoint = repoInfo.UpdatedAt
 			}
-			repoInfo = QueryGithub(catalog, owner, name, startPoint) // pull only needed data
+			repoInfo, err = QueryGithub(catalog, owner, name, startPoint) // pull only needed data
+			if err != nil {
+				log.Println(err)
+				return RepoInfoMessage{}, err
+			}
 			log.Println(owner + "/" + name + " Done querying github")
 		}
 	}
@@ -194,7 +204,7 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 	return RepoInfoMessage{
 		RepoInfo: repoInfo,
 		Insert:   insert,
-	}
+	}, nil
 }
 
 func GetLicenseMap() map[string]int {
@@ -304,11 +314,17 @@ func UpdateScoreState(collection *mongo.Collection, catalog string, owner string
 	syncRepoWithDB(collection, repo, new)
 }
 
-func QueryProject(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) RepoInfo {
+func QueryProject(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
+
 	licenseMap := GetLicenseMap()
 
 	// get repo info message
-	repoInfoMessage := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
+	repoInfoMessage, err := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
+
+	if err != nil {
+		log.Println(err)
+		return RepoInfo{}, err
+	}
 
 	mainRepo := repoInfoMessage.RepoInfo
 	insert := repoInfoMessage.Insert
@@ -316,7 +332,7 @@ func QueryProject(collection *mongo.Collection, catalog string, owner string, na
 	mainRepo.Status = 3
 	syncRepoWithDB(collection, mainRepo, insert)
 
-	return mainRepo
+	return mainRepo, nil
 }
 
 func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, new bool) {
@@ -336,7 +352,9 @@ func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, new bool) {
 	}
 }
 
-func QueryGithub(catalog string, owner string, name string, startPoint time.Time) RepoInfo {
+func QueryGithub(catalog string, owner string, name string, startPoint time.Time) (RepoInfo, error) {
+	errs, ctx := errgroup.WithContext(context.Background())
+
 	src1 := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_1")},
 	)
@@ -364,46 +382,34 @@ func QueryGithub(catalog string, owner string, name string, startPoint time.Time
 			ClosedIssues: make([]ClosedIssue, 0),
 		},
 	}
-	httpClient1 := oauth2.NewClient(context.Background(), src1)
-	httpClient2 := oauth2.NewClient(context.Background(), src2)
-	httpClient3 := oauth2.NewClient(context.Background(), src3)
-	httpClient4 := oauth2.NewClient(context.Background(), src4)
-	httpClient5 := oauth2.NewClient(context.Background(), src5)
+	httpClient1 := oauth2.NewClient(ctx, src1)
+	httpClient2 := oauth2.NewClient(ctx, src2)
+	httpClient3 := oauth2.NewClient(ctx, src3)
+	httpClient4 := oauth2.NewClient(ctx, src4)
+	httpClient5 := oauth2.NewClient(ctx, src5)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		GetGithubIssuesRest(httpClient1, &repoInfo, startPoint.Format(time.RFC3339))
-	}()
+	errs.Go(func() error {
+		return GetGithubIssuesRest(httpClient1, &repoInfo, startPoint.Format(time.RFC3339))
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		GetGithubDependencies(httpClient2, &repoInfo)
-	}()
+	errs.Go(func() error {
+		return GetGithubDependencies(httpClient2, &repoInfo)
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		GetGithubReleases(httpClient3, &repoInfo, startPoint.Format(time.RFC3339))
-	}()
+	errs.Go(func() error {
+		return GetGithubReleases(httpClient3, &repoInfo, startPoint.Format(time.RFC3339))
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		GetCoreRepoInfo(httpClient4, &repoInfo)
-	}()
+	errs.Go(func() error {
+		return GetCoreRepoInfo(httpClient4, &repoInfo)
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		GetGithubCommitsRest(httpClient5, &repoInfo, startPoint.Format(time.RFC3339))
-	}()
+	errs.Go(func() error {
+		return GetGithubCommitsRest(httpClient5, &repoInfo, startPoint.Format(time.RFC3339))
+	})
 
-	wg.Wait()
-
-	return repoInfo
+	err := errs.Wait()
+	return repoInfo, err
 }
 
 func dependencyInSlice(dependency Dependency, dependencies []Dependency) bool {
