@@ -24,3 +24,6 @@ node_modules
 
 # certs
 *.pem
+
+# deps
+node_modules
