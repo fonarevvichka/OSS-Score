@@ -69,120 +69,126 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if err != nil {
 			log.Fatalln(err)
 		}
-		timeFrame := 12
-		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-		switch metric {
-		case "stars":
-			metricValue = float64(repo.Stars)
-			confidence = 100
-		case "releaseCadence":
-			_, metricValue, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
-		case "ageLastRelease":
-			metricValue, _, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
-		case "commitCadence":
-			metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
-		case "contributors":
-			_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
-			metricValue = float64(contributors)
-			confidence = 100
-		case "issueClosureTime":
-			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
-		case "repoActivityScore":
-			score := util.CalculateActivityScore(&repo, startPoint)
-			metricValue = score.Score
-			confidence = int(score.Confidence)
-		case "dependencyActivityScore":
-			score := util.CalculateDependencyActivityScore(collection, &repo, startPoint)
-			metricValue = score.Score
-			confidence = int(score.Confidence)
-		case "repoLicenseScore":
-			licenseMap := util.GetLicenseMap()
-			score := util.CalculateLicenseScore(&repo, licenseMap)
+		if repo.Status == 1 {
+			message = "Score calculation queued"
+		} else if repo.Status == 2{
+			message = "Score calculation in progres"
+		} else {
+			timeFrame := 12
+			startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-			metricValue = score.Score
-			confidence = int(score.Confidence)
-		case "dependencyLicenseScore":
-			licenseMap := util.GetLicenseMap()
-			score := util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+			switch metric {
+			case "stars":
+				metricValue = float64(repo.Stars)
+				confidence = 100
+			case "releaseCadence":
+				_, metricValue, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+			case "ageLastRelease":
+				metricValue, _, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+			case "commitCadence":
+				metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
+			case "contributors":
+				_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
+				metricValue = float64(contributors)
+				confidence = 100
+			case "issueClosureTime":
+				metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+			case "repoActivityScore":
+				score := util.CalculateActivityScore(&repo, startPoint)
+				metricValue = score.Score
+				confidence = int(score.Confidence)
+			case "dependencyActivityScore":
+				score := util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+				metricValue = score.Score
+				confidence = int(score.Confidence)
+			case "repoLicenseScore":
+				licenseMap := util.GetLicenseMap()
+				score := util.CalculateLicenseScore(&repo, licenseMap)
 
-			metricValue = score.Score
-			confidence = int(score.Confidence)
-		case "all":
-			licenseMap := util.GetLicenseMap()
-			var score util.Score
+				metricValue = score.Score
+				confidence = int(score.Confidence)
+			case "dependencyLicenseScore":
+				licenseMap := util.GetLicenseMap()
+				score := util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
 
-			metricValue = float64(repo.Stars)
-			allMetrics.Stars = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: 100,
+				metricValue = score.Score
+				confidence = int(score.Confidence)
+			case "all":
+				licenseMap := util.GetLicenseMap()
+				var score util.Score
+
+				metricValue = float64(repo.Stars)
+				allMetrics.Stars = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: 100,
+				}
+
+				_, metricValue, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+				allMetrics.ReleaseCadence = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: confidence,
+				}
+
+				metricValue, _, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+				allMetrics.AgeLastRelease = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: confidence,
+				}
+
+				metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
+				allMetrics.CommitCadence = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: confidence,
+				}
+
+				_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
+				metricValue = float64(contributors)
+				allMetrics.Contributors = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: 100,
+				}
+
+				metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+				allMetrics.IssueClosureTime = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: confidence,
+				}
+
+				score = util.CalculateActivityScore(&repo, startPoint)
+				metricValue = score.Score
+				confidence = int(score.Confidence)
+				allMetrics.RepoActivityScore = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: confidence,
+				}
+
+				score = util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+				metricValue = score.Score
+				confidence = int(score.Confidence)
+				allMetrics.DependencyActivityScore = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: confidence,
+				}
+
+				score = util.CalculateLicenseScore(&repo, licenseMap)
+				metricValue = score.Score
+				confidence = int(score.Confidence)
+				allMetrics.RepoLicenseScore = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: confidence,
+				}
+
+				score = util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+				metricValue = score.Score
+				confidence = int(score.Confidence)
+				allMetrics.DependencyLicenseScore = singleMetricRepsone{
+					Metric:     metricValue,
+					Confidence: confidence,
+				}
+			default:
+				message = fmt.Sprintf("Metric querying not yet supported for %s", metric)
 			}
-
-			_, metricValue, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
-			allMetrics.ReleaseCadence = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: confidence,
-			}
-
-			metricValue, _, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
-			allMetrics.AgeLastRelease = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: confidence,
-			}
-
-			metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
-			allMetrics.CommitCadence = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: confidence,
-			}
-
-			_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
-			metricValue = float64(contributors)
-			allMetrics.Contributors = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: 100,
-			}
-
-			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
-			allMetrics.IssueClosureTime = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: confidence,
-			}
-
-			score = util.CalculateActivityScore(&repo, startPoint)
-			metricValue = score.Score
-			confidence = int(score.Confidence)
-			allMetrics.RepoActivityScore = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: confidence,
-			}
-
-			score = util.CalculateDependencyActivityScore(collection, &repo, startPoint)
-			metricValue = score.Score
-			confidence = int(score.Confidence)
-			allMetrics.DependencyActivityScore = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: confidence,
-			}
-
-			score = util.CalculateLicenseScore(&repo, licenseMap)
-			metricValue = score.Score
-			confidence = int(score.Confidence)
-			allMetrics.RepoLicenseScore = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: confidence,
-			}
-
-			score = util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
-			metricValue = score.Score
-			confidence = int(score.Confidence)
-			allMetrics.DependencyLicenseScore = singleMetricRepsone{
-				Metric:     metricValue,
-				Confidence: confidence,
-			}
-
-		default:
-			message = fmt.Sprintf("Metric querying not yet supported for %s", metric)
 		}
 	} else {
 		message = "Score not available"
