@@ -51,7 +51,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	mongoClient := util.GetMongoClient()
-	defer mongoClient.Disconnect(context.TODO())
+	defer mongoClient.Disconnect(ctx)
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 
 	res := util.GetRepoFromDB(collection, owner, name)
@@ -196,8 +196,16 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		response, _ = json.Marshal(singleMetricRepsone{Message: message, Metric: metricValue, Confidence: confidence})
 	}
 
-	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(response)}
-	resp.Headers["Access-Control-Allow-Origin"] = "*"
+	resp := events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Access-Control-Allow-Methods": "GET",
+		},
+		Body: string(response),
+	}
+
 	return resp, nil
 }
 
