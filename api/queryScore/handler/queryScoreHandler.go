@@ -36,9 +36,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no name variable in path")
 	}
 
-<<<<<<< HEAD
 	log.Println("Ready to submit request for ", owner, "/", name)
-=======
 	// CHECK IF REPO IS VALID AND PUBLIC
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
@@ -60,7 +58,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}, err
 	}
 
->>>>>>> 2f2cb21cfd8d1ca2c6935c752424c02c1e612f99
 	client := util.GetSqsSession(ctx)
 
 	gQInput := &sqs.GetQueueUrlInput{
