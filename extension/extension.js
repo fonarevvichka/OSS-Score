@@ -80,32 +80,26 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
             insertScores(scoreDiv, scores);
         }
         else if (scores.message == 'Score not yet calculated') {
-            console.log("requesting previously unknown score");
-            //scoreDiv.innerHTML += "not yet calculated";
-            requestScores(owner, repo)
-                .then(message => {
-                    //scoreDiv.innerHTML += message;
-                    awaitResults(scoreDiv, owner, repo);
-                });
+            scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2> ";
+            scoreDiv.innerHTML += '<button class=requestScore id=requestButton> Request Score </button>'
+
+            document.getElementById('requestButton').addEventListener('click', async function() {
+                scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
+
+                //maybe put this in try catch?
+                console.log("requesting previously unknown score");
+                requestScores(owner, repo)
+                    .then(message => {
+                        awaitResults(scoreDiv, owner, repo);
+                    });
+                scoreDiv.innerHTML += 'Scores Requested';
+                scoreDiv.innerHTML += loading_gears;
+            });
+
         }
          else { // NO SCORES
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>";
             scoreDiv.innerHTML += scores.message;
-
-            /* button stuff
-                scoreDiv.innerHTML += '<br><br>'
-                scoreDiv.innerHTML += '<button class=requestScore id=requestButton> Request Score </button>'
-
-                document.getElementById('requestButton').addEventListener('click', async function() {
-                    scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
-
-                    //maybe put this in try catch?
-                    requestScoreCalculation(owner, repo, 'activity');
-                    requestScoreCalculation(owner, repo, 'license');
-                    scoreDiv.innerHTML += 'Scores Requested';
-                    awaitResults(scoreDiv, owner, repo);
-                });
-            }*/
         }
     });
 
