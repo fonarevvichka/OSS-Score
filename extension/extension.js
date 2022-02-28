@@ -45,7 +45,7 @@ async function awaitResults(scoreDiv, owner, repo) {
                 insertScores(scoreDiv, scores);
             } else if (scores.message == 'Score calculation queued') {
                 awaitResults(scoreDiv, owner, repo); 
-            } else if (scores.message == 'Score calculation in progress') {
+            } else if (scores.message == 'Score calculation in progres') {
                 awaitResults(scoreDiv, owner, repo); 
             } else {
                 scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>";
@@ -78,20 +78,19 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
         if (scores.message == 'Score ready') { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
         }
-        else if (scores.message == 'Score not yet calculated') { 
+        else if (scores.message == 'Score not yet calculated') { // SCORE NEEDS TO BE CALCULATED
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2> ";
             scoreDiv.innerHTML += '<button class=requestScore id=requestButton> Request Score </button>'
 
             document.getElementById('requestButton').addEventListener('click', async function() {
                 scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>"
-
-                //maybe put this in try catch?
+                scoreDiv.innerHTML += loading_gears;
                 console.log("requesting previously unknown score");
                 requestScores(owner, repo)
                     .then(message => {
+                        console.log(message);
                         awaitResults(scoreDiv, owner, repo);
                     });
-                scoreDiv.innerHTML += loading_gears;
             });
 
         }
@@ -100,35 +99,43 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
             scoreDiv.innerHTML += scores.message;
         }
     });
+}
 
+async function processResponse(response, scores, type) {
+    if (response.status == 200) {
+        let scorePromise = response.json();
+        await scorePromise.then(response => {
+            if (response.message == "Score ready") {
+                if (type == "license") {
+                    scores.license = response.score;
+                } else if (type == "activity") {
+                    scores.activity = response.score;
+                }
+            } 
+            scores.message = response.message;
+        }).catch(err => {
+            console.error(err);
+        });
+    } else {
+        let messagePromise = response.json();
+        await messagePromise.then(message => {
+            scores.message = message.message;
+        }).catch(err => {
+            console.error(err);
+        });
+    }
+    return scores
 }
 
 async function getScores(owner, repo) {
     let scores = {license: null, activity: null, message: null};
     let promises = [];    
+    
     let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
     promises.push(
         fetch(licenseRequestUrl).then(async (response) => {
-            if (response.status == 200) {
-                let scorePromise = response.json();
-                await scorePromise.then(response => {
-                    if (response.message == "Score ready") {
-                        scores.license = response.score;
-                        scores.message = response.message;
-                    } else {
-                        scores.message = response.message;
-                    };
-                }).catch(err => {
-                    console.error(err);
-                });
-            } else {
-                let messagePromise = response.json();
-                await messagePromise.then(message => {
-                    scores.message = message.message;
-                }).catch(err => {
-                    console.error(err);
-                });
-            }
+            await processResponse(response, scores, "license").then(score =>
+                scores = score);
         }).catch(err => {
             console.error(err);
         })
@@ -137,33 +144,14 @@ async function getScores(owner, repo) {
     let activityRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/activity';
     promises.push(
         fetch(activityRequestUrl).then(async (response) => {
-            if (response.status == 200) {
-                let scorePromise = response.json();
-                await scorePromise.then(response => {
-                    if (response.message == "Score ready") {
-                        scores.activity = response.score;
-                        scores.message = response.message;
-                    } else {
-                        scores.message = response.message;
-                    };
-                }).catch(err => {
-                    console.error(err);
-                });
-            } else {
-                let messagePromise = response.json();
-                await messagePromise.then(message => {
-                    scores.message = message.message;
-                }).catch(err => {
-                    console.error(err);
-                });
-            }
+            await processResponse(response, scores, "activity").then(score =>
+                scores = score);
         }).catch(err => {
             console.error(err);
         })
     );
 
     await Promise.all(promises);
-
     return scores;
 }
 
@@ -184,12 +172,7 @@ if (splitUrl.length == 2) { // Repo homepage
 }
 
 if (owner != '' && repo != '') {
-    //let rowDiv= document.createElement('div');
-    //rowDiv.className = 'BorderGrid-row';
- 
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
-
     insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
-    // insertScoreSection(owner, repo, scoreDiv, getFakeScores(owner, repo, scoreDiv));
 }
