@@ -46,7 +46,7 @@ async function awaitResults(scoreDiv, owner, repo) {
                 insertScores(scoreDiv, scores);
             } else if (scores.message == 'Score calculation queued') {
                 awaitResults(scoreDiv, owner, repo); 
-            } else if (scores.message == 'Score calculation in progres') {
+            } else if (scores.message == 'Score calculation in progress') {
                 awaitResults(scoreDiv, owner, repo); 
             } else {
                 scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>";
