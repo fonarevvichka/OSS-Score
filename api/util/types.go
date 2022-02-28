@@ -197,7 +197,8 @@ type RepoInfo struct {
 
 	DefaultBranch string
 
-	ScoreStatus       int //0 - not calcualted, 1 - queued, 2 ready
+	Status int //0 - not calcualted, 1 - queued, 2 pulled from queue, 3 ready
+
 	RepoActivityScore Score
 	RepoLicenseScore  Score
 
@@ -219,11 +220,16 @@ type RepoInfo struct {
 }
 
 type RepoInfoMessage struct {
-	DataStatus int
-	RepoInfo   RepoInfo
+	Insert   bool
+	RepoInfo RepoInfo
 }
 
 type Score struct {
 	Score      float64 `json:"score"`
 	Confidence float64 `json:"confidence"`
+}
+
+type NameOwner struct {
+	Owner string
+	Name  string
 }

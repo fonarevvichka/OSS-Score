@@ -215,6 +215,7 @@ paths:
               - openIssues
               - discussions
               - forks
+              - all
       responses:
         '200':
           description: Requested metric for the repo

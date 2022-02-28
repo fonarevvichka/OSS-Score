@@ -4,7 +4,6 @@ import (
 	"api/util"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -33,15 +32,17 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no scoreType variable in path")
 	}
-	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, scoreType)
 
 	mongoClient := util.GetMongoClient()
-	score, scoreStatus := util.GetCachedScore(mongoClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
+	collection := mongoClient.Database("OSS-Score").Collection(catalog)
+	score, scoreStatus := util.GetScore(collection, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
 	var message string
 	if scoreStatus == 0 {
 		message = "Score not yet calculated"
 	} else if scoreStatus == 1 {
+		message = "Score calculation queued"
+	} else if scoreStatus == 2 {
 		message = "Score calculation in progress"
 	} else {
 		message = "Score ready"
@@ -51,8 +52,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	//if score in database send score
 
 	response, _ := json.Marshal(response{Message: message, Score: score})
-	resp := events.APIGatewayProxyResponse{StatusCode: 200, Headers: make(map[string]string), Body: string(response)}
-	resp.Headers["Access-Control-Allow-Origin"] = "*"
+	resp := events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Access-Control-Allow-Methods": "GET",
+		},
+		Body: string(response)}
 
 	return resp, nil
 }

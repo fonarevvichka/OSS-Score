@@ -13,10 +13,23 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type response struct {
+type singleMetricRepsone struct {
 	Message    string  `json:"message"`
 	Metric     float64 `json:"metric"`
 	Confidence int     `json:"confidence"`
+}
+
+type allMetricsResponse struct {
+	Stars                   singleMetricRepsone `json:"stars"`
+	ReleaseCadence          singleMetricRepsone `json:"releaseCadence"`
+	AgeLastRelease          singleMetricRepsone `json:"ageLastRelease"`
+	CommitCadence           singleMetricRepsone `json:"commitCadence"`
+	Contributors            singleMetricRepsone `json:"contributors"`
+	IssueClosureTime        singleMetricRepsone `json:"issueClosureTime"`
+	RepoActivityScore       singleMetricRepsone `json:"repoActivityScore"`
+	DependencyActivityScore singleMetricRepsone `json:"dependencyActivityScore"`
+	RepoLicenseScore        singleMetricRepsone `json:"repoLicenseScore"`
+	DependencyLicenseScore  singleMetricRepsone `json:"dependencyLicenseScore"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -36,10 +49,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no metric variable in path")
 	}
-	fmt.Printf("%s,%s,%s,%s\n", catalog, owner, name, metric)
 
 	mongoClient := util.GetMongoClient()
-	defer mongoClient.Disconnect(context.TODO())
+	defer mongoClient.Disconnect(ctx)
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 
 	res := util.GetRepoFromDB(collection, owner, name)
@@ -48,6 +60,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	var metricValue float64
 	var confidence int
 	var message string
+
+	var allMetrics allMetricsResponse
 
 	if res.Err() != mongo.ErrNoDocuments { // match in DB
 		err := res.Decode(&repo)
@@ -74,6 +88,99 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			confidence = 100
 		case "issueClosureTime":
 			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+		case "repoActivityScore":
+			score := util.CalculateActivityScore(&repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "dependencyActivityScore":
+			score := util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "repoLicenseScore":
+			licenseMap := util.GetLicenseMap()
+			score := util.CalculateLicenseScore(&repo, licenseMap)
+
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "dependencyLicenseScore":
+			licenseMap := util.GetLicenseMap()
+			score := util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+		case "all":
+			licenseMap := util.GetLicenseMap()
+			var score util.Score
+
+			metricValue = float64(repo.Stars)
+			allMetrics.Stars = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: 100,
+			}
+
+			_, metricValue, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+			allMetrics.ReleaseCadence = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			metricValue, _, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
+			allMetrics.AgeLastRelease = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
+			allMetrics.CommitCadence = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
+			metricValue = float64(contributors)
+			allMetrics.Contributors = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: 100,
+			}
+
+			metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+			allMetrics.IssueClosureTime = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateActivityScore(&repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.RepoActivityScore = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.DependencyActivityScore = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateLicenseScore(&repo, licenseMap)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.RepoLicenseScore = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
+			score = util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+			metricValue = score.Score
+			confidence = int(score.Confidence)
+			allMetrics.DependencyLicenseScore = singleMetricRepsone{
+				Metric:     metricValue,
+				Confidence: confidence,
+			}
+
 		default:
 			message = fmt.Sprintf("Metric querying not yet supported for %s", metric)
 		}
@@ -81,8 +188,25 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		message = "Score not available"
 	}
 
-	response, _ := json.Marshal(response{Message: message, Metric: metricValue, Confidence: confidence})
-	return events.APIGatewayProxyResponse{StatusCode: 200, Body: string(response)}, nil
+	var response []byte
+
+	if metric == "all" {
+		response, _ = json.Marshal(allMetrics)
+	} else {
+		response, _ = json.Marshal(singleMetricRepsone{Message: message, Metric: metricValue, Confidence: confidence})
+	}
+
+	resp := events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Access-Control-Allow-Methods": "GET",
+		},
+		Body: string(response),
+	}
+
+	return resp, nil
 }
 
 func main() {

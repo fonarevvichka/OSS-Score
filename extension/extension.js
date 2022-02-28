@@ -11,7 +11,8 @@ async function requestScores(owner, repo) {
     let requestURL = basePath + '/owner/' + owner + '/name/' + repo;
     let promise = 
         fetch(requestURL, {
-            method: 'POST'
+            method: 'POST',
+            mode: 'cors'
         }).then(async (response) => {
             if (response.status == 200) {
                 let messagePromise = response.json();
