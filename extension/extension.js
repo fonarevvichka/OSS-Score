@@ -38,7 +38,7 @@ async function requestScores(owner, repo) {
 }
 
 async function awaitResults(scoreDiv, owner, repo) {
-    promiseTimeout(5000).then(() => {
+    promiseTimeout(500).then(() => {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
             if (scores.message == 'Score ready') {
@@ -46,7 +46,9 @@ async function awaitResults(scoreDiv, owner, repo) {
             } else if (scores.message == 'Score not yet calculated') {
                 awaitResults(scoreDiv, owner, repo);
             }
-            else {
+            else if (scores.message == 'Score calculation queued') {
+                awaitResults(scoreDiv, owner, repo);
+            } else {
                 scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>";
                 scoreDiv.innerHTML += scores.message;
             }
