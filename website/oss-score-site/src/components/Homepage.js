@@ -3,6 +3,8 @@
 import { data } from 'jquery';
 import React, {useState} from 'react'
 import './Homepage.css';
+import DisplayScores from './DisplayScores.js';
+
 
 
 /* functional component for homepage */
@@ -105,7 +107,7 @@ export default function Home(props) {
                     console.log("Got the scores finally")
                 } else {
                     // Loading gears
-                    awaitResults(owner, repo);
+                    awaitResults(owner_name, repo_name);
                 }
             });
         });
@@ -186,11 +188,11 @@ export default function Home(props) {
         let scores1 = await getMetrics(owner1, name1)
 
         if (scores1.activity != null) { // VALID SCORES RETURNED
-            insertScores(scores); // our component that writes the html
+            //insertScores(scores); // our component that writes the html
         } else {
             console.log("Requesting previously unknown score");
             //submit post request
-            awaitResults(owner_name, repo_name)
+            awaitResults(owner1, name1)
         }
 
 
@@ -232,7 +234,7 @@ export default function Home(props) {
 
     return (
         <div className="Home">
-            <img src="../images/logo1.png" alt="OSS-SCORE"></img>
+            {/*<img src="../images/logo1.png" alt="OSS-SCORE"></img>*/}
             <header>OSS-SCORE</header>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
@@ -253,6 +255,8 @@ export default function Home(props) {
             </form>
             <div id="loading"></div>
             <div class="head2head" id="head2head">
+                {/*DisplayScores()*/}
+
                 <div class="repo1-stats">
                     <div class="basic-info-display">
                         <div class="basic-info-title">Name</div>

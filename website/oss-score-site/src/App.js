@@ -13,6 +13,7 @@ import GenerateScores from './components/GenerateScores.js';
 import Categories from './components/Categories.js';
 import WorkForUs from './components/WorkForUs.js';
 import NotFound from './components/NotFound.js';
+import DisplayScores from './components/DisplayScores.js';
 
 
 
