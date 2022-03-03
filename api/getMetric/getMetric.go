@@ -54,7 +54,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	defer mongoClient.Disconnect(ctx)
 	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
 
-	res := util.GetRepoFromDB(collection, owner, name)
+	res := util.GetRepoFromDBMongo(collection, owner, name)
 
 	var repo util.RepoInfo
 	var metricValue float64

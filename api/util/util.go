@@ -12,6 +12,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	dynamoTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -32,6 +35,15 @@ func GetSqsSession(ctx context.Context) *sqs.Client {
 	return sqs.NewFromConfig(cfg)
 }
 
+func GetDynamoDBSession(ctx context.Context) *dynamodb.Client {
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	return dynamodb.NewFromConfig(cfg)
+}
+
 func GetMongoClient() *mongo.Client {
 	uri := os.Getenv("MONGO_URI")
 	// Create a new mongo_client and connect to the server
@@ -49,7 +61,22 @@ func GetMongoClient() *mongo.Client {
 	return mongoClient
 }
 
-func getRepoFilter(owner string, name string) bson.D {
+
+func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, name string) (*dynamodb.GetItemOutput, error) {
+	return client.GetItem(ctx, &dynamodb.GetItemInput {
+		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
+		Key: map[string]dynamoTypes.AttributeValue{
+			"name": &dynamoTypes.AttributeValueMemberS{Value: name},
+			"owner": &dynamoTypes.AttributeValueMemberS{Value: owner},
+		},
+	})
+}
+
+// func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repos []NameOwner) (*dynamodb.GetItemOutput, error) {
+// 	client.Que
+// }
+
+func getRepoFilterMongo(owner string, name string) bson.D {
 	return bson.D{
 		{"$and",
 			bson.A{
@@ -78,14 +105,14 @@ func getManyRepoFilter(repos []NameOwner) bson.D {
 	}
 }
 
-func GetRepoFromDB(collection *mongo.Collection, owner string, name string) *mongo.SingleResult {
+func GetRepoFromDBMongo(collection *mongo.Collection, owner string, name string) *mongo.SingleResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	return collection.FindOne(ctx, getRepoFilter(owner, name))
+	return collection.FindOne(ctx, getRepoFilterMongo(owner, name))
 }
 
-func GetReposFromDB(collection *mongo.Collection, repos []NameOwner) []RepoInfo {
+func GetReposFromDBMongo(collection *mongo.Collection, repos []NameOwner) []RepoInfo {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -110,8 +137,12 @@ func GetReposFromDB(collection *mongo.Collection, repos []NameOwner) []RepoInfo 
 	return deps
 }
 
-func GetScore(collection *mongo.Collection, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
-	res := GetRepoFromDB(collection, owner, name)
+func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
+	data, err := GetRepoFromDB(ctx, dbClient, owner, name)
+	if err != nil {
+		log.Println("error querying db")
+		log.Fatalln(err)
+	}
 
 	var combinedScore Score
 	var repoScore Score
@@ -123,8 +154,8 @@ func GetScore(collection *mongo.Collection, catalog string, owner string, name s
 	}
 	var repoInfo RepoInfo
 
-	if res.Err() != mongo.ErrNoDocuments { // Match in DB
-		err := res.Decode(&repoInfo)
+	if data.Item != nil { // Match in DB
+		err = attributevalue.UnmarshalMap(data.Item, &repoInfo)
 
 		if err != nil {
 			log.Fatalln(err)
@@ -137,11 +168,11 @@ func GetScore(collection *mongo.Collection, catalog string, owner string, name s
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
 				repoScore = CalculateActivityScore(&repoInfo, startPoint)
-				depScore = CalculateDependencyActivityScore(collection, &repoInfo, startPoint)
+				// depScore = CalculateDependencyActivityScore(collection, &repoInfo, startPoint)
 			} else if scoreType == "license" {
 				licenseMap := GetLicenseMap()
 				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
-				depScore = CalculateDependencyLicenseScore(collection, &repoInfo, licenseMap)
+				// depScore = CalculateDependencyLicenseScore(collection, &repoInfo, licenseMap)
 			}
 			combinedScore = Score{
 				Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
@@ -161,7 +192,7 @@ func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, n
 		return RepoInfoMessage{}, err
 	}
 
-	res := GetRepoFromDB(collection, owner, name)
+	res := GetRepoFromDBMongo(collection, owner, name)
 
 	repoInfo := RepoInfo{}
 	insert := false
@@ -290,7 +321,7 @@ func SubmitDependencies(ctx context.Context, catalog string, owner string, name 
 }
 
 func UpdateScoreState(collection *mongo.Collection, catalog string, owner string, name string, status int) {
-	res := GetRepoFromDB(collection, owner, name)
+	res := GetRepoFromDBMongo(collection, owner, name)
 
 	var repo RepoInfo
 	new := false
@@ -344,7 +375,7 @@ func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, new bool) {
 		}
 	} else {
 		insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
-		filter := getRepoFilter(repo.Owner, repo.Name)
+		filter := getRepoFilterMongo(repo.Owner, repo.Name)
 		_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
 		if err != nil {
 			log.Fatal(err)

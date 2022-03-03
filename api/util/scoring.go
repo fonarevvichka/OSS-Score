@@ -160,7 +160,7 @@ func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *Re
 		})
 	}
 
-	deps := GetReposFromDB(collection, repos)
+	deps := GetReposFromDBMongo(collection, repos)
 
 	for _, dep := range deps {
 		wg.Add(1)
@@ -235,7 +235,7 @@ func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *Rep
 			Name:  dependency.Name,
 		})
 	}
-	deps := GetReposFromDB(collection, repos)
+	deps := GetReposFromDBMongo(collection, repos)
 
 	for _, dep := range deps {
 		wg.Add(1)

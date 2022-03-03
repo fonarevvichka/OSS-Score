@@ -191,9 +191,9 @@ type RepoRequestInfo struct {
 }
 
 type RepoInfo struct {
-	Name    string
-	Owner   string
-	Catalog string
+	Name    string `dynamodbav:name`
+	Owner   string `dynamodbav:owner`
+	Catalog string `dynamodbav:catalog`
 
 	DefaultBranch string
 
@@ -207,7 +207,7 @@ type RepoInfo struct {
 
 	UpdatedAt time.Time
 
-	License       string
+	License       string 
 	CreateDate    time.Time
 	LatestRelease time.Time
 	Stars         int
