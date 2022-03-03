@@ -36,7 +36,6 @@ header {
 /*** head2head ***/
 
 .head2head {
-    display: none;
     flex-wrap: wrap;
     justify-content: center;
     margin-left: 15%;
@@ -49,7 +48,7 @@ header {
     padding: 10px;
 }
 
-.repo1-stats, .repo2-stats {
+.repo-stats {
     text-align: center;
     flex: 1;
     
