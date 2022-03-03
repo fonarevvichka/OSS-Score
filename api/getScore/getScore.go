@@ -34,9 +34,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	dbClient := util.GetDynamoDBClient(ctx)
-
-	// mongoClient := util.GetMongoClient()
-	// collection := mongoClient.Database("OSS-Score").Collection(catalog)
 	score, scoreStatus := util.GetScore(ctx, dbClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
 	var message string
