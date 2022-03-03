@@ -62,14 +62,31 @@ func GetMongoClient() *mongo.Client {
 }
 
 
-func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, name string) (*dynamodb.GetItemOutput, error) {
-	return client.GetItem(ctx, &dynamodb.GetItemInput {
+// repo, found, error
+func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, name string) (RepoInfo, bool, error) {
+	var repo RepoInfo
+	data, err := client.GetItem(ctx, &dynamodb.GetItemInput {
 		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
 		Key: map[string]dynamoTypes.AttributeValue{
 			"name": &dynamoTypes.AttributeValueMemberS{Value: name},
 			"owner": &dynamoTypes.AttributeValueMemberS{Value: owner},
 		},
 	})
+
+	if err != nil {
+		return repo, false, fmt.Errorf("GetItem: %v\n", err)
+	}
+
+	if data.Item == nil {
+		return repo, false, nil
+	}
+
+	err = attributevalue.UnmarshalMap(data.Item, &repo)
+	if err != nil {
+		return repo, false, fmt.Errorf("UnmarhsalMap: %v\n", err)
+	}
+
+	return  repo, true, nil
 }
 
 // func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repos []NameOwner) (*dynamodb.GetItemOutput, error) {
@@ -138,7 +155,7 @@ func GetReposFromDBMongo(collection *mongo.Collection, repos []NameOwner) []Repo
 }
 
 func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
-	data, err := GetRepoFromDB(ctx, dbClient, owner, name)
+	repoInfo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 	if err != nil {
 		log.Println("error querying db")
 		log.Fatalln(err)
@@ -152,14 +169,8 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 	if err != nil {
 		log.Fatalln(err)
 	}
-	var repoInfo RepoInfo
 
-	if data.Item != nil { // Match in DB
-		err = attributevalue.UnmarshalMap(data.Item, &repoInfo)
-
-		if err != nil {
-			log.Fatalln(err)
-		}
+	if found { // Match in DB
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
@@ -184,7 +195,6 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 	return combinedScore, repoInfo.Status
 }
 
-// Channel returns: RepoInfo struct, dataStatus int -- (0 - nothing new, 1 - updated, 2 - all new data)
 func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int, licenseMap map[string]int) (RepoInfoMessage, error) {
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
