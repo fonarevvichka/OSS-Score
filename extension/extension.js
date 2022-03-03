@@ -55,10 +55,10 @@ async function awaitResults(scoreDiv, owner, repo) {
 
 function insertScores(scoreDiv, scores) {
     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>";
-    scoreDiv.innerHTML += 'Activity: ' + scores.activity.score.toFixed(1) + '/10';
+    scoreDiv.innerHTML += 'Activity: ' + (scores.activity.score/10).toFixed(1) + ' of 10';
     scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.activity.confidence.toFixed(0) + '%';
     scoreDiv.innerHTML += '<br/><br/>';
-    scoreDiv.innerHTML += 'License: ' + scores.license.score.toFixed(1) + '/10';
+    scoreDiv.innerHTML += 'License: ' + (scores.license.score/10).toFixed(1) + ' of 10';
     scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.license.confidence.toFixed(0) + '%';
 }
 
