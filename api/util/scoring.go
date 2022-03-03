@@ -1,10 +1,12 @@
 package util
 
 import (
+	"context"
 	"math"
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -139,12 +141,12 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	return repoScore
 }
 
-func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) Score {
+func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, startPoint time.Time) (Score, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
 			Score:      100,
 			Confidence: 100,
-		}
+		}, nil
 	}
 
 	var wg sync.WaitGroup
@@ -160,20 +162,27 @@ func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *Re
 		})
 	}
 
-	// deps := GetReposFromDBMongo(collection, repos)
+	deps, err := GetReposFromDB(ctx, dbClient, repos)
 
-	// for _, dep := range deps {
-	// 	wg.Add(1)
-	// 	go func(collection *mongo.Collection, dep RepoInfo, startPoint time.Time) {
-	// 		defer wg.Done()
+	if err != nil {
+		return Score{ // not sure if score should be 0 or 100 here
+			Score:      100,
+			Confidence: 0,
+		}, err
+	}
 
-	// 		individualScore := CalculateActivityScore(&dep, startPoint)
-	// 		score += individualScore.Score
-	// 		confidence += individualScore.Confidence
+	for _, dep := range deps {
+		wg.Add(1)
+		go func(dep RepoInfo, startPoint time.Time) {
+			defer wg.Done()
 
-	// 		depsWithScores++
-	// 	}(collection, dep, startPoint)
-	// }
+			individualScore := CalculateActivityScore(&dep, startPoint)
+			score += individualScore.Score
+			confidence += individualScore.Confidence
+
+			depsWithScores++
+		}(dep, startPoint)
+	}
 	totalDeps := len(repoInfo.Dependencies)
 
 	wg.Wait()
@@ -190,7 +199,7 @@ func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *Re
 	return Score{
 		Score:      score,
 		Confidence: confidence,
-	}
+	}, nil
 }
 
 func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {

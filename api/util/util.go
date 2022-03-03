@@ -17,7 +17,6 @@ import (
 	dynamoTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/oauth2"
 	"golang.org/x/sync/errgroup"
 )
@@ -43,10 +42,10 @@ func GetDynamoDBClient(ctx context.Context) *dynamodb.Client {
 // repo, found, error
 func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, name string) (RepoInfo, bool, error) {
 	var repo RepoInfo
-	data, err := client.GetItem(ctx, &dynamodb.GetItemInput {
+	data, err := client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
 		Key: map[string]dynamoTypes.AttributeValue{
-			"name": &dynamoTypes.AttributeValueMemberS{Value: name},
+			"name":  &dynamoTypes.AttributeValueMemberS{Value: name},
 			"owner": &dynamoTypes.AttributeValueMemberS{Value: owner},
 		},
 	})
@@ -64,31 +63,67 @@ func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, n
 		return repo, false, fmt.Errorf("UnmarhsalMap: %v", err)
 	}
 
-	return  repo, true, nil
+	return repo, true, nil
 }
 
-// func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repos []NameOwner) (*dynamodb.GetItemOutput, error) {
-// 	client.Que
-// }
+func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeysInfo []NameOwner) ([]RepoInfo, error) {
+	var repoKeys []map[string]dynamoTypes.AttributeValue
+	var repos []RepoInfo
+	table := os.Getenv("DYNAMODB_TABLE")
 
-func getManyRepoFilter(repos []NameOwner) bson.D {
-	var filters bson.A
-	for _, repo := range repos {
-		currFilter := bson.D{
-			{"$and",
-				bson.A{
-					bson.D{{"owner", repo.Owner}},
-					bson.D{{"name", repo.Name}},
-				}},
+	for _, repoKeyInfo := range repoKeysInfo {
+		repoKeys = append(repoKeys, map[string]dynamoTypes.AttributeValue{
+			"name":  &dynamoTypes.AttributeValueMemberS{Value: repoKeyInfo.Name},
+			"owner": &dynamoTypes.AttributeValueMemberS{Value: repoKeyInfo.Owner},
+		})
+	}
+
+	data, err := client.BatchGetItem(ctx, &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]dynamoTypes.KeysAndAttributes{
+			table: {
+				Keys: repoKeys,
+			},
+		},
+	})
+
+	if err != nil {
+		return repos, fmt.Errorf("BatchGetItem: %v", err)
+	}
+
+	items := data.Responses[table]
+
+	for _, item := range items {
+		var repo RepoInfo
+		if item != nil {
+			err = attributevalue.UnmarshalMap(item, &repo)
+			if err != nil {
+				return repos, fmt.Errorf("UnmarhsalMap: %v", err)
+			}
+			repos = append(repos, repo)
 		}
-
-		filters = append(filters, currFilter)
 	}
 
-	return bson.D{
-		{"$or", filters},
-	}
+	return repos, nil
 }
+
+// func getManyRepoFilter(repos []NameOwner) bson.D {
+// 	var filters bson.A
+// 	for _, repo := range repos {
+// 		currFilter := bson.D{
+// 			{"$and",
+// 				bson.A{
+// 					bson.D{{"owner", repo.Owner}},
+// 					bson.D{{"name", repo.Name}},
+// 				}},
+// 		}
+
+// 		filters = append(filters, currFilter)
+// 	}
+
+// 	return bson.D{
+// 		{"$or", filters},
+// 	}
+// }
 
 // func GetReposFromDBMongo(collection *mongo.Collection, repos []NameOwner) []RepoInfo {
 // 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -139,7 +174,8 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
 				repoScore = CalculateActivityScore(&repoInfo, startPoint)
-				// depScore = CalculateDependencyActivityScore(collection, &repoInfo, startPoint)
+				depScore, err = CalculateDependencyActivityScore(ctx, dbClient, &repoInfo, startPoint)
+				log.Println(err)
 			} else if scoreType == "license" {
 				licenseMap := GetLicenseMap()
 				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
@@ -298,17 +334,17 @@ func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 	_, err = dbClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
 		Key: map[string]dynamoTypes.AttributeValue{
-			"name": &dynamoTypes.AttributeValueMemberS{Value: repo.Name},
+			"name":  &dynamoTypes.AttributeValueMemberS{Value: repo.Name},
 			"owner": &dynamoTypes.AttributeValueMemberS{Value: repo.Owner},
 		},
 		UpdateExpression: aws.String("set #catalog = :catalog, #status = :status"),
 		ExpressionAttributeValues: map[string]dynamoTypes.AttributeValue{
-			":catalog":        &dynamoTypes.AttributeValueMemberS{Value: repo.Catalog},
-			":status":        &dynamoTypes.AttributeValueMemberN{Value: strconv.Itoa(repo.Status)},
+			":catalog": &dynamoTypes.AttributeValueMemberS{Value: repo.Catalog},
+			":status":  &dynamoTypes.AttributeValueMemberN{Value: strconv.Itoa(repo.Status)},
 		},
 		ExpressionAttributeNames: map[string]string{
 			"#catalog": "catalog",
-			"#status": "status",
+			"#status":  "status",
 		},
 	})
 
@@ -345,7 +381,7 @@ func syncRepoWithDB(ctx context.Context, client *dynamodb.Client, repo RepoInfo)
 
 	_, err = client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
-		Item: data,
+		Item:      data,
 	})
 
 	if err != nil {
