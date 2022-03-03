@@ -200,6 +200,10 @@ func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 
 	repo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 
+	if err != nil {
+		return RepoInfo{}, err
+	}
+
 	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
 	if !found { // No data on repo
@@ -214,7 +218,6 @@ func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 	} else {
 		// Repo data expired
 		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) {
-
 			log.Println(owner + "/" + name + " Need to do partial update")
 			if repo.UpdatedAt.After(startPoint) {
 				startPoint = repo.UpdatedAt
@@ -261,23 +264,7 @@ func GetLicenseMap() map[string]int {
 	return licenseMap
 }
 
-func SubmitDependencies(ctx context.Context, catalog string, owner string, name string) error {
-	queueName := os.Getenv("QUERY_QUEUE")
-	fmt.Println(queueName)
-	client := GetSqsClient(ctx)
-
-	gQInput := &sqs.GetQueueUrlInput{
-		QueueName: &queueName,
-	}
-
-	result, err := client.GetQueueUrl(ctx, gQInput)
-	if err != nil {
-		log.Println("Got an error getting the queue URL:")
-		log.Println(err)
-		return err
-	}
-
-	queueURL := result.QueueUrl
+func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string, catalog string, owner string, name string) error {
 	timeFrame := "12"
 
 	sMInput := &sqs.SendMessageInput{
@@ -300,14 +287,14 @@ func SubmitDependencies(ctx context.Context, catalog string, owner string, name 
 			},
 		},
 		MessageBody: aws.String("Repo to be queried"),
-		QueueUrl:    queueURL,
+		QueueUrl:    &queueURL,
 	}
 
-	_, err = client.SendMessage(ctx, sMInput)
+	_, err := client.SendMessage(ctx, sMInput)
 	if err != nil {
 		fmt.Println("Got an error sending the message:")
 		fmt.Println(err)
-		return err
+		return fmt.Errorf("sqs.client SendMessage %v", err)
 	}
 
 	return nil
@@ -376,7 +363,7 @@ func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string
 func syncRepoWithDB(ctx context.Context, client *dynamodb.Client, repo RepoInfo) error {
 	data, err := attributevalue.MarshalMap(repo)
 	if err != nil {
-		return fmt.Errorf("MarshalMap: %v\n", err)
+		return fmt.Errorf("MarshalMap: %v", err)
 	}
 
 	_, err = client.PutItem(ctx, &dynamodb.PutItemInput{
