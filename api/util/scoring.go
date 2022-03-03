@@ -160,20 +160,20 @@ func CalculateDependencyActivityScore(collection *mongo.Collection, repoInfo *Re
 		})
 	}
 
-	deps := GetReposFromDBMongo(collection, repos)
+	// deps := GetReposFromDBMongo(collection, repos)
 
-	for _, dep := range deps {
-		wg.Add(1)
-		go func(collection *mongo.Collection, dep RepoInfo, startPoint time.Time) {
-			defer wg.Done()
+	// for _, dep := range deps {
+	// 	wg.Add(1)
+	// 	go func(collection *mongo.Collection, dep RepoInfo, startPoint time.Time) {
+	// 		defer wg.Done()
 
-			individualScore := CalculateActivityScore(&dep, startPoint)
-			score += individualScore.Score
-			confidence += individualScore.Confidence
+	// 		individualScore := CalculateActivityScore(&dep, startPoint)
+	// 		score += individualScore.Score
+	// 		confidence += individualScore.Confidence
 
-			depsWithScores++
-		}(collection, dep, startPoint)
-	}
+	// 		depsWithScores++
+	// 	}(collection, dep, startPoint)
+	// }
 	totalDeps := len(repoInfo.Dependencies)
 
 	wg.Wait()
@@ -235,20 +235,20 @@ func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *Rep
 			Name:  dependency.Name,
 		})
 	}
-	deps := GetReposFromDBMongo(collection, repos)
+	// deps := GetReposFromDBMongo(collection, repos)
 
-	for _, dep := range deps {
-		wg.Add(1)
-		go func(collection *mongo.Collection, dep RepoInfo) {
-			defer wg.Done()
+	// for _, dep := range deps {
+	// 	wg.Add(1)
+	// 	go func(collection *mongo.Collection, dep RepoInfo) {
+	// 		defer wg.Done()
 
-			individualScore := CalculateLicenseScore(&dep, licenseMap)
-			score += individualScore.Score
-			confidence += individualScore.Confidence
+	// 		individualScore := CalculateLicenseScore(&dep, licenseMap)
+	// 		score += individualScore.Score
+	// 		confidence += individualScore.Confidence
 
-			depsWithScores++
-		}(collection, dep)
-	}
+	// 		depsWithScores++
+	// 	}(collection, dep)
+	// }
 	totalDeps := len(repoInfo.Dependencies)
 
 	wg.Wait()

@@ -12,7 +12,6 @@ import (
 )
 
 func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
-	var repo util.RepoInfo
 	for _, message := range sqsEvent.Records {
 		catalog := *message.MessageAttributes["catalog"].StringValue
 		owner := *message.MessageAttributes["owner"].StringValue
@@ -24,21 +23,22 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return err
 		}
 
-		mongoClient := util.GetMongoClient()
-		defer mongoClient.Disconnect(ctx)
-		collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-		util.SetScoreState(collection, catalog, owner, name, 2)
-		repo, err = util.QueryProject(collection, catalog, owner, name, timeFrame)
+		
+		dbClient := util.GetDynamoDBClient(ctx)
+		err = util.SetScoreState(ctx, dbClient, catalog, owner, name, 2)
+
+		repo, err := util.QueryProject(ctx, dbClient, catalog, owner, name, timeFrame)
 		if err != nil {
 			log.Println(err)
 			return err
 		}
+		fmt.Println(repo)
 	}
 
-	for _, dependency := range repo.Dependencies {
-		fmt.Println("submitting dep to queue")
-		util.SubmitDependencies(ctx, dependency.Catalog, dependency.Owner, dependency.Name)
-	}
+	// for _, dependency := range repo.Dependencies {
+	// 	fmt.Println("submitting dep to queue")
+	// 	util.SubmitDependencies(ctx, dependency.Catalog, dependency.Owner, dependency.Name)
+	// }
 
 	return nil
 }

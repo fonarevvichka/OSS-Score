@@ -18,9 +18,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"golang.org/x/oauth2"
 	"golang.org/x/sync/errgroup"
 )
@@ -43,24 +40,6 @@ func GetDynamoDBClient(ctx context.Context) *dynamodb.Client {
 	return dynamodb.NewFromConfig(cfg)
 }
 
-func GetMongoClient() *mongo.Client {
-	uri := os.Getenv("MONGO_URI")
-	// Create a new mongo_client and connect to the server
-	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	if err := mongoClient.Ping(context.Background(), readpref.Primary()); err != nil {
-		panic(err)
-	}
-	fmt.Println("Successfully connected and pinged.")
-
-	return mongoClient
-}
-
-
 // repo, found, error
 func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, name string) (RepoInfo, bool, error) {
 	var repo RepoInfo
@@ -73,7 +52,7 @@ func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, n
 	})
 
 	if err != nil {
-		return repo, false, fmt.Errorf("GetItem: %v\n", err)
+		return repo, false, fmt.Errorf("GetItem: %v", err)
 	}
 
 	if data.Item == nil {
@@ -82,7 +61,7 @@ func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, n
 
 	err = attributevalue.UnmarshalMap(data.Item, &repo)
 	if err != nil {
-		return repo, false, fmt.Errorf("UnmarhsalMap: %v\n", err)
+		return repo, false, fmt.Errorf("UnmarhsalMap: %v", err)
 	}
 
 	return  repo, true, nil
@@ -91,16 +70,6 @@ func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, n
 // func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repos []NameOwner) (*dynamodb.GetItemOutput, error) {
 // 	client.Que
 // }
-
-func getRepoFilterMongo(owner string, name string) bson.D {
-	return bson.D{
-		{"$and",
-			bson.A{
-				bson.D{{"owner", owner}},
-				bson.D{{"name", name}},
-			}},
-	}
-}
 
 func getManyRepoFilter(repos []NameOwner) bson.D {
 	var filters bson.A
@@ -121,42 +90,34 @@ func getManyRepoFilter(repos []NameOwner) bson.D {
 	}
 }
 
-func GetRepoFromDBMongo(collection *mongo.Collection, owner string, name string) *mongo.SingleResult {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+// func GetReposFromDBMongo(collection *mongo.Collection, repos []NameOwner) []RepoInfo {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
 
-	return collection.FindOne(ctx, getRepoFilterMongo(owner, name))
-}
+// 	cur, err := collection.Find(ctx, getManyRepoFilter(repos))
 
-func GetReposFromDBMongo(collection *mongo.Collection, repos []NameOwner) []RepoInfo {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+// 	if err != nil {
+// 		log.Fatalln(err)
+// 	}
 
-	cur, err := collection.Find(ctx, getManyRepoFilter(repos))
+// 	var deps []RepoInfo
 
-	if err != nil {
-		log.Fatalln(err)
-	}
+// 	for cur.Next(context.TODO()) {
+// 		var dep RepoInfo
+// 		err := cur.Decode(&dep)
 
-	var deps []RepoInfo
+// 		if err != nil {
+// 			log.Fatal("Error on Decoding the document", err)
+// 		}
+// 		deps = append(deps, dep)
+// 	}
 
-	for cur.Next(context.TODO()) {
-		var dep RepoInfo
-		err := cur.Decode(&dep)
-
-		if err != nil {
-			log.Fatal("Error on Decoding the document", err)
-		}
-		deps = append(deps, dep)
-	}
-
-	return deps
-}
+// 	return deps
+// }
 
 func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
 	repoInfo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 	if err != nil {
-		log.Println("error querying db")
 		log.Fatalln(err)
 	}
 
@@ -194,57 +155,44 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 	return combinedScore, repoInfo.Status
 }
 
-func addUpdateRepo(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int, licenseMap map[string]int) (RepoInfoMessage, error) {
+func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int, licenseMap map[string]int) (RepoInfo, error) {
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
 		log.Println(err)
-		return RepoInfoMessage{}, err
+		return RepoInfo{}, err
 	}
 
-	res := GetRepoFromDBMongo(collection, owner, name)
-
-	repoInfo := RepoInfo{}
-	insert := false
+	repo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 
 	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-	if res.Err() == mongo.ErrNoDocuments { // No data on repo
-		insert = true
+	if !found { // No data on repo
 		log.Println(owner + "/" + name + " Not in DB, need to do full query")
 
-		repoInfo, err = QueryGithub(catalog, owner, name, startPoint)
+		repo, err = QueryGithub(catalog, owner, name, startPoint)
 		if err != nil {
 			log.Println(err)
-			return RepoInfoMessage{}, err
+			return repo, err
 		}
 		log.Println(owner + "/" + name + " Done querying github")
 	} else {
-		err := res.Decode(&repoInfo)
-		if err != nil {
-			log.Println(err)
-			return RepoInfoMessage{}, err
-		}
-
 		// Repo data expired
-		if repoInfo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) {
+		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) {
 
 			log.Println(owner + "/" + name + " Need to do partial update")
-			if repoInfo.UpdatedAt.After(startPoint) {
-				startPoint = repoInfo.UpdatedAt
+			if repo.UpdatedAt.After(startPoint) {
+				startPoint = repo.UpdatedAt
 			}
-			repoInfo, err = QueryGithub(catalog, owner, name, startPoint) // pull only needed data
+			repo, err = QueryGithub(catalog, owner, name, startPoint) // pull only needed data
 			if err != nil {
 				log.Println(err)
-				return RepoInfoMessage{}, err
+				return repo, err
 			}
 			log.Println(owner + "/" + name + " Done querying github")
 		}
 	}
 
-	return RepoInfoMessage{
-		RepoInfo: repoInfo,
-		Insert:   insert,
-	}, nil
+	return repo, nil
 }
 
 func GetLicenseMap() map[string]int {
@@ -329,11 +277,11 @@ func SubmitDependencies(ctx context.Context, catalog string, owner string, name 
 	return nil
 }
 
-func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, status int) {
+func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, status int) error {
 	repo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	if !found { // No match in DB
@@ -365,43 +313,47 @@ func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 	})
 
 	if err != nil {
-		log.Println(repo.Owner + "/" + repo.Name)
-		log.Fatal(err)
+		return fmt.Errorf("Error updating item %v", err)
 	}
 
-	// syncRepoWithDB(ctx, dbClient, repo)
+	return nil
 }
 
-func QueryProject(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
+func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
 
 	licenseMap := GetLicenseMap()
 
 	// get repo info message
-	repoInfoMessage, err := addUpdateRepo(collection, catalog, owner, name, timeFrame, licenseMap)
+	repo, err := addUpdateRepo(ctx, dbClient, catalog, owner, name, timeFrame, licenseMap)
 
 	if err != nil {
 		log.Println(err)
 		return RepoInfo{}, err
 	}
 
-	mainRepo := repoInfoMessage.RepoInfo
-	// insert := repoInfoMessage.Insert
+	repo.Status = 3
+	err = syncRepoWithDB(ctx, dbClient, repo)
 
-	mainRepo.Status = 3
-	// syncRepoWithDB(collection, mainRepo)
-
-	return mainRepo, nil
+	return repo, err
 }
 
-func syncRepoWithDB(ctx context.Context, client *dynamodb.Client, repo RepoInfo) {
-	_, err := client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
-		
+func syncRepoWithDB(ctx context.Context, client *dynamodb.Client, repo RepoInfo) error {
+	data, err := attributevalue.MarshalMap(repo)
+	if err != nil {
+		return fmt.Errorf("MarshalMap: %v\n", err)
+	}
+
+	_, err = client.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
+		Item: data,
 	})
 
 	if err != nil {
-		log.Println(repo.Owner + "/" + repo.Name)
-		log.Fatal(err)
+		log.Println("Error inserting " + repo.Owner + "/" + repo.Name)
+		return fmt.Errorf("PutItem: %v", err)
 	}
+
+	return nil
 }
 
 func QueryGithub(catalog string, owner string, name string, startPoint time.Time) (RepoInfo, error) {

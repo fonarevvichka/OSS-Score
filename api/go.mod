@@ -6,8 +6,8 @@ require (
 	github.com/aws/aws-lambda-go v1.28.0
 	github.com/aws/aws-sdk-go-v2/config v1.13.1
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.17.1
-	go.mongodb.org/mongo-driver v1.8.3
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+	go.mongodb.org/mongo-driver v1.8.4
+	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 )
 
 require (
@@ -17,6 +17,7 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go v1.43.10
 	github.com/aws/aws-sdk-go-v2 v1.14.0 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.8.0 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.7.0
@@ -41,9 +42,9 @@ require (
 	github.com/xdg-go/stringprep v1.0.2 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	golang.org/x/crypto v0.0.0-20201216223049-8b5274cf687f // indirect
-	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208 // indirect
-	golang.org/x/text v0.3.5 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 )

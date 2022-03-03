@@ -4,11 +4,15 @@ import (
 	"api/util"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"golang.org/x/oauth2"
 )
 
@@ -17,7 +21,7 @@ type response struct {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// queueName := os.Getenv("QUERY_QUEUE")
+	queueName := os.Getenv("QUERY_QUEUE")
 	catalog, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
@@ -53,62 +57,74 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 	log.Println("Ready to submit request for ", owner, "/", name)
 
-	// client := util.GetSqsClient(ctx)
+	client := util.GetSqsClient(ctx)
 
-	// gQInput := &sqs.GetQueueUrlInput{
-	// 	QueueName: &queueName,
-	// }
+	gQInput := &sqs.GetQueueUrlInput{
+		QueueName: &queueName,
+	}
 
-	// result, err := client.GetQueueUrl(ctx, gQInput)
-	// if err != nil {
-	// 	log.Println("Got an error getting the queue URL:")
-	// 	log.Println(err)
-	// 	return events.APIGatewayProxyResponse{
-	// 		StatusCode: 503,
-	// 		Headers: map[string]string{
-	// 			"Access-Control-Allow-Origin":  "*",
-	// 			"Access-Control-Allow-Headers": "Content-Type",
-	// 			"Access-Control-Allow-Methods": "POST",
-	// 		},
-	// 		Body: string("Error while getting the queue URL"),
-	// 	}, err
-	// }
+	result, err := client.GetQueueUrl(ctx, gQInput)
+	if err != nil {
+		log.Println("Got an error getting the queue URL:")
+		log.Println(err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: 503,
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Methods": "POST",
+			},
+			Body: string("Error while getting the queue URL"),
+		}, err
+	}
 
-	// queueURL := result.QueueUrl
-	// messageBody := fmt.Sprintf("%s/%s", owner, name)
-	// sMInput := &sqs.SendMessageInput{
-	// 	MessageGroupId: aws.String(messageBody),
-	// 	MessageAttributes: map[string]types.MessageAttributeValue{
-	// 		"catalog": {
-	// 			DataType:    aws.String("String"),
-	// 			StringValue: aws.String(catalog),
-	// 		},
-	// 		"owner": {
-	// 			DataType:    aws.String("String"),
-	// 			StringValue: aws.String(owner),
-	// 		},
-	// 		"name": {
-	// 			DataType:    aws.String("String"),
-	// 			StringValue: aws.String(name),
-	// 		},
-	// 		"timeFrame": {
-	// 			DataType:    aws.String("String"),
-	// 			StringValue: aws.String("12"), // temp hardcoded
-	// 		},
-	// 	},
-	// 	MessageBody: aws.String(messageBody),
-	// 	QueueUrl:    queueURL,
-	// }
+	queueURL := result.QueueUrl
+	messageBody := fmt.Sprintf("%s/%s", owner, name)
+	sMInput := &sqs.SendMessageInput{
+		MessageGroupId: aws.String(messageBody),
+		MessageAttributes: map[string]types.MessageAttributeValue{
+			"catalog": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(catalog),
+			},
+			"owner": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(owner),
+			},
+			"name": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(name),
+			},
+			"timeFrame": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String("12"), // temp hardcoded
+			},
+		},
+		MessageBody: aws.String(messageBody),
+		QueueUrl:    queueURL,
+	}
 
-	// _, err = client.SendMessage(ctx, sMInput)
-	// if err != nil {
-	// 	fmt.Println("Got an error sending the message:")
-	// 	fmt.Println(err)
-	// 	return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Got an error sending the message:")}, err
-	// }
+	_, err = client.SendMessage(ctx, sMInput)
+	if err != nil {
+		fmt.Println("Got an error sending the message:")
+		fmt.Println(err)
+		return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Got an error sending the message:")}, err
+	}
 
 	dbClient := util.GetDynamoDBClient(ctx)
-	util.SetScoreState(ctx, dbClient, catalog, owner, name, 1)
+	err = util.SetScoreState(ctx, dbClient, catalog, owner, name, 1)
+
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Methods": "POST",
+			},
+			Body: "Error updating state in DynamoDB",
+		}, err
+	}
 
 	response, _ := json.Marshal(response{Message: "Score calculation request queued"})
 	resp := events.APIGatewayProxyResponse{

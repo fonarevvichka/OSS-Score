@@ -191,19 +191,13 @@ type RepoRequestInfo struct {
 }
 
 type RepoInfo struct {
-	Name    string `dynamodbav:name`
-	Owner   string `dynamodbav:owner`
-	Catalog string `dynamodbav:catalog`
+	Name    string `dynamodbav:"name"`
+	Owner   string `dynamodbav:"owner"`
+	Catalog string
 
 	DefaultBranch string
 
-	Status int `dynamodbav:status`//0 - not calcualted, 1 - queued, 2 pulled from queue, 3 ready
-
-	RepoActivityScore Score
-	RepoLicenseScore  Score
-
-	DependencyActivityScore Score
-	DependencyLicenseScore  Score
+	Status int //0 - not calcualted, 1 - queued, 2 pulled from queue, 3 ready
 
 	UpdatedAt time.Time
 
@@ -217,6 +211,10 @@ type RepoInfo struct {
 	Issues       Issues
 	Dependencies []Dependency
 	Commits      []Commit
+}
+
+type RepoData struct {
+
 }
 
 type RepoInfoMessage struct {
