@@ -197,7 +197,7 @@ type RepoInfo struct {
 
 	DefaultBranch string
 
-	Status int //0 - not calcualted, 1 - queued, 2 pulled from queue, 3 ready
+	Status int `dynamodbav:status`//0 - not calcualted, 1 - queued, 2 pulled from queue, 3 ready
 
 	RepoActivityScore Score
 	RepoLicenseScore  Score

@@ -18,7 +18,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -26,7 +25,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func GetSqsSession(ctx context.Context) *sqs.Client {
+func GetSqsClient(ctx context.Context) *sqs.Client {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		panic(err)
@@ -35,7 +34,7 @@ func GetSqsSession(ctx context.Context) *sqs.Client {
 	return sqs.NewFromConfig(cfg)
 }
 
-func GetDynamoDBSession(ctx context.Context) *dynamodb.Client {
+func GetDynamoDBClient(ctx context.Context) *dynamodb.Client {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		panic(err)
@@ -281,7 +280,7 @@ func GetLicenseMap() map[string]int {
 func SubmitDependencies(ctx context.Context, catalog string, owner string, name string) error {
 	queueName := os.Getenv("QUERY_QUEUE")
 	fmt.Println(queueName)
-	client := GetSqsSession(ctx)
+	client := GetSqsClient(ctx)
 
 	gQInput := &sqs.GetQueueUrlInput{
 		QueueName: &queueName,
@@ -330,29 +329,47 @@ func SubmitDependencies(ctx context.Context, catalog string, owner string, name 
 	return nil
 }
 
-func UpdateScoreState(collection *mongo.Collection, catalog string, owner string, name string, status int) {
-	res := GetRepoFromDBMongo(collection, owner, name)
+func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, status int) {
+	repo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 
-	var repo RepoInfo
-	new := false
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	if res.Err() == mongo.ErrNoDocuments { // No match in DB
-		repo = RepoInfo{ // this is bad, will break, need to get repo from db first
+	if !found { // No match in DB
+		repo = RepoInfo{
 			Catalog: catalog,
 			Owner:   owner,
 			Name:    name,
 			Status:  status,
 		}
-		new = true
 	} else {
-		err := res.Decode(&repo)
-		if err != nil {
-			log.Fatalln(err)
-		}
 		repo.Status = status
 	}
 
-	syncRepoWithDB(collection, repo, new)
+	_, err = dbClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
+		Key: map[string]dynamoTypes.AttributeValue{
+			"name": &dynamoTypes.AttributeValueMemberS{Value: repo.Name},
+			"owner": &dynamoTypes.AttributeValueMemberS{Value: repo.Owner},
+		},
+		UpdateExpression: aws.String("set #catalog = :catalog, #status = :status"),
+		ExpressionAttributeValues: map[string]dynamoTypes.AttributeValue{
+			":catalog":        &dynamoTypes.AttributeValueMemberS{Value: repo.Catalog},
+			":status":        &dynamoTypes.AttributeValueMemberN{Value: strconv.Itoa(repo.Status)},
+		},
+		ExpressionAttributeNames: map[string]string{
+			"#catalog": "catalog",
+			"#status": "status",
+		},
+	})
+
+	if err != nil {
+		log.Println(repo.Owner + "/" + repo.Name)
+		log.Fatal(err)
+	}
+
+	// syncRepoWithDB(ctx, dbClient, repo)
 }
 
 func QueryProject(collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
@@ -368,28 +385,22 @@ func QueryProject(collection *mongo.Collection, catalog string, owner string, na
 	}
 
 	mainRepo := repoInfoMessage.RepoInfo
-	insert := repoInfoMessage.Insert
+	// insert := repoInfoMessage.Insert
 
 	mainRepo.Status = 3
-	syncRepoWithDB(collection, mainRepo, insert)
+	// syncRepoWithDB(collection, mainRepo)
 
 	return mainRepo, nil
 }
 
-func syncRepoWithDB(collection *mongo.Collection, repo RepoInfo, new bool) {
-	if new {
-		_, err := collection.InsertOne(context.TODO(), repo)
-		if err != nil {
-			log.Println(repo.Owner + "/" + repo.Name)
-			log.Fatal(err)
-		}
-	} else {
-		insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
-		filter := getRepoFilterMongo(repo.Owner, repo.Name)
-		_, err := collection.UpdateOne(context.TODO(), filter, insertableData)
-		if err != nil {
-			log.Fatal(err)
-		}
+func syncRepoWithDB(ctx context.Context, client *dynamodb.Client, repo RepoInfo) {
+	_, err := client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		
+	})
+
+	if err != nil {
+		log.Println(repo.Owner + "/" + repo.Name)
+		log.Fatal(err)
 	}
 }
 

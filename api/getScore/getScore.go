@@ -33,7 +33,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
-	dbClient := util.GetDynamoDBSession(ctx)
+	dbClient := util.GetDynamoDBClient(ctx)
 
 	// mongoClient := util.GetMongoClient()
 	// collection := mongoClient.Database("OSS-Score").Collection(catalog)
