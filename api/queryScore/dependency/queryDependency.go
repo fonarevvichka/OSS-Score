@@ -23,6 +23,10 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 
 		util.QueryProject(ctx, dbClient, catalog, owner, name, timeFrame)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 	}
 
 	return nil
