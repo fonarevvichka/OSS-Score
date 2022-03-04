@@ -106,50 +106,6 @@ func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeysInfo [
 	return repos, nil
 }
 
-// func getManyRepoFilter(repos []NameOwner) bson.D {
-// 	var filters bson.A
-// 	for _, repo := range repos {
-// 		currFilter := bson.D{
-// 			{"$and",
-// 				bson.A{
-// 					bson.D{{"owner", repo.Owner}},
-// 					bson.D{{"name", repo.Name}},
-// 				}},
-// 		}
-
-// 		filters = append(filters, currFilter)
-// 	}
-
-// 	return bson.D{
-// 		{"$or", filters},
-// 	}
-// }
-
-// func GetReposFromDBMongo(collection *mongo.Collection, repos []NameOwner) []RepoInfo {
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-
-// 	cur, err := collection.Find(ctx, getManyRepoFilter(repos))
-
-// 	if err != nil {
-// 		log.Fatalln(err)
-// 	}
-
-// 	var deps []RepoInfo
-
-// 	for cur.Next(context.TODO()) {
-// 		var dep RepoInfo
-// 		err := cur.Decode(&dep)
-
-// 		if err != nil {
-// 			log.Fatal("Error on Decoding the document", err)
-// 		}
-// 		deps = append(deps, dep)
-// 	}
-
-// 	return deps
-// }
-
 func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
 	repoInfo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 	if err != nil {
