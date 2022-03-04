@@ -201,7 +201,7 @@ type RepoInfo struct {
 
 	UpdatedAt time.Time
 
-	License       string 
+	License       string
 	CreateDate    time.Time
 	LatestRelease time.Time
 	Stars         int
@@ -211,15 +211,6 @@ type RepoInfo struct {
 	Issues       Issues
 	Dependencies []Dependency
 	Commits      []Commit
-}
-
-type RepoData struct {
-
-}
-
-type RepoInfoMessage struct {
-	Insert   bool
-	RepoInfo RepoInfo
 }
 
 type Score struct {
