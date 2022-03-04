@@ -21,6 +21,10 @@ async function requestScores(owner, repo) {
                 }).catch(err => {
                     console.error(err);
                 });
+            } else if (response.status == 406)  {
+                scores.message = "Cannot provide score for private repo";
+            } else if ((response.status == 501) || (response.status == 503))  {
+                scores.message = "Error: cannot calculate score request";
             } else {
                 let messagePromise = response.json();
                 await messagePromise.then(response => {
