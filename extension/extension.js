@@ -75,7 +75,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     // scoreDiv.innerHTML += loading_gears;
     
     scoresPromise.then(scores => {
-        if (scores.activity != null) { // VALID SCORES RETURNED
+        if (scores.activity != null && scores.license != null) { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
         } else if (scores.message == 'Score not yet calculated') {
             console.log("Requesting previously unknown score");
@@ -120,6 +120,10 @@ async function getScores(owner, repo) {
                 }).catch(err => {
                     console.error(err);
                 });
+            } else if (response.status == 406)  {
+                scores.message = "Cannot provide score for private repo";
+            } else if ((response.status == 501) || (response.status == 503))  {
+                scores.message = "Error: cannot calculate score request";
             } else {
                 let messagePromise = response.json();
                 await messagePromise.then(message => {
@@ -148,6 +152,10 @@ async function getScores(owner, repo) {
                 }).catch(err => {
                     console.error(err);
                 });
+            } else if (response.status == 406)  {
+                scores.message = "Cannot provide score for private repo";
+            } else if ((response.status == 501) || (response.status == 503))  {
+                scores.message = "Error: cannot calculate score request";
             } else {
                 let messagePromise = response.json();
                 await messagePromise.then(message => {
