@@ -68,10 +68,16 @@ function insertScores(scoreDiv, scores) {
 
 async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     //inject into correct part of site
-    let repoInfo = document.querySelectorAll('.BorderGrid-row');
-    let releases = repoInfo[1];
-    let parent = releases.parentNode;
-    parent.insertBefore(scoreDiv, releases);
+    try {
+        let repoInfo = document.querySelectorAll('.BorderGrid-row');
+        let releases = repoInfo[1];
+        let parent = releases.parentNode;
+        parent.insertBefore(scoreDiv, releases);
+    } catch (error) {
+        console.log("Error in insertScoreSection: " + error)
+        return
+    }
+
 
     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2> Scores Loading...";
     scoreDiv.innerHTML += '<br><br>';
@@ -197,6 +203,5 @@ if (splitUrl.length == 2) { // Repo homepage
 if (owner != '' && repo != '') {
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
-
     insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
 }
