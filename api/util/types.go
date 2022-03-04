@@ -199,7 +199,8 @@ type RepoInfo struct {
 
 	Status int //0 - not calcualted, 1 - queued, 2 pulled from queue, 3 ready
 
-	UpdatedAt time.Time
+	DataStartPoint time.Time
+	UpdatedAt      time.Time
 
 	License       string
 	CreateDate    time.Time

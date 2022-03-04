@@ -163,8 +163,9 @@ func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 
 	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-	if !found { // No data on repo
+	if !found { // No data on repo, essentially useless, since it will be inserted by handler
 		log.Println(owner + "/" + name + " Not in DB, need to do full query")
+		repo.DataStartPoint = startPoint
 
 		repo, err = QueryGithub(catalog, owner, name, startPoint)
 		if err != nil {
@@ -174,8 +175,11 @@ func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 		log.Println(owner + "/" + name + " Done querying github")
 	} else {
 		// Repo data expired
-		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) {
-			log.Println(owner + "/" + name + " Need to do partial update")
+		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || startPoint.Before(repo.DataStartPoint) {
+			if startPoint.Before(repo.DataStartPoint) || repo.DataStartPoint.IsZero() {
+				repo.DataStartPoint = startPoint
+			}
+			log.Println(owner + "/" + name + " Need to query github")
 			if repo.UpdatedAt.After(startPoint) {
 				startPoint = repo.UpdatedAt
 			}
