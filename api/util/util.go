@@ -179,7 +179,8 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 			} else if scoreType == "license" {
 				licenseMap := GetLicenseMap()
 				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
-				// depScore = CalculateDependencyLicenseScore(collection, &repoInfo, licenseMap)
+				depScore, err = CalculateDependencyLicenseScore(ctx, dbClient, &repoInfo, licenseMap)
+				log.Println(err)
 			}
 			combinedScore = Score{
 				Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),

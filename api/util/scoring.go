@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // issues:
@@ -224,12 +223,12 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 	return repoScore
 }
 
-func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) Score {
+func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, licenseMap map[string]int) (Score, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
-			Score: 100,
-			// Confidence: 100,
-		}
+			Score:      100,
+			Confidence: 100,
+		}, nil
 	}
 
 	var wg sync.WaitGroup
@@ -244,20 +243,27 @@ func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *Rep
 			Name:  dependency.Name,
 		})
 	}
-	// deps := GetReposFromDBMongo(collection, repos)
+	deps, err := GetReposFromDB(ctx, dbClient, repos)
 
-	// for _, dep := range deps {
-	// 	wg.Add(1)
-	// 	go func(collection *mongo.Collection, dep RepoInfo) {
-	// 		defer wg.Done()
+	if err != nil {
+		return Score{ // not sure if score should be 0 or 100 here
+			Score:      100,
+			Confidence: 0,
+		}, err
+	}
 
-	// 		individualScore := CalculateLicenseScore(&dep, licenseMap)
-	// 		score += individualScore.Score
-	// 		confidence += individualScore.Confidence
+	for _, dep := range deps {
+		wg.Add(1)
+		go func(dep RepoInfo) {
+			defer wg.Done()
 
-	// 		depsWithScores++
-	// 	}(collection, dep)
-	// }
+			individualScore := CalculateLicenseScore(&dep, licenseMap)
+			score += individualScore.Score
+			confidence += individualScore.Confidence
+
+			depsWithScores++
+		}(dep)
+	}
 	totalDeps := len(repoInfo.Dependencies)
 
 	wg.Wait()
@@ -274,5 +280,5 @@ func CalculateDependencyLicenseScore(collection *mongo.Collection, repoInfo *Rep
 	return Score{
 		Score:      score,
 		Confidence: confidence,
-	}
+	}, nil
 }
