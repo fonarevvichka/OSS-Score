@@ -197,7 +197,7 @@ type RepoInfo struct {
 
 	DefaultBranch string
 
-	Status int //0 - not calcualted, 1 - queued, 2 pulled from queue, 3 ready
+	Status int //0 - not calculated, 1 - queued, 2 - pulled from queue, 3 - ready
 
 	DataStartPoint time.Time
 	UpdatedAt      time.Time

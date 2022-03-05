@@ -177,20 +177,19 @@ func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 		// Repo data expired, or empty
 		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || startPoint.Before(repo.DataStartPoint) {
 			log.Println(owner + "/" + name + " Need to query github")
-			if repo.DataStartPoint.IsZero() {
-				repo.DataStartPoint = startPoint
-			}
 
-			if startPoint.Before(repo.DataStartPoint) {
-				repo.DataStartPoint = startPoint
-			} else if startPoint.Before(repo.UpdatedAt) { // don't want to reset start point if we want full query
+			if startPoint.Before(repo.UpdatedAt) { // set start point to collect only needed data
 				startPoint = repo.UpdatedAt
 			}
 
-			repo, err = QueryGithub(catalog, owner, name, startPoint) // pull only needed data
+			repo, err = QueryGithub(catalog, owner, name, startPoint)
 			if err != nil {
 				log.Println(err)
 				return repo, err
+			}
+
+			if repo.DataStartPoint.IsZero() || startPoint.Before(repo.DataStartPoint) {
+				repo.DataStartPoint = startPoint
 			}
 			log.Println(owner + "/" + name + " Done querying github")
 		}
