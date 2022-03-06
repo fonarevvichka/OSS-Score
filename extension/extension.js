@@ -9,6 +9,7 @@ function promiseTimeout (time) {
 async function requestScores(owner, repo) {
     let message = null;
     let requestURL = basePath + '/owner/' + owner + '/name/' + repo;
+
     let promise = 
         fetch(requestURL, {
             method: 'POST',
@@ -22,18 +23,19 @@ async function requestScores(owner, repo) {
                     console.error(err);
                 });
             } else if (response.status == 406)  {
-                scores.message = "Cannot provide score for private repo";
+                message = "Cannot provide score for private repo";
             } else if ((response.status == 501) || (response.status == 503))  {
-                scores.message = "Error: Internal Servor Error";
+                message = "Error: Internal Servor Error";
             } else {
-                scores.message = "Un-handled response from OSS-Score API";
+                message = "Un-handled response from OSS-Score API";
             }
         }).catch(err => {
-            message = "error caught in post";
+            message = "Error while placing/parcing post";
             message += err;
             console.error(err);
         });
     await promise;
+
     return message;
 }
 
