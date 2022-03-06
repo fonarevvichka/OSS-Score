@@ -1,17 +1,8 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
+plugins:
+  - serverless-iam-roles-per-function
 
-service: oss-score-test # NOTE: update this with your service name
+
+service: oss-score-test
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -21,50 +12,50 @@ frameworkVersion: ">=2.24.0"
 provider:
   name: aws
   runtime: go1.x
-
-you can overwrite defaults here
- stage: dev
- region: us-east-2
+  stage: dev
+  region: us-east-2
 
 
 # you can add statements to the Lambda function's IAM Role here
-#  iam:
-#    role:
-#      statements:
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:ListBucket"
-#          Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:PutObject"
-#          Resource:
-#            Fn::Join:
-#              - ""
-#              - - "arn:aws:s3:::"
-#                - "Ref" : "ServerlessDeploymentBucket"
-#                - "/*"
+  # iam:
+  #   role:
+  #     statements:
+  #       - Effect: "Allow"
+  #         Action:
+  #           - dynamodb:GetItem 
+  #         Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }         Resource:
+  #           Fn::Join:
+  #             - ""
+  #             - - "arn:aws:dynamodb:::"
+  #               - "Ref" : "ServerlessDeploymentBucket"
+  #               - "/*"
 
 # you can define service wide environment variables here
-#  environment:
-#    variable1: value1
+  environment:
+    DYNAMODB_TABLE: ${env:DYNAMODB_TABLE}
+    SHELF_LIFE: ${env:SHELF_LIFE}
 
 package:
- individually: true
- exclude:
-   - ./**
+  individually: true
+  exclude:
+    - ./*
 
 functions:
   get:
     handler: bin/getScore
+    iamRoleStatementsName: get-score-role
+    iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:GetItem 
+      Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
     package:
       include:
         - ../bin/getScore
-        - ../bin/mongo_cert.pem
         - ../util/scores
     events:
       - http:
-          path: catalog/{catalog}/owner/{owner}/name/{name}
+          path: catalog/{catalog}/owner/{owner}/name/{name}/type/{type}
           method: get
           cors: true
           request:
@@ -73,6 +64,16 @@ functions:
                 catalog: true
                 owner: true
                 name: true
+                type: true
+    # post:
+    #   handler: bin/queryScoreHandl
+    #   package:
+    #     include:
+    #       - ./bin/getQueryBin
+    #   events:
+    #     - http:
+    #         path: post
+    #         method: post
   # getquery:
   #   handler: bin/getQueryBin
   #   package:
