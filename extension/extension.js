@@ -24,15 +24,10 @@ async function requestScores(owner, repo) {
             } else if (response.status == 406)  {
                 scores.message = "Cannot provide score for private repo";
             } else if ((response.status == 501) || (response.status == 503))  {
-                scores.message = "Error: cannot calculate score request";
+                scores.message = "Error: Internal Servor Error";
             } else {
-                let messagePromise = response.json();
-                await messagePromise.then(response => {
-                    message = response.message;
-                }).catch(err => {
-                    console.error(err);
-                });
-        }
+                scores.message = "Un-handled response from OSS-Score API";
+            }
         }).catch(err => {
             message = "error caught in post";
             message += err;
@@ -122,7 +117,6 @@ async function getScores(owner, repo) {
                 await scorePromise.then(response => {
                     if (response.message == "Score ready") {
                         scores.license = response.score;
-                        // scores.message = response.message;
                     } else {
                         scores.message = response.message
                     };
@@ -132,14 +126,9 @@ async function getScores(owner, repo) {
             } else if (response.status == 406)  {
                 scores.message = "Cannot provide score for private repo";
             } else if ((response.status == 501) || (response.status == 503))  {
-                scores.message = "Error: cannot calculate score request";
+                scores.message = "Error: Internal Servor Error";
             } else {
-                let messagePromise = response.json();
-                await messagePromise.then(message => {
-                    scores.message = message.message;
-                }).catch(err => {
-                    console.error(err);
-                });
+                scores.message = "Un-handled response from OSS-Score API";
             }
         }).catch(err => {
             console.error(err);
