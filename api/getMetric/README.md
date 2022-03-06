@@ -1,1 +1,0 @@
-Needs mongo cert file by the name of `mongo_cert.pem`
