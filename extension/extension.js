@@ -8,6 +8,7 @@ function promiseTimeout (time) {
 
 async function requestScores(owner, repo) {
     let message = null;
+    let success = false
     let requestURL = basePath + '/owner/' + owner + '/name/' + repo;
 
     let promise = 
@@ -19,6 +20,7 @@ async function requestScores(owner, repo) {
                 let messagePromise = response.json();
                 await messagePromise.then(response => {
                     message = response.message;
+                    success = true
                 }).catch(err => {
                     console.error(err);
                 });
@@ -30,13 +32,13 @@ async function requestScores(owner, repo) {
                 message = "Un-handled response from OSS-Score API";
             }
         }).catch(err => {
-            message = "Error while placing/parcing post";
+            message = "Error while placing/parsing post";
             message += err;
             console.error(err);
         });
     await promise;
 
-    return message;
+    return [message, success];
 }
 
 async function awaitResults(scoreDiv, owner, repo) {
