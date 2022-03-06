@@ -130,8 +130,9 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 			return err
 		}
 
-		if data.Data.Repository.DependencyGraphManifests.TotalCount == 0 {
-			break
+		// No dependencies
+		if len(data.Data.Repository.DependencyGraphManifests.Edges) == 0 {
+			return nil
 		}
 
 		for _, node := range data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.Edges {
