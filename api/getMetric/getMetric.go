@@ -19,6 +19,7 @@ type singleMetricRepsone struct {
 }
 
 type allMetricsResponse struct {
+	Message                 string              `json:"message"`
 	Stars                   singleMetricRepsone `json:"stars"`
 	ReleaseCadence          singleMetricRepsone `json:"releaseCadence"`
 	AgeLastRelease          singleMetricRepsone `json:"ageLastRelease"`
@@ -63,7 +64,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	var allMetrics allMetricsResponse
 
 	if found { // match in DB
-
 		if repo.Status == 1 {
 			message = "Score calculation queued"
 		} else if repo.Status == 2 {
@@ -71,6 +71,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		} else {
 			timeFrame := 12
 			startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+			message = "Metric ready"
 
 			switch metric {
 			case "stars":
@@ -185,12 +186,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			}
 		}
 	} else {
-		message = "Score not available"
+		message = "Metric not available"
 	}
 
 	var response []byte
 
 	if metric == "all" {
+		allMetrics.Message = message
 		response, _ = json.Marshal(allMetrics)
 	} else {
 		response, _ = json.Marshal(singleMetricRepsone{Message: message, Metric: metricValue, Confidence: confidence})
