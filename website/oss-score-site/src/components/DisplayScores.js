@@ -5,6 +5,12 @@ import './Homepage.css';
 
 
 const DisplayScores = (owner, name, metrics) => {
+    // round scores
+    
+    for (var key in metrics) {
+        metrics[key].metric = Math.round(metrics[key].metric * 100) / 100
+    }
+
     return (
         '<div class="repo-stats">\
             <div class="basic-info-display">\

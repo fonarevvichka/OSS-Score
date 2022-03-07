@@ -43,6 +43,7 @@ header {
 /*** head2head ***/
 
 .head2head {
+    display: flex;
     flex-wrap: wrap;
     justify-content: center;
     margin-left: 15%;

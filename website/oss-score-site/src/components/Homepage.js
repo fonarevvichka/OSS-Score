@@ -5,9 +5,6 @@ import React, {useState} from 'react'
 import './Homepage.css';
 import DisplayScores from './DisplayScores.js';
 
-
-
-
 /* functional component for homepage */
 export default function Home(props) {
 
@@ -20,10 +17,23 @@ export default function Home(props) {
     const validateURL = (url, repoNum) => {
 
         // Pattern match Github URL with regex: check that it starts with https://github.com
-        const validgitHub = new RegExp('^https://github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
-        const validgitHubTree = new RegExp('^https://github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
+        //const validgitHub = new RegExp('^https://github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
+        //const validgitHubTree = new RegExp('^https://github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
+        //const validgitHub = new RegExp('^ ((https:\/\/)?github.com\/)?[a-zA-Z0-9._-]+\/+[a-zA-Z0-9._-]+$')
+        //const validgitHubTree = new RegExp('^ ((https:\/\/)?github.com\/)?[a-zA-Z0-9._-]+\/tree\/+[a-zA-Z0-9._-]+$')
+
+        // Note: If there is a user error in the input of the repository name, which would be a valid
+        //      repository name (ex. github.comfacebook/react) our validation will pass
+        //      but the API will return no repo found
+
+        const validgitHub = new RegExp('^(https://)?github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
+        const validgitHubTree = new RegExp('^(https://)?github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
+
+        const validgitHubNoPrefix = new RegExp('^[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
+        const validgitHubTreeNoPrefix = new RegExp('^[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
         
-        if (!validgitHub.test(url) && !validgitHubTree.test(url)) {
+        if (!validgitHub.test(url) && !validgitHubTree.test(url) &&
+            !validgitHubNoPrefix.test(url) && !validgitHubTreeNoPrefix.test(url)) {
             return false
         }
 
@@ -56,17 +66,19 @@ export default function Home(props) {
         }
     }
 
-    /*function handleFocusOut(event) {
-        alert("in focus out")
-        if (!validateURL(event.target.value, "1")) {
-            displayError("1")
-        }
-    }*/
-
 
     /* function for parsing name and author */
     const getNameAuthor = (url) => {
-        let newUrl = url.replace('https://github.com/', '');
+        // or replace github.com/
+        let newUrl = null;
+
+        if (url.includes('https://github.com/')) {
+            newUrl = url.replace('https://github.com/', '');
+        } else if (url.includes('github.com/')) {
+            newUrl = url.replace('github.com/', '')
+        } else {
+            newUrl = url
+        }
 
         let splitUrl = newUrl.split('/').filter(element => element !== '');
         let owner = '';
@@ -82,46 +94,13 @@ export default function Home(props) {
             }
         }
         return [owner, repo];
-        }
-
+    }
 
     function promiseTimeout(time) {
         return new Promise(function (resolve, reject) {
             setTimeout(function () { resolve(); }, time);
         });
     };
-
-    async function requestScores(owner, repo) {
-        let message = null;
-        let requestURL = basePath + '/owner/' + owner + '/name/' + repo;
-        let promise =
-            fetch(requestURL, {
-                method: 'POST',
-                mode: 'cors'
-            }).then(async (response) => {
-                if (response.status == 200) {
-                    let messagePromise = response.json();
-                    await messagePromise.then(response => {
-                        message = response.message;
-                    }).catch(err => {
-                        console.error(err);
-                    });
-                } else {
-                    let messagePromise = response.json();
-                    await messagePromise.then(response => {
-                        message = response.message;
-                    }).catch(err => {
-                        console.error(err);
-                    });
-                }
-            }).catch(err => {
-                message = "error caught in post";
-                message += err;
-                console.error(err);
-            });
-        await promise;
-        return message;
-    }
 
 
     /* function that makes api call given an owner and repo name, returns metrics in json */
@@ -133,9 +112,9 @@ export default function Home(props) {
                     + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/'
                     + metric_name)
             
-            if (response.status == 200) {
+            if (response.status === 200) {
                 return response.json()
-            } else if (response.status == 406) {
+            } else if (response.status === 406) {
                 console.error("Repository entered does not exist")
                 return null
             } else {
@@ -148,43 +127,21 @@ export default function Home(props) {
         }
     }
 
-    async function awaitResults(owner_name, repo_name) {
+    async function awaitResults(owner, repo) {
         promiseTimeout(500).then(() => {
             console.log('Requesting Score');
-            getMetrics(owner_name, repo_name).then(scores => {
+            getMetrics(owner, repo).then(scores => {
                 if (scores.activity != null) {
-                    // need to call get metrics maybe
-                    // insertScores(scores); // Call component to make html
-                    console.log("Got the scores finally")
+                    return scores
                 } else {
-                    // Loading gears
-                    awaitResults(owner_name, repo_name);
+                    // still waiting
+                    console.log("Waiting for score")
+                    awaitResults(owner, repo);
+                    return null
                 }
             });
         });
     }
-
-
-
-    /* function for flattenning JSON */
-    /*const flattenJSON = (obj = {}, res = {}) => {
-        // base case: when it is not an object
-        // base case: when it is an object with a score and a confidence
-
-        // recursive case: when it is an object that doesn't have score and confidence
-
-        for (var key in obj) {
-            if (typeof obj[key] !== 'object') {
-                res[key] = obj[key];
-            } else if (obj[key].hasOwnProperty('message') && obj[key].hasOwnProperty('metric') && obj[key].hasOwnProperty('confidence')) {
-                res[key] = obj[key];
-            } else {
-                flattenJSON(obj[key], res);
-            };
-        };
-        
-        return res;
-    }*/
 
     /* handleSubmit function that does everything */
     const handleSubmit = async (evt) => {
@@ -207,48 +164,25 @@ export default function Home(props) {
         // Loading gear
         document.getElementById("head2head").innerHTML += loading_gears;
 
-        /*if (!validgitHub.test(inputs.search1) && !validgitHubTree.test(inputs.search1)) {
-            // clear textbox and highlight textbox red
-            document.getElementById("search1").style.borderColor = "#cc0000"
-        } else {
-            // parse Name and Author, call API
-            [owner1, name1] = getNameAuthor(inputs.search1)
-            scores1 = await getMetrics(owner1, name1)
-
-        }*/
-
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
             [owner1, name1] = getNameAuthor(inputs.search1)
-            scores1 = await getMetrics(owner1, name1)
+            scores1 = await awaitResults(owner1, name1)
         } else {
             displayError("1");
         }
 
-        // validating second url 
-        /*if (!validgitHub.test(inputs.search2) && !validgitHubTree.test(inputs.search2)) {
-            // clear textbox and highlight textbox red
-            document.getElementById("search2").style.borderColor = "#cc0000"
-        } else {
-            // parse Name and Author, call API
-            [owner2, name2] = getNameAuthor(inputs.search2)
-            scores2 = await getMetrics(owner2, name2)
-
-            // Hide loading gear
-            //document.getElementById("loading-extension").style.display = 'none'
-        }*/
-
         if (validateURL(inputs.search2, "2")) {
             // parse Name and Author, call API
             [owner2, name2] = getNameAuthor(inputs.search2)
-            scores2 = await getMetrics(owner2, name2)
+            scores2 = await awaitResults(owner2, name2)
         } else {
             displayError("2");
         }
 
         // Hide loading gear/clear all html in head2head
         document.getElementById("head2head").innerHTML = ''
-        document.getElementById("head2head").style.display = 'flex'
+
         if (scores1 != null && scores2 != null) {
             // Display both scores
             document.getElementById("head2head").innerHTML += DisplayScores(owner1, name1, scores1)
@@ -260,72 +194,6 @@ export default function Home(props) {
             // Display score 2
             document.getElementById("head2head").innerHTML += DisplayScores(owner2, name2, scores2)
         }
-
-        //document.getElementById("loading").innerHTML = loading_gears;
-
-
-        // get name and author: https://github.com/author/name
-        // const [owner1, name1] = getNameAuthor(inputs.search1)
-        // const [owner2, name2] = getNameAuthor(inputs.search2)
-
-        // set name and author in html
-        // document.getElementById("repoName1").innerHTML = name1;
-        // document.getElementById("repoAuthor1").innerHTML = owner1;
-        // document.getElementById("repoName2").innerHTML = name2;
-        // document.getElementById("repoAuthor2").innerHTML = owner2;
-        
-
-
-        // make call to api to get metrics in teh form of json
-        // let scores1 = await getMetrics(owner1, name1)
-
-        // if (scores1.activity != null) { // VALID SCORES RETURNED
-        //     //insertScores(scores); // our component that writes the html
-        // } else {
-        //     console.log("Requesting previously unknown score");
-        //     //submit post request
-        //     awaitResults(owner1, name1)
-        // }
-
-
-        // let scores2 = await getMetrics(owner2, name2)
-        
-        //console.log(scores1)
-        //console.log(scores2)
-
-
-        // // call component to display metrics
-        // // iterate through metric div tags to put scores in
-        // var num_repos = 2;
-        // var metricElems = document.getElementsByClassName("metric");
-        // var confidenceElems = document.getElementsByClassName("confidence")
-
-        // for (var i = 0; i < metricElems.length; i++) {
-        //     var metricId = metricElems[i].id
-        //     metricId = metricId.slice(0, -1)
-        //     console.log(metricId)
-
-        //     if (i < (metricElems.length / num_repos)) {
-        //         metricElems[i].innerHTML = scores1[metricId].metric
-        //         confidenceElems[i].innerHTML = scores1[metricId].confidence
-        //     }
-        //     else {
-        //         metricElems[i].innerHTML = scores2[metricId].metric
-        //         confidenceElems[i].innerHTML = scores2[metricId].confidence
-        //     }
-        // }
-
-        // show scores
-        // document.getElementById("loading").style.display = 'none'
-        // document.getElementById("head2head").style.display = 'flex'
-
-        // // clear previous scores
-        // document.getElementById("head2head").innerHTML = ""
-        // document.getElementById("head2head").innerHTML = ""
-
-        // // display new scores
-        // document.getElementById("head2head").innerHTML += DisplayScores(owner1, name1, scores1)
-        // document.getElementById("head2head").innerHTML += DisplayScores(owner2, name2, scores2)
     }
 
     return (
@@ -336,16 +204,12 @@ export default function Home(props) {
                 <div class="searchbar">
                     <div>
                         <label for="search1" >Link to Github repo #1</label><br></br>
-                        {/*<input key="search1" id="search1" name="search1" type="text" placeholder="Search Repo 1" onClick={() => document.getElementById('search1').style.borderColor = '#000000'}
-                            onChange={({ target }) => setInputs(state => ({ ...state, search1: target.value }))} value={inputs.search1} />*/}
                         <input key="search1" id="search1" name="search1" type="text" placeholder="Search Repo 1" onClick={() => document.getElementById('search1').style.borderColor = '#000000'}
                             onChange={handleChange("1")} value={inputs.search1}/>
                         <div class="error-message" id="error-message1" name="error-message1">Please enter a valid Github URL</div>
                     </div>
                     <div>
                         <label for="search2" >Link to Github repo #2</label><br></br>
-                        {/* <input key="search2" id="search2" name="search2" type="text" placeholder="Search Repo 2" onClick={() => document.getElementById('search2').style.borderColor = '#000000'}
-                            onChange={({ target }) => setInputs(state => ({ ...state, search2: target.value }))} value={inputs.search2} /> */}
                         <input key="search2" id="search2" name="search2" type="text" placeholder="Search Repo 2" onClick={() => document.getElementById('search2').style.borderColor = '#000000'}
                             onChange = {handleChange("2")} value={inputs.search2} />
                         <div class="error-message" id="error-message2" name="error-message2">Please enter a valid Github URL</div>
