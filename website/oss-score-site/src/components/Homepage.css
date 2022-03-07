@@ -33,6 +33,13 @@ header {
     padding: 3px;
 }
 
+.error-message {
+    display: none;
+    color: #cc0000;
+    text-align: left;
+    font-size: 10px;
+}
+
 /*** head2head ***/
 
 .head2head {
