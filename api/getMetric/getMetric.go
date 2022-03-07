@@ -110,7 +110,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 			case "all":
-				message = "Metric ready"
 				licenseMap := util.GetLicenseMap()
 				var score util.Score
 
