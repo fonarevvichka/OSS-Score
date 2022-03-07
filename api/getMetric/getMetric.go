@@ -71,6 +71,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		} else {
 			timeFrame := 12
 			startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+			message = "Metric ready"
 
 			switch metric {
 			case "stars":
@@ -109,6 +110,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 			case "all":
+				message = "Metric ready"
 				licenseMap := util.GetLicenseMap()
 				var score util.Score
 
