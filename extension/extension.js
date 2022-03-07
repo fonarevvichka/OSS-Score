@@ -19,7 +19,7 @@ async function requestScores(owner, repo) {
             if (response.status == 200) {
                 let messagePromise = response.json();
                 await messagePromise.then(response => {
-                    message = response.message;
+                    message = response.Message;
                     success = true
                 }).catch(err => {
                     console.error(err);
