@@ -102,18 +102,78 @@ export default function Home(props) {
         });
     };
 
+    async function requestScores(owner, repo) {
+        console.log("HERE")
+        let message = null;
+        let success = false
+        let requestURL = basePath + '/owner/' + owner + '/name/' + repo;
+
+        let promise =
+            fetch(requestURL, {
+                method: 'POST',
+                mode: 'cors'
+            }).then(async (response) => {
+                if (response.status === 200) {
+                    let messagePromise = response.json();
+                    await messagePromise.then(response => {
+                        message = response.message;
+                        success = true
+                    }).catch(err => {
+                        console.error(err);
+                    });
+                } else if (response.status === 406) {
+                    message = "Cannot provide score for private repo";
+                } else if ((response.status === 501) || (response.status === 503)) {
+                    message = "Error: Internal Servor Error";
+                } else {
+                    message = "Un-handled response from OSS-Score API";
+                }
+            }).catch(err => {
+                message = "Error while placing/parsing post";
+                message += err;
+                console.error(err);
+            });
+        await promise;
+
+        return {
+            message: message,
+            success: success,
+        };
+    }
+
+
 
     /* function that makes api call given an owner and repo name, returns metrics in json */
-    const getMetrics = async (owner_name, repo_name) => {
+    const getMetrics = async (owner, repo) => {
         let catalog_name = 'github'
         let metric_name = 'all'
         try {
             let response = await fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/'
-                    + catalog_name + '/owner/' + owner_name + '/name/' + repo_name + '/metric/'
+                    + catalog_name + '/owner/' + owner + '/name/' + repo + '/metric/'
                     + metric_name)
             
             if (response.status === 200) {
-                return response.json()
+                let scorePromise = response.json()
+                await scorePromise.then(response => {
+                    if (response.message === "Metric ready") {
+                        return response
+                    } else if (response.message === "Metric not available") {
+                            // submit post request to get scores --> check that you get a 200, only call await if you get 200
+                            // call await results
+                            // await results will ping every 500ms to getMetrics and insert accrodingly 
+                        requestScores(owner, repo).then(requestResponse => {
+                            if (requestResponse.success) {
+                                return awaitResults(owner, repo);
+                            }
+                        });
+                    } else {
+                        // score calculate queued, don't call request scores, go straight to awaitResults
+                        return awaitResults(owner, repo);
+                    }
+                })
+
+                //return response.json()
+                
             } else if (response.status === 406) {
                 console.error("Repository entered does not exist")
                 return null
@@ -127,19 +187,20 @@ export default function Home(props) {
         }
     }
 
+
     async function awaitResults(owner, repo) {
         promiseTimeout(500).then(() => {
             console.log('Requesting Score');
-            getMetrics(owner, repo).then(scores => {
-                if (scores.activity != null) {
-                    return scores
+            getMetrics(owner, repo).then(metrics => {
+                if (metrics.message === "Metric ready") {
+                    console.log("Metric is ready")
+                    return metrics
                 } else {
                     // still waiting
                     console.log("Waiting for score")
-                    awaitResults(owner, repo);
-                    return null
+                    return awaitResults(owner, repo);
                 }
-            });
+            })
         });
     }
 
@@ -167,7 +228,7 @@ export default function Home(props) {
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
             [owner1, name1] = getNameAuthor(inputs.search1)
-            scores1 = await awaitResults(owner1, name1)
+            scores1 = await getMetrics(owner1, name1)
         } else {
             displayError("1");
         }
@@ -175,7 +236,7 @@ export default function Home(props) {
         if (validateURL(inputs.search2, "2")) {
             // parse Name and Author, call API
             [owner2, name2] = getNameAuthor(inputs.search2)
-            scores2 = await awaitResults(owner2, name2)
+            scores2 = await getMetrics(owner2, name2)
         } else {
             displayError("2");
         }
@@ -183,7 +244,9 @@ export default function Home(props) {
         // Hide loading gear/clear all html in head2head
         document.getElementById("head2head").innerHTML = ''
 
+        //alert("hello")
         if (scores1 != null && scores2 != null) {
+            //alert("ayo")
             // Display both scores
             document.getElementById("head2head").innerHTML += DisplayScores(owner1, name1, scores1)
             document.getElementById("head2head").innerHTML += DisplayScores(owner2, name2, scores2)
