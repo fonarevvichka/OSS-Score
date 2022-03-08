@@ -8,7 +8,9 @@ const DisplayScores = (owner, name, metrics) => {
     // round scores
     
     for (var key in metrics) {
-        metrics[key].metric = Math.round(metrics[key].metric * 100) / 100
+        if (key != "message") {
+            metrics[key].metric = Math.round(metrics[key].metric * 100) / 100
+        }
     }
 
     return (

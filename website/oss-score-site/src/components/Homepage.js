@@ -151,28 +151,23 @@ export default function Home(props) {
             let response = await fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/'
                     + catalog_name + '/owner/' + owner + '/name/' + repo + '/metric/'
                     + metric_name)
-            
             if (response.status === 200) {
-                let scorePromise = response.json()
-                await scorePromise.then(response => {
-                    if (response.message === "Metric ready") {
-                        return response
-                    } else if (response.message === "Metric not available") {
-                            // submit post request to get scores --> check that you get a 200, only call await if you get 200
-                            // call await results
-                            // await results will ping every 500ms to getMetrics and insert accrodingly 
-                        requestScores(owner, repo).then(requestResponse => {
-                            if (requestResponse.success) {
-                                return awaitResults(owner, repo);
-                            }
-                        });
-                    } else {
-                        // score calculate queued, don't call request scores, go straight to awaitResults
-                        return awaitResults(owner, repo);
-                    }
-                })
-
-                //return response.json()
+                let data = await response.json()
+                if (data.message === "Metric ready") {
+                    return data
+                } else if (data.message === "Metric not available") {
+                    // submit post request to get scores --> check that you get a 200, only call await if you get 200
+                    // call await results
+                    // await results will ping every 500ms to getMetrics and insert accrodingly 
+                    requestScores(owner, repo).then(requestResponse => {
+                        if (requestResponse.success) {
+                            return awaitResults(owner, repo);
+                        }
+                    });
+                } else {
+                    // score calculate queued, don't call request scores, go straight to awaitResults
+                    return awaitResults(owner, repo);
+                }
                 
             } else if (response.status === 406) {
                 console.error("Repository entered does not exist")
@@ -229,6 +224,7 @@ export default function Home(props) {
             // parse Name and Author, call API
             [owner1, name1] = getNameAuthor(inputs.search1)
             scores1 = await getMetrics(owner1, name1)
+            alert(scores1.stars)
         } else {
             displayError("1");
         }
@@ -246,7 +242,6 @@ export default function Home(props) {
 
         //alert("hello")
         if (scores1 != null && scores2 != null) {
-            //alert("ayo")
             // Display both scores
             document.getElementById("head2head").innerHTML += DisplayScores(owner1, name1, scores1)
             document.getElementById("head2head").innerHTML += DisplayScores(owner2, name2, scores2)
