@@ -161,7 +161,6 @@ export default function Home(props) {
                     // await results will ping every 500ms to getMetrics and insert accrodingly 
                     requestScores(owner, repo).then(requestResponse => { //THIS IS PROBABILI THE PRORBLEM LINE 
                         if (requestResponse.success) {
-                            alert("going to start recursing")
                             document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, awaitResults(owner, repo))
                         }
                     });
@@ -222,7 +221,7 @@ export default function Home(props) {
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
             [owner1, name1] = getNameAuthor(inputs.search1)
-            getMetrics(owner1, name1)
+            await getMetrics(owner1, name1)
             // scores1 = await getMetrics(owner1, name1)
 
         } else {
