@@ -96,14 +96,13 @@ export default function Home(props) {
         return [owner, repo];
     }
 
-    function promiseTimeout(time) {
+    async function promiseTimeout(time) {
         return new Promise(function (resolve, reject) {
             setTimeout(function () { resolve(); }, time);
         });
     };
 
     async function requestScores(owner, repo) {
-        console.log("HERE")
         let message = null;
         let success = false
         let requestURL = basePath + '/owner/' + owner + '/name/' + repo;
@@ -159,7 +158,7 @@ export default function Home(props) {
                     // submit post request to get scores --> check that you get a 200, only call await if you get 200
                     // call await results
                     // await results will ping every 500ms to getMetrics and insert accrodingly 
-                    requestScores(owner, repo).then(requestResponse => {
+                    return requestScores(owner, repo).then(requestResponse => { //THIS IS PROBABILI THE PRORBLEM LINE 
                         if (requestResponse.success) {
                             return awaitResults(owner, repo);
                         }
@@ -184,18 +183,29 @@ export default function Home(props) {
 
 
     async function awaitResults(owner, repo) {
-        promiseTimeout(500).then(() => {
+        promiseTimeout(2000).then(async () => {
             console.log('Requesting Score');
-            getMetrics(owner, repo).then(metrics => {
-                if (metrics.message === "Metric ready") {
-                    console.log("Metric is ready")
-                    return metrics
-                } else {
-                    // still waiting
-                    console.log("Waiting for score")
-                    return awaitResults(owner, repo);
-                }
-            })
+            let metrics = await getMetrics(owner, repo);
+            if (metrics != null && metrics.message === "Metric ready") { //checking for null is stop gap TODO
+                console.log("Metric is ready")
+                return metrics
+            } else {
+                // still waiting
+                console.log("Waiting for score")
+                return awaitResults(owner, repo);
+            }
+
+
+            // getMetrics(owner, repo).then(metrics => {
+            //     if (metrics.message === "Metric ready") {
+            //         console.log("Metric is ready")
+            //         return metrics
+            //     } else {
+            //         // still waiting
+            //         console.log("Waiting for score")
+            //         return awaitResults(owner, repo);
+            //     }
+            // })
         });
     }
 
@@ -224,7 +234,7 @@ export default function Home(props) {
             // parse Name and Author, call API
             [owner1, name1] = getNameAuthor(inputs.search1)
             scores1 = await getMetrics(owner1, name1)
-            alert(scores1.stars)
+
         } else {
             displayError("1");
         }
