@@ -144,6 +144,7 @@ export default function Home(props) {
 
     /* function that makes api call given an owner and repo name, returns metrics in json */
     const getMetrics = async (owner, repo) => {
+        alert("top of metrics")
         let catalog_name = 'github'
         let metric_name = 'all'
         try {
@@ -153,37 +154,37 @@ export default function Home(props) {
             if (response.status === 200) {
                 let data = await response.json()
                 if (data.message === "Metric ready") {
-                    return data
+                    document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, data)
                 } else if (data.message === "Metric not available") {
                     // submit post request to get scores --> check that you get a 200, only call await if you get 200
                     // call await results
                     // await results will ping every 500ms to getMetrics and insert accrodingly 
-                    return requestScores(owner, repo).then(requestResponse => { //THIS IS PROBABILI THE PRORBLEM LINE 
+                    requestScores(owner, repo).then(requestResponse => { //THIS IS PROBABILI THE PRORBLEM LINE 
                         if (requestResponse.success) {
-                            return awaitResults(owner, repo);
+                            alert("going to start recursing")
+                            document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, awaitResults(owner, repo))
                         }
                     });
                 } else {
                     // score calculate queued, don't call request scores, go straight to awaitResults
-                    return awaitResults(owner, repo);
+                    document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, awaitResults(owner, repo))
                 }
-                
             } else if (response.status === 406) {
                 console.error("Repository entered does not exist")
-                return null
+                // return null
             } else {
                 console.error("Error connecting to OSS-Score API")
-                return null
+                // return null
             }
         } catch (error) {
             console.log(error)
-            return [];
+            // return [];
         }
     }
 
 
     async function awaitResults(owner, repo) {
-        promiseTimeout(2000).then(async () => {
+        promiseTimeout(5000).then(async () => {
             console.log('Requesting Score');
             let metrics = await getMetrics(owner, repo);
             if (metrics != null && metrics.message === "Metric ready") { //checking for null is stop gap TODO
@@ -194,18 +195,6 @@ export default function Home(props) {
                 console.log("Waiting for score")
                 return awaitResults(owner, repo);
             }
-
-
-            // getMetrics(owner, repo).then(metrics => {
-            //     if (metrics.message === "Metric ready") {
-            //         console.log("Metric is ready")
-            //         return metrics
-            //     } else {
-            //         // still waiting
-            //         console.log("Waiting for score")
-            //         return awaitResults(owner, repo);
-            //     }
-            // })
         });
     }
 
@@ -228,40 +217,40 @@ export default function Home(props) {
         let scores2 = null
 
         // Loading gear
-        document.getElementById("head2head").innerHTML += loading_gears;
+        // document.getElementById("head2head").innerHTML += loading_gears;
 
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
             [owner1, name1] = getNameAuthor(inputs.search1)
-            scores1 = await getMetrics(owner1, name1)
+            getMetrics(owner1, name1)
+            // scores1 = await getMetrics(owner1, name1)
 
         } else {
             displayError("1");
         }
 
-        if (validateURL(inputs.search2, "2")) {
-            // parse Name and Author, call API
-            [owner2, name2] = getNameAuthor(inputs.search2)
-            scores2 = await getMetrics(owner2, name2)
-        } else {
-            displayError("2");
-        }
+        // if (validateURL(inputs.search2, "2")) {
+        //     // parse Name and Author, call API
+        //     [owner2, name2] = getNameAuthor(inputs.search2)
+        //     scores2 = await getMetrics(owner2, name2)
+        // } else {
+        //     displayError("2");
+        // }
 
         // Hide loading gear/clear all html in head2head
-        document.getElementById("head2head").innerHTML = ''
+        // document.getElementById("head2head").innerHTML = ''
 
-        //alert("hello")
-        if (scores1 != null && scores2 != null) {
-            // Display both scores
-            document.getElementById("head2head").innerHTML += DisplayScores(owner1, name1, scores1)
-            document.getElementById("head2head").innerHTML += DisplayScores(owner2, name2, scores2)
-        } else if (scores1 != null) {
-            // Display score 1
-            document.getElementById("head2head").innerHTML += DisplayScores(owner1, name1, scores1)
-        } else if (scores2 != null) {
-            // Display score 2
-            document.getElementById("head2head").innerHTML += DisplayScores(owner2, name2, scores2)
-        }
+        // if (scores1 != null && scores2 != null) {
+        //     // Display both scores
+        //     document.getElementById("head2head").innerHTML += DisplayScores(owner1, name1, scores1)
+        //     document.getElementById("head2head").innerHTML += DisplayScores(owner2, name2, scores2)
+        // } else if (scores1 != null) {
+        //     // Display score 1
+        //     document.getElementById("head2head").innerHTML += DisplayScores(owner1, name1, scores1)
+        // } else if (scores2 != null) {
+        //     // Display score 2
+        //     document.getElementById("head2head").innerHTML += DisplayScores(owner2, name2, scores2)
+        // }
     }
 
     return (
