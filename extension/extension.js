@@ -38,12 +38,29 @@ async function requestScores(owner, repo) {
     return message;
 }
 
+async function updateScores(scoreDiv, owner, repo) {
+    promiseTimeout(10000).then(() => {
+        console.log('Updating Score');
+        scoreDiv.innerHTML += "updating";
+        getScores(owner, repo).then(scores => {
+            if (scores.activity != null) {
+                insertScores(scoreDiv, scores);
+                updateScores(scoreDiv, owner, repo);
+            } else {
+                scoreDiv.innerHTML += "mess up in update scores";
+                updateScores(scoreDiv, owner, repo);
+            }
+        });
+    });
+}
+
 async function awaitResults(scoreDiv, owner, repo) {
     promiseTimeout(500).then(() => {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
             if (scores.activity != null) {
                 insertScores(scoreDiv, scores);
+                updateScores(scoreDiv, owner, repo);
             } else {
                 scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> OSS Scores </h2>";
                 scoreDiv.innerHTML += scores.message;
