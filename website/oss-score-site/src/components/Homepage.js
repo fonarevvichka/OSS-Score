@@ -159,14 +159,16 @@ export default function Home(props) {
                     // submit post request to get scores --> check that you get a 200, only call await if you get 200
                     // call await results
                     // await results will ping every 500ms to getMetrics and insert accrodingly 
-                    requestScores(owner, repo).then(requestResponse => { //THIS IS PROBABILI THE PRORBLEM LINE 
+                    requestScores(owner, repo).then(async requestResponse => { //THIS IS PROBABILI THE PRORBLEM LINE 
                         if (requestResponse.success) {
-                            document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, awaitResults(owner, repo))
+                            let metrics = await awaitResults(owner, repo)
+                            document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, metrics)
                         }
                     });
                 } else {
                     // score calculate queued, don't call request scores, go straight to awaitResults
-                    document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, awaitResults(owner, repo))
+                    let metrics = await awaitResults(owner, repo)
+                    document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, metrics)
                 }
             } else if (response.status === 406) {
                 console.error("Repository entered does not exist")
@@ -183,17 +185,34 @@ export default function Home(props) {
 
 
     async function awaitResults(owner, repo) {
-        promiseTimeout(5000).then(async () => {
+        promiseTimeout(1000).then(async () => {
+            let catalog_name = 'github'
+            let metric_name = 'all'
             console.log('Requesting Score');
-            let metrics = await getMetrics(owner, repo);
-            if (metrics != null && metrics.message === "Metric ready") { //checking for null is stop gap TODO
-                console.log("Metric is ready")
-                return metrics
-            } else {
-                // still waiting
-                console.log("Waiting for score")
-                return awaitResults(owner, repo);
+            let response = await fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/'
+                    + catalog_name + '/owner/' + owner + '/name/' + repo + '/metric/'
+                    + metric_name)
+            if (response.status === 200) {
+                let data = await response.json()
+                if (data.message === "Metric ready") {
+                    console.log("metric ready")
+                    return data
+                } else {
+                    return awaitResults(owner, repo)
+                }
             }
+            return null
+
+
+            // let metrics = await getMetrics(owner, repo);
+            // if (metrics != null && metrics.message === "Metric ready") { //checking for null is stop gap TODO
+            //     console.log("Metric is ready")
+            //     return metrics
+            // } else {
+            //     // still waiting
+            //     console.log("Waiting for score")
+            //     return awaitResults(owner, repo);
+            // }
         });
     }
 
@@ -221,7 +240,7 @@ export default function Home(props) {
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
             [owner1, name1] = getNameAuthor(inputs.search1)
-            await getMetrics(owner1, name1)
+            getMetrics(owner1, name1)
             // scores1 = await getMetrics(owner1, name1)
 
         } else {
