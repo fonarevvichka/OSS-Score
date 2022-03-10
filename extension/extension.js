@@ -45,16 +45,17 @@ async function requestScores(owner, repo) {
 }
 
 async function updateScores(scoreDiv, owner, repo) {
-    promiseTimeout(10000).then(() => {
+    promiseTimeout(30000).then(() => {
         console.log('Updating Score');
         scoreDiv.innerHTML += "updating";
         getScores(owner, repo).then(scores => {
-            if (scores.activity != null) {
+            if ((scores.activity != null) && (scores.license != null)) {
                 insertScores(scoreDiv, scores);
-                updateScores(scoreDiv, owner, repo);
+                if ((scores.activity.confidence < 95) || (scores.license.confidence < 95)) {
+                    updateScores(scoreDiv, owner, repo);
+                }
             } else {
-                scoreDiv.innerHTML += "mess up in update scores";
-                updateScores(scoreDiv, owner, repo);
+                console.log("Error retrieving scores in updateScores")
             }
         });
     });
