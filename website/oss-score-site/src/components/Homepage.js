@@ -209,13 +209,11 @@ export default function Home(props) {
         document.getElementById("head2head").innerHTML = ''
 
         // validating first url
-        let owner1 = null
-        let name1 = null
-        let scores1 = null
+        let owner1 = ""
+        let name1 = ""
         
-        let owner2 = null
-        let name2 = null
-        let scores2 = null
+        let owner2 = ""
+        let name2 = ""
 
         // Loading gear
         // document.getElementById("head2head").innerHTML += loading_gears;
@@ -230,13 +228,13 @@ export default function Home(props) {
             displayError("1");
         }
 
-        // if (validateURL(inputs.search2, "2")) {
-        //     // parse Name and Author, call API
-        //     [owner2, name2] = getNameAuthor(inputs.search2)
-        //     scores2 = await getMetrics(owner2, name2)
-        // } else {
-        //     displayError("2");
-        // }
+        if (validateURL(inputs.search2, "2")) {
+            // parse Name and Author, call API
+            [owner2, name2] = getNameAuthor(inputs.search2)
+            getMetrics(owner2, name2)
+        } else {
+            displayError("2");
+        }
 
         // Hide loading gear/clear all html in head2head
         // document.getElementById("head2head").innerHTML = ''
