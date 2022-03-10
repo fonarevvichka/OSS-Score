@@ -17,7 +17,7 @@ import (
 )
 
 type response struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
