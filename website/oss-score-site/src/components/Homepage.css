@@ -40,6 +40,23 @@ header {
     font-size: 10px;
 }
 
+/*** loading ***/
+
+.loading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-left: 15%;
+    margin-right: 15%;
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+.loading > div {
+    padding: 10px;
+}
+
+
 /*** head2head ***/
 
 .head2head {

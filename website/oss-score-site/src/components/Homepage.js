@@ -153,17 +153,20 @@ export default function Home(props) {
             if (response.status === 200) {
                 let data = await response.json()
                 if (data.message === "Metric ready") {
+                    //return data
                     document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, data)
                 } else if (data.message === "Metric not available") {
                     requestScores(owner, repo).then(async requestResponse => {
                         if (requestResponse.success) {
                             let metrics = await awaitResults(owner, repo)
+                            //return metrics
                             document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, metrics)
                         }
                     });
                 } else {
                     // score calculate queued, don't call request scores, go straight to awaitResults
                     let metrics = await awaitResults(owner, repo)
+                    //return metrics
                     document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, metrics)
                 }
             } else if (response.status === 406) {
@@ -195,18 +198,24 @@ export default function Home(props) {
                 await promiseTimeout(1000)
                 return awaitResults(owner, repo)
             }
-        }
-        return null
     }
+    return null
+}
 
     /* handleSubmit function that does everything */
     const handleSubmit = async (evt) => {
+        
 
         // erorr prevent default
         evt.preventDefault();
 
-        // Hide loading gear/clear all html in head2head
+        // Clear all html in head2head and hide it
         document.getElementById("head2head").innerHTML = ''
+        document.getElementById("head2head").style.display = "none"
+        
+        // Show loading gear
+        document.getElementById("loading").innerHTML += loading_gears;
+        // document.getElementsByClassName("machine-extension")[0].style.display = "block"
 
         // validating first url
         let owner1 = ""
@@ -215,14 +224,14 @@ export default function Home(props) {
         let owner2 = ""
         let name2 = ""
 
-        // Loading gear
-        // document.getElementById("head2head").innerHTML += loading_gears;
+        let scores1 = null
+        let scores2 = null
 
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
             [owner1, name1] = getNameAuthor(inputs.search1)
             getMetrics(owner1, name1)
-            // scores1 = await getMetrics(owner1, name1)
+            //scores1 = await getMetrics(owner1, name1)
 
         } else {
             displayError("1");
@@ -232,12 +241,20 @@ export default function Home(props) {
             // parse Name and Author, call API
             [owner2, name2] = getNameAuthor(inputs.search2)
             getMetrics(owner2, name2)
+            //scores2 = await getMetrics(owner2, name2)
         } else {
             displayError("2");
         }
 
         // Hide loading gear/clear all html in head2head
+        document.getElementById("loading").innerHTML = ''
+
         // document.getElementById("head2head").innerHTML = ''
+        //document.getElementById("loading").style.display = "none"
+        // document.getElementsByClassName("machine-extension")[0].style.display = "block"
+        
+        // Display results in head2head
+        document.getElementById("head2head").style.display = "flex"
 
         // if (scores1 != null && scores2 != null) {
         //     // Display both scores
