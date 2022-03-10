@@ -16,20 +16,6 @@ provider:
   region: us-east-2
 
 
-# you can add statements to the Lambda function's IAM Role here
-  # iam:
-  #   role:
-  #     statements:
-  #       - Effect: "Allow"
-  #         Action:
-  #           - dynamodb:GetItem 
-  #         Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }         Resource:
-  #           Fn::Join:
-  #             - ""
-  #             - - "arn:aws:dynamodb:::"
-  #               - "Ref" : "ServerlessDeploymentBucket"
-  #               - "/*"
-
 # you can define service wide environment variables here
   environment:
     DYNAMODB_TABLE: ${env:DYNAMODB_TABLE}
@@ -37,22 +23,27 @@ provider:
 
 package:
   individually: true
-  exclude:
-    - ./*
+  patterns:
+    - '!**'
 
 functions:
-  get:
+  getScore:
+    name: ${self:provider.stage}-get-score
     handler: bin/getScore
     iamRoleStatementsName: get-score-role
     iamRoleStatements:
-    - Effect: "Allow"
-      Action:
-        - dynamodb:GetItem 
-      Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
+      # - Effect: "Allow"
+        # Action:
+        #   - sqs:GetQueueUrl
+        # Resource: 'arn:aws:sqs:${self:provider.region}:*:${env:REPO_QUERY_QUEUE}'
+      - Effect: "Allow"
+        Action:
+          - dynamodb:GetItem 
+        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
     package:
-      include:
-        - ../bin/getScore
-        - ../util/scores
+      patterns:
+        - bin/getScore
+        - util/scores
     events:
       - http:
           path: catalog/{catalog}/owner/{owner}/name/{name}/type/{type}
@@ -65,38 +56,54 @@ functions:
                 owner: true
                 name: true
                 type: true
-    # post:
-    #   handler: bin/queryScoreHandl
-    #   package:
-    #     include:
-    #       - ./bin/getQueryBin
-    #   events:
-    #     - http:
-    #         path: post
-    #         method: post
-  # getquery:
-  #   handler: bin/getQueryBin
+  getMetric:
+    name: ${self:provider.stage}-get-metric
+    handler: bin/getScore
+    iamRoleStatementsName: get-metric-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - dynamodb:GetItem 
+        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
+    package:
+      patterns:
+        - bin/getMetric
+    events:
+      - http:
+          path: catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                catalog: true
+                owner: true
+                name: true
+                metric: true
+     
+  # queryRepositoryHandler:
+  #   name: ${self:provider.stage}-query-repo-handler
+  #   handler: bin/queryRepoHandler
+  #   iamRoleStatementsName: query-repo-handler-role
+  #   iamRoleStatements:
+  #     - Effect: "Allow"
+  #       Action:
+  #         - dynamodb:GetItem 
+  #       Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
   #   package:
-  #     include:
-  #       - ./bin/getQueryBin
+  #     patterns:
+  #       - bin/queryRepoHandler
   #   events:
   #     - http:
-  #         path: getQ
-  #         method: get
+  #         path: catalog/{catalog}/owner/{owner}/name/{name}
+  #         method: post
+  #         cors: true
   #         request:
   #           parameters:
-  #             querystrings:
+  #             paths:
+  #               catalog: true
+  #               owner: true
   #               name: true
-  # post:
-  #   handler: bin/postBin
-  #   package:
-  #     include:
-  #       - ./bin/getQueryBin
-  #   events:
-  #     - http:
-  #         path: post
-  #         method: post
-
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
