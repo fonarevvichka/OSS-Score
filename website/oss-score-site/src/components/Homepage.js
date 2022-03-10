@@ -144,7 +144,6 @@ export default function Home(props) {
 
     /* function that makes api call given an owner and repo name, returns metrics in json */
     const getMetrics = async (owner, repo) => {
-        alert("top of metrics")
         let catalog_name = 'github'
         let metric_name = 'all'
         try {
@@ -156,10 +155,7 @@ export default function Home(props) {
                 if (data.message === "Metric ready") {
                     document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, data)
                 } else if (data.message === "Metric not available") {
-                    // submit post request to get scores --> check that you get a 200, only call await if you get 200
-                    // call await results
-                    // await results will ping every 500ms to getMetrics and insert accrodingly 
-                    requestScores(owner, repo).then(async requestResponse => { //THIS IS PROBABILI THE PRORBLEM LINE 
+                    requestScores(owner, repo).then(async requestResponse => {
                         if (requestResponse.success) {
                             let metrics = await awaitResults(owner, repo)
                             document.getElementById("head2head").innerHTML += DisplayScores(owner, repo, metrics)
@@ -178,42 +174,29 @@ export default function Home(props) {
                 // return null
             }
         } catch (error) {
-            console.log(error)
+            console.error(error)
             // return [];
         }
     }
 
 
     async function awaitResults(owner, repo) {
-        promiseTimeout(1000).then(async () => {
-            let catalog_name = 'github'
-            let metric_name = 'all'
-            console.log('Requesting Score');
-            let response = await fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/'
-                    + catalog_name + '/owner/' + owner + '/name/' + repo + '/metric/'
-                    + metric_name)
-            if (response.status === 200) {
-                let data = await response.json()
-                if (data.message === "Metric ready") {
-                    console.log("metric ready")
-                    return data
-                } else {
-                    return awaitResults(owner, repo)
-                }
+        let catalog_name = 'github'
+        let metric_name = 'all'
+
+        let response = await fetch('https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/'
+                + catalog_name + '/owner/' + owner + '/name/' + repo + '/metric/'
+                + metric_name)
+        if (response.status === 200) {
+            let data = await response.json()
+            if (data.message === "Metric ready") {
+                return data
+            } else {
+                await promiseTimeout(1000)
+                return awaitResults(owner, repo)
             }
-            return null
-
-
-            // let metrics = await getMetrics(owner, repo);
-            // if (metrics != null && metrics.message === "Metric ready") { //checking for null is stop gap TODO
-            //     console.log("Metric is ready")
-            //     return metrics
-            // } else {
-            //     // still waiting
-            //     console.log("Waiting for score")
-            //     return awaitResults(owner, repo);
-            // }
-        });
+        }
+        return null
     }
 
     /* handleSubmit function that does everything */
