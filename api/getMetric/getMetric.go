@@ -10,7 +10,6 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type singleMetricRepsone struct {
@@ -20,6 +19,7 @@ type singleMetricRepsone struct {
 }
 
 type allMetricsResponse struct {
+	Message                 string              `json:"message"`
 	Stars                   singleMetricRepsone `json:"stars"`
 	ReleaseCadence          singleMetricRepsone `json:"releaseCadence"`
 	AgeLastRelease          singleMetricRepsone `json:"ageLastRelease"`
@@ -33,7 +33,7 @@ type allMetricsResponse struct {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	catalog, found := request.PathParameters["catalog"]
+	_, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
 	}
@@ -50,26 +50,20 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no metric variable in path")
 	}
 
-	mongoClient := util.GetMongoClient()
-	defer mongoClient.Disconnect(ctx)
-	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
+	dbClient := util.GetDynamoDBClient(ctx)
+	repo, found, err := util.GetRepoFromDB(ctx, dbClient, owner, name)
+	if err != nil {
+		log.Fatalln(err)
+		//TODO: This should be handeled properly
+	}
 
-	res := util.GetRepoFromDB(collection, owner, name)
-
-	var repo util.RepoInfo
 	var metricValue float64
 	var confidence int
 	var message string
 
 	var allMetrics allMetricsResponse
 
-	if res.Err() != mongo.ErrNoDocuments { // match in DB
-		err := res.Decode(&repo)
-
-		if err != nil {
-			log.Fatalln(err)
-		}
-
+	if found { // match in DB
 		if repo.Status == 1 {
 			message = "Score calculation queued"
 		} else if repo.Status == 2 {
@@ -77,6 +71,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		} else {
 			timeFrame := 12
 			startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+			message = "Metric ready"
 
 			switch metric {
 			case "stars":
@@ -99,7 +94,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 			case "dependencyActivityScore":
-				score := util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+				score, _ := util.CalculateDependencyActivityScore(ctx, dbClient, &repo, startPoint) //TODO: INGORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 			case "repoLicenseScore":
@@ -110,7 +105,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				confidence = int(score.Confidence)
 			case "dependencyLicenseScore":
 				licenseMap := util.GetLicenseMap()
-				score := util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+				score, _ := util.CalculateDependencyLicenseScore(ctx, dbClient, &repo, licenseMap) //TODO: IGNORING ERROR
 
 				metricValue = score.Score
 				confidence = int(score.Confidence)
@@ -163,7 +158,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					Confidence: confidence,
 				}
 
-				score = util.CalculateDependencyActivityScore(collection, &repo, startPoint)
+				score, _ = util.CalculateDependencyActivityScore(ctx, dbClient, &repo, startPoint) //TODO: INGORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 				allMetrics.DependencyActivityScore = singleMetricRepsone{
@@ -179,7 +174,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					Confidence: confidence,
 				}
 
-				score = util.CalculateDependencyLicenseScore(collection, &repo, licenseMap)
+				score, _ = util.CalculateDependencyLicenseScore(ctx, dbClient, &repo, licenseMap) //TODO: IGNORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 				allMetrics.DependencyLicenseScore = singleMetricRepsone{
@@ -191,12 +186,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			}
 		}
 	} else {
-		message = "Score not available"
+		message = "Metric not available"
 	}
 
 	var response []byte
 
 	if metric == "all" {
+		allMetrics.Message = message
 		response, _ = json.Marshal(allMetrics)
 	} else {
 		response, _ = json.Marshal(singleMetricRepsone{Message: message, Metric: metricValue, Confidence: confidence})

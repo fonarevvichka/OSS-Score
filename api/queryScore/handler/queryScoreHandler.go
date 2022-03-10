@@ -10,15 +10,14 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
-	"golang.org/x/oauth2"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"golang.org/x/oauth2"
 )
 
 type response struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -58,7 +57,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}, err
 	}
 
-	client := util.GetSqsSession(ctx)
+	client := util.GetSqsClient(ctx)
 
 	gQInput := &sqs.GetQueueUrlInput{
 		QueueName: &queueName,
@@ -112,10 +111,20 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Got an error sending the message:")}, err
 	}
 
-	mongoClient := util.GetMongoClient()
-	defer mongoClient.Disconnect(ctx)
-	collection := mongoClient.Database("OSS-Score").Collection(catalog) // TODO MAKE DB NAME ENV VAR
-	util.UpdateScoreState(collection, catalog, owner, name, 1)
+	dbClient := util.GetDynamoDBClient(ctx)
+	err = util.SetScoreState(ctx, dbClient, catalog, owner, name, 1)
+
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Methods": "POST",
+			},
+			Body: "Error updating state in DynamoDB",
+		}, err
+	}
 
 	response, _ := json.Marshal(response{Message: "Score calculation request queued"})
 	resp := events.APIGatewayProxyResponse{
