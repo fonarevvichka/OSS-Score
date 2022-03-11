@@ -31,6 +31,22 @@ resources:
       Properties:
         QueueName: ${env:REPO_QUERY_QUEUE}
         FifoQueue: true
+    repoMetricsDB:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-${env:REPO_METRICS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: name
+            AttributeType: S
+          - AttributeName: owner
+            AttributeType: S
+        KeySchema:
+          - AttributeName: name
+            KeyType: HASH
+          - AttributeName: owner
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+            
 
 functions:
   getScore:
@@ -41,7 +57,11 @@ functions:
       - Effect: "Allow"
         Action:
           - dynamodb:GetItem 
-        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
+        Resource: 
+            Fn::GetAtt:
+              - repoMetricsDB
+              - Arn
+        # 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
     package:
       patterns:
         - bin/getScore
@@ -67,7 +87,12 @@ functions:
       - Effect: "Allow"
         Action:
           - dynamodb:GetItem 
-        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
+        Resource: 
+            Fn::GetAtt:
+              - repoMetricsDB
+              - Arn
+        
+        # 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
     package:
       patterns:
         - bin/getMetric
@@ -96,7 +121,11 @@ functions:
         Action:
           - sqs:GetQueueUrl
           - sqs:SendMessage
-        Resource: 'arn:aws:sqs:${self:provider.region}:*:${env:REPO_QUERY_QUEUE}'
+        Resource: 
+            Fn::GetAtt:
+              - repoMetricsDB
+              - Arn
+        # 'arn:aws:sqs:${self:provider.region}:*:${env:REPO_QUERY_QUEUE}'
       - Effect: "Allow"
         Action:
           - dynamodb:UpdateItem
@@ -151,15 +180,6 @@ functions:
               - repoQueryQueue
               - Arn
           batchSize: 1
-          maximumRetryAttempts: 3
-  #  resources: 
-  #   Resources:
-  #     repoQueryQueue:
-  #       Type: "AWS::SQS::Queue"
-  #       Properties:
-  #         QueueName: ${env:REPO_QUERY_QUEUE}
-  #         FifoQueue: true
-
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
