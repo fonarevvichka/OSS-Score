@@ -14,9 +14,7 @@ provider:
   runtime: go1.x
   stage: dev
   region: us-east-2
-
-
-# you can define service wide environment variables here
+  
   environment:
     DYNAMODB_TABLE: ${env:DYNAMODB_TABLE}
     SHELF_LIFE: ${env:SHELF_LIFE}
@@ -26,16 +24,20 @@ package:
   patterns:
     - '!**'
 
+resources: 
+  Resources:
+    repoQueryQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${env:REPO_QUERY_QUEUE}
+        FifoQueue: true
+
 functions:
   getScore:
     name: ${self:provider.stage}-get-score
     handler: bin/getScore
     iamRoleStatementsName: get-score-role
     iamRoleStatements:
-      # - Effect: "Allow"
-        # Action:
-        #   - sqs:GetQueueUrl
-        # Resource: 'arn:aws:sqs:${self:provider.region}:*:${env:REPO_QUERY_QUEUE}'
       - Effect: "Allow"
         Action:
           - dynamodb:GetItem 
@@ -56,6 +58,7 @@ functions:
                 owner: true
                 name: true
                 type: true
+  
   getMetric:
     name: ${self:provider.stage}-get-metric
     handler: bin/getScore
@@ -81,29 +84,82 @@ functions:
                 name: true
                 metric: true
      
-  # queryRepositoryHandler:
-  #   name: ${self:provider.stage}-query-repo-handler
-  #   handler: bin/queryRepoHandler
-  #   iamRoleStatementsName: query-repo-handler-role
-  #   iamRoleStatements:
-  #     - Effect: "Allow"
-  #       Action:
-  #         - dynamodb:GetItem 
-  #       Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
-  #   package:
-  #     patterns:
-  #       - bin/queryRepoHandler
-  #   events:
-  #     - http:
-  #         path: catalog/{catalog}/owner/{owner}/name/{name}
-  #         method: post
-  #         cors: true
-  #         request:
-  #           parameters:
-  #             paths:
-  #               catalog: true
-  #               owner: true
-  #               name: true
+  queryRepositoryHandler:
+    name: ${self:provider.stage}-query-repo-handler
+    handler: bin/queryRepoHandler
+    environment:
+      GIT_PAT: ${env:GIT_PAT_1}
+      QUEUE: ${self:provider.stage}-${env:REPO_QUERY_QUEUE}
+    iamRoleStatementsName: query-repo-handler-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - sqs:GetQueueUrl
+          - sqs:SendMessage
+        Resource: 'arn:aws:sqs:${self:provider.region}:*:${env:REPO_QUERY_QUEUE}'
+      - Effect: "Allow"
+        Action:
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem 
+        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
+    package:
+      patterns:
+        - bin/queryRepoHandler
+    events:
+      - http:
+          path: catalog/{catalog}/owner/{owner}/name/{name}
+          method: post
+          cors: true
+          request:
+            parameters:
+              paths:
+                catalog: true
+                owner: true
+                name: true
+  
+  queryRepositoryProcessing:
+    name: ${self:provider.stage}-query-repo-processing
+    handler: bin/queryRepoProcessing
+    reservedConcurrency: 10
+    environment:
+      GIT_PAT_1: ${env:GIT_PAT_2}
+      GIT_PAT_2: ${env:GIT_PAT_3}
+      GIT_PAT_3: ${env:GIT_PAT_4}
+      GIT_PAT_4: ${env:GIT_PAT_5}
+      GIT_PAT_5: ${env:GIT_PAT_6}
+      QUEUE: ${self:provider.stage}-${env:DEP_QUERY_QUEUE}
+    iamRoleStatementsName: query-repo-processing-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - sqs:GetQueueUrl
+          - sqs:SendMessage
+        Resource: 'arn:aws:sqs:${self:provider.region}:*:${env:DEP_QUERY_QUEUE}'
+      - Effect: "Allow"
+        Action:
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem 
+          - dynamodb:PutItem
+        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
+    package:
+      patterns:
+        - bin/queryRepoHandler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - repoQueryQueue
+              - Arn
+          batchSize: 1
+          maximumRetryAttempts: 3
+  #  resources: 
+  #   Resources:
+  #     repoQueryQueue:
+  #       Type: "AWS::SQS::Queue"
+  #       Properties:
+  #         QueueName: ${env:REPO_QUERY_QUEUE}
+  #         FifoQueue: true
+
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events

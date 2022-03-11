@@ -39,7 +39,7 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 	}
 
-	queueName := os.Getenv("QUERY_QUEUE")
+	queueName := os.Getenv("QUEUE")
 	sqsClient := util.GetSqsClient(ctx)
 
 	gQInput := &sqs.GetQueueUrlInput{
