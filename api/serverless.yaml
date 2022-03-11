@@ -16,7 +16,7 @@ provider:
   region: us-east-2
   
   environment:
-    DYNAMODB_TABLE: ${env:DYNAMODB_TABLE}
+    DYNAMODB_TABLE: ${self:provider.stage}-${env:REPO_METRICS_TABLE}
     SHELF_LIFE: ${env:SHELF_LIFE}
 
 package:
@@ -26,11 +26,18 @@ package:
 
 resources: 
   Resources:
+    depQueryQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:provider.stage}-${env:DEP_QUERY_QUEUE}
+
     repoQueryQueue:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: ${env:REPO_QUERY_QUEUE}
+        QueueName: ${self:provider.stage}-${env:REPO_QUERY_QUEUE}
         FifoQueue: true
+        ContentBasedDeduplication: true
+
     repoMetricsDB:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -61,7 +68,6 @@ functions:
             Fn::GetAtt:
               - repoMetricsDB
               - Arn
-        # 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
     package:
       patterns:
         - bin/getScore
@@ -81,7 +87,7 @@ functions:
   
   getMetric:
     name: ${self:provider.stage}-get-metric
-    handler: bin/getScore
+    handler: bin/getMetric
     iamRoleStatementsName: get-metric-role
     iamRoleStatements:
       - Effect: "Allow"
@@ -92,7 +98,6 @@ functions:
               - repoMetricsDB
               - Arn
         
-        # 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
     package:
       patterns:
         - bin/getMetric
@@ -122,15 +127,17 @@ functions:
           - sqs:GetQueueUrl
           - sqs:SendMessage
         Resource: 
-            Fn::GetAtt:
-              - repoMetricsDB
-              - Arn
-        # 'arn:aws:sqs:${self:provider.region}:*:${env:REPO_QUERY_QUEUE}'
+          Fn::GetAtt:
+            - repoQueryQueue
+            - Arn
       - Effect: "Allow"
         Action:
           - dynamodb:UpdateItem
           - dynamodb:GetItem 
-        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
+        Resource: 
+          Fn::GetAtt:
+            - repoMetricsDB
+            - Arn
     package:
       patterns:
         - bin/queryRepoHandler
@@ -163,13 +170,19 @@ functions:
         Action:
           - sqs:GetQueueUrl
           - sqs:SendMessage
-        Resource: 'arn:aws:sqs:${self:provider.region}:*:${env:DEP_QUERY_QUEUE}'
+        Resource:
+          Fn::GetAtt:
+            - depQueryQueue
+            - Arn
       - Effect: "Allow"
         Action:
-          - dynamodb:UpdateItem
           - dynamodb:GetItem 
           - dynamodb:PutItem
-        Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${env:DYNAMODB_TABLE}'
+          - dynamodb:UpdateItem
+        Resource:
+          Fn::GetAtt:
+            - repoMetricsDB
+            - Arn
     package:
       patterns:
         - bin/queryRepoHandler
@@ -180,49 +193,3 @@ functions:
               - repoQueryQueue
               - Arn
           batchSize: 1
-
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-# events:
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
-#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
-
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
-
-# you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
