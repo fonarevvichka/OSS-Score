@@ -1,0 +1,236 @@
+plugins:
+  - serverless-iam-roles-per-function
+service: oss-score
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+frameworkVersion: ">=2.24.0"
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: ${opt:stage, 'dev'}
+  region: us-east-2
+  
+  environment:
+    DYNAMODB_TABLE: ${self:provider.stage}-${env:REPO_METRICS_TABLE}
+    SHELF_LIFE: ${env:SHELF_LIFE}
+
+package:
+  individually: true
+  patterns:
+    - '!**'
+
+resources: 
+  Resources:
+    repoQueryQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:provider.stage}-${env:REPO_QUERY_QUEUE}
+        VisibilityTimeout: 60
+        FifoQueue: true
+        ContentBasedDeduplication: true
+    
+    depQueryQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:provider.stage}-${env:DEP_QUERY_QUEUE}
+        VisibilityTimeout: 300
+
+    repoMetricsDB:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-${env:REPO_METRICS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: name
+            AttributeType: S
+          - AttributeName: owner
+            AttributeType: S
+        KeySchema:
+          - AttributeName: name
+            KeyType: HASH
+          - AttributeName: owner
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+            
+
+functions:
+  getScore:
+    name: ${self:provider.stage}-get-score
+    handler: bin/getScore
+    timeout: 15
+    iamRoleStatementsName: ${self:provider.stage}-get-score-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - dynamodb:GetItem 
+          - dynamodb:BatchGetItem
+        Resource: 
+            Fn::GetAtt:
+              - repoMetricsDB
+              - Arn
+    package:
+      patterns:
+        - bin/getScore
+        - util/scores/**
+    events:
+      - http:
+          path: catalog/{catalog}/owner/{owner}/name/{name}/type/{type}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                catalog: true
+                owner: true
+                name: true
+                type: true
+  
+  getMetric:
+    name: ${self:provider.stage}-get-metric
+    handler: bin/getMetric
+    timeout: 15
+    iamRoleStatementsName: ${self:provider.stage}-get-metric-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - dynamodb:GetItem 
+        Resource: 
+            Fn::GetAtt:
+              - repoMetricsDB
+              - Arn
+        
+    package:
+      patterns:
+        - bin/getMetric
+    events:
+      - http:
+          path: catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                catalog: true
+                owner: true
+                name: true
+                metric: true
+     
+  queryRepositoryHandler:
+    name: ${self:provider.stage}-query-repo-handler
+    handler: bin/queryRepoHandler
+    timeout: 15
+    environment:
+      GIT_PAT: ${env:GIT_PAT_1}
+      QUEUE: ${self:provider.stage}-${env:REPO_QUERY_QUEUE}
+    iamRoleStatementsName: ${self:provider.stage}-query-repo-handler-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - sqs:GetQueueUrl
+          - sqs:SendMessage
+        Resource: 
+          Fn::GetAtt:
+            - repoQueryQueue
+            - Arn
+      - Effect: "Allow"
+        Action:
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem 
+        Resource: 
+          Fn::GetAtt:
+            - repoMetricsDB
+            - Arn
+    package:
+      patterns:
+        - bin/queryRepoHandler
+
+    events:
+      - http:
+          path: catalog/{catalog}/owner/{owner}/name/{name}
+          method: post
+          cors: true
+          request:
+            parameters:
+              paths:
+                catalog: true
+                owner: true
+                name: true
+  
+  queryRepositoryProcessing:
+    name: ${self:provider.stage}-query-repo-processing
+    handler: bin/queryRepoProcessing
+    timeout: 60
+    reservedConcurrency: 10
+    environment:
+      GIT_PAT_1: ${env:GIT_PAT_2}
+      GIT_PAT_2: ${env:GIT_PAT_3}
+      GIT_PAT_3: ${env:GIT_PAT_4}
+      GIT_PAT_4: ${env:GIT_PAT_5}
+      GIT_PAT_5: ${env:GIT_PAT_6}
+      QUEUE: ${self:provider.stage}-${env:DEP_QUERY_QUEUE}
+    iamRoleStatementsName: ${self:provider.stage}-query-repo-processing-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - sqs:GetQueueUrl
+          - sqs:SendMessage
+        Resource:
+          Fn::GetAtt:
+            - depQueryQueue
+            - Arn
+      - Effect: "Allow"
+        Action:
+          - dynamodb:GetItem 
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+        Resource:
+          Fn::GetAtt:
+            - repoMetricsDB
+            - Arn
+    package:
+      patterns:
+        - bin/queryRepoProcessing
+        - 'util/queries/**'
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - repoQueryQueue
+              - Arn
+          batchSize: 1
+
+  queryDependencyProcessing:
+    name: ${self:provider.stage}-query-dep-processing
+    handler: bin/queryDependency
+    timeout: 300
+    reservedConcurrency: 10
+    environment:
+      GIT_PAT_1: ${env:GIT_PAT_7}
+      GIT_PAT_2: ${env:GIT_PAT_8}
+      GIT_PAT_3: ${env:GIT_PAT_9}
+      GIT_PAT_4: ${env:GIT_PAT_10}
+      GIT_PAT_5: ${env:GIT_PAT_11}
+    iamRoleStatementsName: ${self:provider.stage}-query-dep-processing-role
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - dynamodb:GetItem 
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+        Resource:
+          Fn::GetAtt:
+            - repoMetricsDB
+            - Arn
+    package:
+      patterns:
+        - bin/queryDependency
+        - 'util/queries/**'
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - depQueryQueue
+              - Arn
+          batchSize: 10
