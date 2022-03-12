@@ -1,4 +1,4 @@
-const basePath = 'https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/github'
+const basePath = 'https://s1zat66g56.execute-api.us-east-2.amazonaws.com/dev/catalog/github'
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
