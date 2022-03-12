@@ -16,7 +16,7 @@ import (
 const GitUrl = "https://api.github.com/graphql"
 
 func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
-	query, err := importQuery("./queries/repoInfo.graphql") //TODO: Make this a an env var probably
+	query, err := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
 		return err
@@ -76,7 +76,7 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 }
 
 func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
-	query, err := importQuery("./queries/dependencies.graphql")
+	query, err := importQuery("./util/queries/dependencies.graphql")
 	if err != nil {
 		log.Println(err)
 		return err
@@ -336,7 +336,7 @@ func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string)
 
 // deprecated
 func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
-	query, err := importQuery("./queries/issues.graphql") //TODO: Make this a an env var probably
+	query, err := importQuery("./util/queries/issues.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
 		return err
@@ -419,7 +419,7 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 
 // deprecated
 func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
-	query, err := importQuery("./queries/commits.graphql") //TODO: Make this a an env var probably
+	query, err := importQuery("./util/queries/commits.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
 		return err
@@ -485,7 +485,7 @@ func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate stri
 }
 
 func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) error {
-	query, err := importQuery("./queries/releases.graphql") //TODO: Make this a an env var probably
+	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
 		return err

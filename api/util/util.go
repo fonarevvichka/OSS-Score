@@ -148,7 +148,7 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 	return combinedScore, repoInfo.Status
 }
 
-func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int, licenseMap map[string]int) (RepoInfo, error) {
+func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
 		log.Println(err)
@@ -202,7 +202,7 @@ func GetLicenseMap() map[string]int {
 	// Get License Score map
 	licenseMap := make(map[string]int)
 
-	licenseFile, err := os.Open("./scores/licenseScores.txt")
+	licenseFile, err := os.Open("./util/scores/licenseScores.txt")
 
 	if err != nil {
 		log.Fatalln(err)
@@ -307,11 +307,7 @@ func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 }
 
 func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
-
-	licenseMap := GetLicenseMap()
-
-	// get repo info message
-	repo, err := addUpdateRepo(ctx, dbClient, catalog, owner, name, timeFrame, licenseMap)
+	repo, err := addUpdateRepo(ctx, dbClient, catalog, owner, name, timeFrame)
 
 	if err != nil {
 		log.Println(err)
