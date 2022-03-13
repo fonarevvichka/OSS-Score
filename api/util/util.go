@@ -82,10 +82,10 @@ func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []Nam
 	var errs errgroup.Group
 
 	for i, repoKeyChunk := range repoKeyChunks {
-		func(chunk []NameOwner) {
+		func(chunk []NameOwner, chunkIndex int) {
 			errs.Go(func() error {
 				var keys []map[string]dynamoTypes.AttributeValue
-				for _, repoKey := range repoKeyChunk {
+				for _, repoKey := range chunk {
 					keys = append(keys, map[string]dynamoTypes.AttributeValue{
 						"name":  &dynamoTypes.AttributeValueMemberS{Value: repoKey.Name},
 						"owner": &dynamoTypes.AttributeValueMemberS{Value: repoKey.Owner},
@@ -111,18 +111,22 @@ func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []Nam
 						if err != nil {
 							return fmt.Errorf("UnmarhsalMap: %v", err)
 						}
-						repoInfoChunks[i] = append(repoInfoChunks[i], repo)
+						repoInfoChunks[chunkIndex] = append(repoInfoChunks[chunkIndex], repo)
 					}
 				}
 				return nil
 			})
-		}(repoKeyChunk)
+		}(repoKeyChunk, i)
 	}
 	err := errs.Wait()
 	var repos []RepoInfo
 
 	for _, repoChunk := range repoInfoChunks {
 		repos = append(repos, repoChunk...)
+	}
+
+	for _, repo := range repos {
+		fmt.Println(repo.Name)
 	}
 
 	return repos, err
