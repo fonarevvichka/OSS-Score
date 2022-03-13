@@ -29,4 +29,4 @@ postgresql,85
 ofl-1.1,65
 ncsa,80
 unlicense,100
-zlib,2595
+zlib,95
