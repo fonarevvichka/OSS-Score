@@ -76,7 +76,7 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, int) {
 func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.Time) (float64, float64, int) {
 	if len(releases) == 0 {
 		// Decrease confidence score
-		return 100.0, 100.0, 0
+		return 10.0, 10.0, 0
 	}
 
 	var releaseCounter float64
@@ -133,7 +133,7 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	confidence := ((contributorWeight + commitWeight) * float64(commitConfidence)) + (issueWeight * float64(issueConfidence)) + (releaseWeight * float64(releaseConfidence))
 
 	repoScore := Score{
-		Score:      100 * score,
+		Score:      10 * score,
 		Confidence: confidence,
 	}
 
@@ -143,7 +143,7 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, startPoint time.Time) (Score, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
-			Score:      100,
+			Score:      10,
 			Confidence: 100,
 		}, nil
 	}
@@ -165,7 +165,7 @@ func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Cl
 
 	if err != nil {
 		return Score{ // not sure if score should be 0 or 100 here
-			Score:      100,
+			Score:      10,
 			Confidence: 0,
 		}, err
 	}
@@ -191,7 +191,7 @@ func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Cl
 		confidence /= float64(depsWithScores)
 		confidence *= (float64(depsWithScores) / float64(totalDeps))
 	} else {
-		score = 100
+		score = 10
 		confidence = 0
 	}
 
@@ -207,11 +207,11 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 
 	license := repoInfo.License
 
-	licenseScore = licenseMap[license]
+	licenseScore = licenseMap[license] / 10
 
 	// Zero confidence if we can't find the license
 	if licenseScore == 0 {
-		licenseScore = 100
+		licenseScore = 10
 		confidence = 0
 	}
 
@@ -226,7 +226,7 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, licenseMap map[string]int) (Score, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
-			Score:      100,
+			Score:      10,
 			Confidence: 100,
 		}, nil
 	}
@@ -247,7 +247,7 @@ func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Cli
 
 	if err != nil {
 		return Score{ // not sure if score should be 0 or 100 here
-			Score:      100,
+			Score:      10,
 			Confidence: 0,
 		}, err
 	}
@@ -273,7 +273,7 @@ func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Cli
 		confidence /= float64(depsWithScores)
 		confidence *= (float64(depsWithScores) / float64(totalDeps))
 	} else {
-		score = 100
+		score = 10
 		confidence = 0
 	}
 
