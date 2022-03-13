@@ -67,35 +67,41 @@ func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, n
 }
 
 func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeysInfo []NameOwner) ([]RepoInfo, error) {
-	var repoKeys []map[string]dynamoTypes.AttributeValue
 	var repos []RepoInfo
+	var items []map[string]dynamoTypes.AttributeValue
 	table := os.Getenv("DYNAMODB_TABLE")
 
+	counter := 0
 	for _, repoKeyInfo := range repoKeysInfo {
-		repoKeys = append(repoKeys, map[string]dynamoTypes.AttributeValue{
-			"name":  &dynamoTypes.AttributeValueMemberS{Value: repoKeyInfo.Name},
-			"owner": &dynamoTypes.AttributeValueMemberS{Value: repoKeyInfo.Owner},
-		})
+		if counter < 100 {
+			var repoKeys []map[string]dynamoTypes.AttributeValue
+			repoKeys = append(repoKeys, map[string]dynamoTypes.AttributeValue{
+				"name":  &dynamoTypes.AttributeValueMemberS{Value: repoKeyInfo.Name},
+				"owner": &dynamoTypes.AttributeValueMemberS{Value: repoKeyInfo.Owner},
+			})
+			data, err := client.BatchGetItem(ctx, &dynamodb.BatchGetItemInput{
+				RequestItems: map[string]dynamoTypes.KeysAndAttributes{
+					table: {
+						Keys: repoKeys,
+					},
+				},
+			})
+
+			if err != nil {
+				return repos, fmt.Errorf("BatchGetItem: %v", err)
+			}
+
+			items = append(items, data.Responses[table]...)
+		} else {
+			counter = 0
+		}
+		counter++
 	}
-
-	data, err := client.BatchGetItem(ctx, &dynamodb.BatchGetItemInput{
-		RequestItems: map[string]dynamoTypes.KeysAndAttributes{
-			table: {
-				Keys: repoKeys,
-			},
-		},
-	})
-
-	if err != nil {
-		return repos, fmt.Errorf("BatchGetItem: %v", err)
-	}
-
-	items := data.Responses[table]
 
 	for _, item := range items {
 		var repo RepoInfo
 		if item != nil {
-			err = attributevalue.UnmarshalMap(item, &repo)
+			err := attributevalue.UnmarshalMap(item, &repo)
 			if err != nil {
 				return repos, fmt.Errorf("UnmarhsalMap: %v", err)
 			}
