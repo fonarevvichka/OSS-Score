@@ -67,11 +67,10 @@ func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, n
 }
 
 func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []NameOwner) ([]RepoInfo, error) {
-	var repos []RepoInfo
-	var items []map[string]dynamoTypes.AttributeValue
 	table := os.Getenv("DYNAMODB_TABLE")
-
 	repoKeyChunks := make([][]NameOwner, (len(repoKeys))/100+1)
+	repoInfoChunks := make([][]RepoInfo, (len(repoKeys))/100+1)
+
 	chunkCounter := 0
 	for i, repoKey := range repoKeys {
 		if i%100 == 0 && i/100 > 0 { //Chunk complete
@@ -80,40 +79,53 @@ func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []Nam
 		repoKeyChunks[chunkCounter] = append(repoKeyChunks[chunkCounter], repoKey)
 	}
 
-	for _, repoKeyChunk := range repoKeyChunks {
-		var keys []map[string]dynamoTypes.AttributeValue
-		for _, repoKey := range repoKeyChunk {
-			keys = append(keys, map[string]dynamoTypes.AttributeValue{
-				"name":  &dynamoTypes.AttributeValueMemberS{Value: repoKey.Name},
-				"owner": &dynamoTypes.AttributeValueMemberS{Value: repoKey.Owner},
+	var errs errgroup.Group
+
+	for i, repoKeyChunk := range repoKeyChunks {
+		func(chunk []NameOwner) {
+			errs.Go(func() error {
+				var keys []map[string]dynamoTypes.AttributeValue
+				for _, repoKey := range repoKeyChunk {
+					keys = append(keys, map[string]dynamoTypes.AttributeValue{
+						"name":  &dynamoTypes.AttributeValueMemberS{Value: repoKey.Name},
+						"owner": &dynamoTypes.AttributeValueMemberS{Value: repoKey.Owner},
+					})
+				}
+
+				data, err := client.BatchGetItem(ctx, &dynamodb.BatchGetItemInput{
+					RequestItems: map[string]dynamoTypes.KeysAndAttributes{
+						table: {
+							Keys: keys,
+						},
+					},
+				})
+				if err != nil {
+					return fmt.Errorf("BatchGetItem: %v", err)
+				}
+				items := data.Responses[table]
+
+				for _, item := range items {
+					var repo RepoInfo
+					if item != nil {
+						err := attributevalue.UnmarshalMap(item, &repo)
+						if err != nil {
+							return fmt.Errorf("UnmarhsalMap: %v", err)
+						}
+						repoInfoChunks[i] = append(repoInfoChunks[i], repo)
+					}
+				}
+				return nil
 			})
-		}
+		}(repoKeyChunk)
+	}
+	err := errs.Wait()
+	var repos []RepoInfo
 
-		data, err := client.BatchGetItem(ctx, &dynamodb.BatchGetItemInput{
-			RequestItems: map[string]dynamoTypes.KeysAndAttributes{
-				table: {
-					Keys: keys,
-				},
-			},
-		})
-		if err != nil {
-			return repos, fmt.Errorf("BatchGetItem: %v", err)
-		}
-		items = append(items, data.Responses[table]...)
+	for _, repoChunk := range repoInfoChunks {
+		repos = append(repos, repoChunk...)
 	}
 
-	for _, item := range items {
-		var repo RepoInfo
-		if item != nil {
-			err := attributevalue.UnmarshalMap(item, &repo)
-			if err != nil {
-				return repos, fmt.Errorf("UnmarhsalMap: %v", err)
-			}
-			repos = append(repos, repo)
-		}
-	}
-
-	return repos, nil
+	return repos, err
 }
 
 func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
