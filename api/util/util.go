@@ -66,37 +66,42 @@ func GetRepoFromDB(ctx context.Context, client *dynamodb.Client, owner string, n
 	return repo, true, nil
 }
 
-func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeysInfo []NameOwner) ([]RepoInfo, error) {
+func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []NameOwner) ([]RepoInfo, error) {
 	var repos []RepoInfo
 	var items []map[string]dynamoTypes.AttributeValue
 	table := os.Getenv("DYNAMODB_TABLE")
+	var repoKeyChunks [][]NameOwner
 
-	counter := 0
-	for _, repoKeyInfo := range repoKeysInfo {
-		if counter < 100 {
-			var repoKeys []map[string]dynamoTypes.AttributeValue
-			repoKeys = append(repoKeys, map[string]dynamoTypes.AttributeValue{
-				"name":  &dynamoTypes.AttributeValueMemberS{Value: repoKeyInfo.Name},
-				"owner": &dynamoTypes.AttributeValueMemberS{Value: repoKeyInfo.Owner},
+	chunkCounter := 0
+	for i, repoKey := range repoKeys {
+		if i % 100 == 0 && i / 100 > 0 { //Chunk complete
+			chunkCounter++
+		} 
+		repoKeyChunks[chunkCounter] = append(repoKeyChunks[chunkCounter], repoKey)
+	}
+
+	for _, repoKeyChunk := range repoKeyChunks {
+		var keys []map[string]dynamoTypes.AttributeValue
+		for _, repoKey := range repoKeyChunk {
+			keys = append(keys, map[string]dynamoTypes.AttributeValue{
+				"name":  &dynamoTypes.AttributeValueMemberS{Value: repoKey.Name},
+				"owner": &dynamoTypes.AttributeValueMemberS{Value: repoKey.Owner},
 			})
+			
 			data, err := client.BatchGetItem(ctx, &dynamodb.BatchGetItemInput{
 				RequestItems: map[string]dynamoTypes.KeysAndAttributes{
 					table: {
-						Keys: repoKeys,
+						Keys: keys,
 					},
 				},
 			})
-
 			if err != nil {
 				return repos, fmt.Errorf("BatchGetItem: %v", err)
 			}
-
 			items = append(items, data.Responses[table]...)
-		} else {
-			counter = 0
 		}
-		counter++
 	}
+
 
 	for _, item := range items {
 		var repo RepoInfo
