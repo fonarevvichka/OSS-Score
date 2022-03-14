@@ -25,7 +25,7 @@ jobs:
         cd api
         make clean build 
     - name: deploy
-      with:
+      env:
         GIT_PAT_1: ${ {secrets.GIT_PAT_1} }
         GIT_PAT_2: ${ {secrets.GIT_PAT_2} }
         GIT_PAT_3: ${ {secrets.GIT_PAT_3} }
@@ -37,10 +37,6 @@ jobs:
         GIT_PAT_9: ${ {secrets.GIT_PAT_9} }
         GIT_PAT_10: ${ {secrets.GIT_PAT_10} }
         GIT_PAT_11: ${ {secrets.GIT_PAT_11} }
-        SHELF_LIFE: ${ {env.SHELF_LIFE} }
-        REPO_QUERY_QUEUE: ${ {env.REPO_QUERY_QUEUE} }
-        DEP_QUERY_QUEUE: ${ {env.DEP_QUERY_QUEUE} }
-        REPO_METRICS_TABLE: dev-${ {env.REPO_METRICS_TABLE} }
       run: |
         cd api
         sls deploy -s dev
