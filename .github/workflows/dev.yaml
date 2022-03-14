@@ -1,0 +1,26 @@
+name: Deploy Dev
+on:
+  push:
+    branches:
+      - main
+      - set-up-github-actions # test only
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '10.x'
+    - name: Install Serverless Framework
+      run: npm install -g serverless
+    - name: Serverless AWS authentication
+      run: sls config credentials --provider aws --key ${{ secrets.AWS_KEY }} --secret ${{ secrets.AWS_SECRET }}
+    - name: Move to API dir
+      run: cd api
+    - name: Install NPM dependencies
+      run: npm install
+    - name: build project
+      run: make clean build 
+    - name: deploy
+      run: sls deploy -s dev
