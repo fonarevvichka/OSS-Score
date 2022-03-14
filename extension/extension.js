@@ -106,6 +106,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     scoresPromise.then(scores => {
         if (scores.activity != null && scores.license != null) { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
+            updateScores(scoreDiv, owner, repo)
         } else if (scores.message == 'Score not yet calculated') {
             console.log("Requesting previously unknown score");
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> <a href='https://oss-score-website.heroku.com'>OSS Score</a> </h2>"; 
