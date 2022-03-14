@@ -16,11 +16,15 @@ jobs:
       run: npm install -g serverless
     - name: Serverless AWS authentication
       run: sls config credentials --provider aws --key ${{ secrets.AWS_KEY }} --secret ${{ secrets.AWS_SECRET }}
-    - name: Move to API dir
-      run: cd api
     - name: Install NPM dependencies
-      run: npm install
+      run: |
+        cd api
+        npm install
     - name: build project
-      run: make clean build 
+      run: |
+        cd api
+        make clean build 
     - name: deploy
-      run: sls deploy -s dev
+      run: |
+        cd api
+        sls deploy -s dev
