@@ -14,8 +14,8 @@ provider:
   region: us-east-2
   
   environment:
-    DYNAMODB_TABLE: ${self:provider.stage}-${env:REPO_METRICS_TABLE}
-    SHELF_LIFE: ${env:SHELF_LIFE}
+    DYNAMODB_TABLE: ${self:provider.stage}-${file(./vars.yaml):REPO_METRICS_TABLE}
+    SHELF_LIFE: ${file(./vars.yaml):SHELF_LIFE}
 
 package:
   individually: true
@@ -27,7 +27,7 @@ resources:
     repoQueryQueue:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: ${self:provider.stage}-${env:REPO_QUERY_QUEUE}
+        QueueName: ${self:provider.stage}-${file(./vars.yaml):REPO_QUERY_QUEUE}
         VisibilityTimeout: 60
         FifoQueue: true
         ContentBasedDeduplication: true
@@ -35,13 +35,13 @@ resources:
     depQueryQueue:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: ${self:provider.stage}-${env:DEP_QUERY_QUEUE}
+        QueueName: ${self:provider.stage}-${file(./vars.yaml):DEP_QUERY_QUEUE}
         VisibilityTimeout: 300
 
     repoMetricsDB:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.stage}-${env:REPO_METRICS_TABLE}
+        TableName: ${self:provider.stage}-${file(./vars.yaml):REPO_METRICS_TABLE}
         AttributeDefinitions:
           - AttributeName: name
             AttributeType: S
@@ -104,6 +104,7 @@ functions:
     package:
       patterns:
         - bin/getMetric
+        - util/scores/**
     events:
       - http:
           path: catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}
@@ -123,7 +124,7 @@ functions:
     timeout: 15
     environment:
       GIT_PAT: ${env:GIT_PAT_1}
-      QUEUE: ${self:provider.stage}-${env:REPO_QUERY_QUEUE}
+      QUEUE: ${self:provider.stage}-${file(./vars.yaml):REPO_QUERY_QUEUE}
     iamRoleStatementsName: ${self:provider.stage}-query-repo-handler-role
     iamRoleStatements:
       - Effect: "Allow"
@@ -169,7 +170,7 @@ functions:
       GIT_PAT_3: ${env:GIT_PAT_4}
       GIT_PAT_4: ${env:GIT_PAT_5}
       GIT_PAT_5: ${env:GIT_PAT_6}
-      QUEUE: ${self:provider.stage}-${env:DEP_QUERY_QUEUE}
+      QUEUE: ${self:provider.stage}-${file(./vars.yaml):DEP_QUERY_QUEUE}
     iamRoleStatementsName: ${self:provider.stage}-query-repo-processing-role
     iamRoleStatements:
       - Effect: "Allow"

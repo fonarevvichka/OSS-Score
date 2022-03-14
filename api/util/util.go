@@ -125,10 +125,6 @@ func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []Nam
 		repos = append(repos, repoChunk...)
 	}
 
-	for _, repo := range repos {
-		fmt.Println(repo.Name)
-	}
-
 	return repos, err
 }
 
