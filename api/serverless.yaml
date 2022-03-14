@@ -162,7 +162,7 @@ functions:
   queryRepositoryProcessing:
     name: ${self:provider.stage}-query-repo-processing
     handler: bin/queryRepoProcessing
-    timeout: 60
+    timeout: 300
     reservedConcurrency: 10
     environment:
       GIT_PAT_1: ${env:GIT_PAT_2}
@@ -205,7 +205,7 @@ functions:
   queryDependencyProcessing:
     name: ${self:provider.stage}-query-dep-processing
     handler: bin/queryDependency
-    timeout: 300
+    timeout: 900
     reservedConcurrency: 10
     environment:
       GIT_PAT_1: ${env:GIT_PAT_7}
