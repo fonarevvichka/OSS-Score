@@ -21,7 +21,7 @@ type response struct {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	queueName := os.Getenv("QUERY_QUEUE")
+	queueName := os.Getenv("QUEUE")
 	catalog, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
@@ -43,6 +43,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	httpClient := oauth2.NewClient(ctx, src)
 
 	valid, err := util.CheckRepoAccess(httpClient, owner, name)
+	if err != nil {
+		log.Println(err)
+	}
 
 	if !valid {
 		message, _ := json.Marshal(response{Message: "Could not access repo, check that it was inputted correctly and is public"})

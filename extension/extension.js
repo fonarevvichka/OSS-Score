@@ -1,4 +1,5 @@
-const basePath = 'https://ru8ibij7yc.execute-api.us-east-2.amazonaws.com/staging/catalog/github'
+// const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
+const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -61,10 +62,10 @@ async function awaitResults(scoreDiv, owner, repo) {
 
 function insertScores(scoreDiv, scores) {
     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> <a href='https://oss-score-website.heroku.com'>OSS Score</a> </h2>";
-    scoreDiv.innerHTML += 'Activity: ' + (scores.activity.score/10).toFixed(1) + ' of 10';
+    scoreDiv.innerHTML += 'Activity: ' + (scores.activity.score).toFixed(1) + ' of 10';
     scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.activity.confidence.toFixed(0) + '%';
     scoreDiv.innerHTML += '<br/><br/>';
-    scoreDiv.innerHTML += 'License: ' + (scores.license.score/10).toFixed(1) + ' of 10';
+    scoreDiv.innerHTML += 'License: ' + (scores.license.score).toFixed(1) + ' of 10';
     scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.license.confidence.toFixed(0) + '%';
 }
 
