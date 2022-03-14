@@ -28,7 +28,7 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: ${self:provider.stage}-${file(./vars.yaml):REPO_QUERY_QUEUE}
-        VisibilityTimeout: 60
+        VisibilityTimeout: 300
         FifoQueue: true
         ContentBasedDeduplication: true
     
@@ -36,7 +36,7 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: ${self:provider.stage}-${file(./vars.yaml):DEP_QUERY_QUEUE}
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
 
     repoMetricsDB:
       Type: AWS::DynamoDB::Table
@@ -162,7 +162,7 @@ functions:
   queryRepositoryProcessing:
     name: ${self:provider.stage}-query-repo-processing
     handler: bin/queryRepoProcessing
-    timeout: 60
+    timeout: 300
     reservedConcurrency: 10
     environment:
       GIT_PAT_1: ${env:GIT_PAT_2}
@@ -205,7 +205,7 @@ functions:
   queryDependencyProcessing:
     name: ${self:provider.stage}-query-dep-processing
     handler: bin/queryDependency
-    timeout: 300
+    timeout: 900
     reservedConcurrency: 10
     environment:
       GIT_PAT_1: ${env:GIT_PAT_7}
