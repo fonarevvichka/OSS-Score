@@ -28,7 +28,7 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: ${self:provider.stage}-${file(./vars.yaml):REPO_QUERY_QUEUE}
-        VisibilityTimeout: 60
+        VisibilityTimeout: 300
         FifoQueue: true
         ContentBasedDeduplication: true
     
@@ -36,7 +36,7 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: ${self:provider.stage}-${file(./vars.yaml):DEP_QUERY_QUEUE}
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
 
     repoMetricsDB:
       Type: AWS::DynamoDB::Table
