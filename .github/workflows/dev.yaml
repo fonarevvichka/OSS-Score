@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - set-up-github-actions # test only
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
