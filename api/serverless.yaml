@@ -104,6 +104,7 @@ functions:
     package:
       patterns:
         - bin/getMetric
+        - util/scores/**
     events:
       - http:
           path: catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}
