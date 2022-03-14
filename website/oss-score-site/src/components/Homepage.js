@@ -155,12 +155,17 @@ export default function Home(props) {
                 if (data.message === "Metric ready") {
                     scoreDisplay += DisplayScores(owner, repo, data)
                 } else if (data.message === "Metric not available") {
-                    requestScores(owner, repo).then(async requestResponse => {
-                        if (requestResponse.success) {
-                            let metrics = await awaitResults(owner, repo)
-                            scoreDisplay += DisplayScores(owner, repo, metrics)
-                        }
-                    });
+                    let requestResponse = await requestScores(owner, repo)
+                    if (requestResponse.success) {
+                        let metrics = await awaitResults(owner, repo)
+                        scoreDisplay += DisplayScores(owner, repo, metrics)
+                    }
+                    // requestScores(owner, repo).then(async requestResponse => {
+                    //     if (requestResponse.success) {
+                    //         let metrics = await awaitResults(owner, repo)
+                    //         scoreDisplay += DisplayScores(owner, repo, metrics)
+                    //     }
+                    // });
                 } else {
                     // score calculate queued, don't call request scores, go straight to awaitResults
                     let metrics = await awaitResults(owner, repo)
@@ -212,10 +217,12 @@ export default function Home(props) {
         // Show loading gear
         document.getElementById("loading").innerHTML += loading_gears;
 
+        let scorePromises = []
+
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
             let [owner1, name1] = getNameAuthor(inputs.search1)
-            await getMetrics(owner1, name1)
+            scorePromises.push(getMetrics(owner1, name1))
 
         } else {
             displayError("1");
@@ -224,10 +231,13 @@ export default function Home(props) {
         if (validateURL(inputs.search2, "2")) {
             // parse Name and Author, call API
             let [owner2, name2] = getNameAuthor(inputs.search2)
-            await getMetrics(owner2, name2)
+            scorePromises.push(getMetrics(owner2, name2))
         } else {
             displayError("2");
         }
+
+        // do promises
+        await Promise.all(scorePromises) 
 
         // Hide loading gear/clear all html in head2head
         document.getElementById("loading").innerHTML = ''
