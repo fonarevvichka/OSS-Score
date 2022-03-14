@@ -11,14 +11,5 @@
       "resources": ["contentscript.css", "images/neverGiveUp.png"],
       "matches": ["<all_urls>"]
     }],
-    "permissions": [
-      "storage",
-      "contextMenus",
-          "activeTab"
-    ],
-    "host_permissions": [
-      "http://*/*",
-          "https://*/*"
-      ],
     "manifest_version": 3
   }
