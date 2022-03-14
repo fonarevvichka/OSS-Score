@@ -137,8 +137,14 @@ header {
 }
 
 #loading {
-    margin: 0 25% !important;
-    width: 50%; /* add wanted width */
+    /* margin: 0 25% !important;
+    width: 50%; add wanted width */
+
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px;
+
 }
 
 
