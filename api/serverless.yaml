@@ -12,10 +12,11 @@ provider:
   runtime: go1.x
   stage: ${opt:stage, 'dev'}
   region: us-east-2
-  
+
   environment:
-    DYNAMODB_TABLE: ${self:provider.stage}-${file(./vars.yaml):REPO_METRICS_TABLE}
-    SHELF_LIFE: ${file(./vars.yaml):SHELF_LIFE}
+    MONGO_URI: |
+      mongodb+srv://${file(./vars.yaml):${self:provider.stage}.MONGO_DEPLOYMENT}.x0frg.mongodb.net/${file(./vars.yaml):${self:provider.stage}.MONGO_DB}?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&tlsCertificateKeyFile=${file(./vars.yaml):${self:provider.stage}.MONGO_CERT}
+    SHELF_LIFE: ${file(./vars.yaml):${self:provider.stage}.SHELF_LIFE}
 
 package:
   individually: true
@@ -27,7 +28,7 @@ resources:
     repoQueryQueue:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: ${self:provider.stage}-${file(./vars.yaml):REPO_QUERY_QUEUE}
+        QueueName: ${self:provider.stage}-${file(./vars.yaml):dev.REPO_QUERY_QUEUE}
         VisibilityTimeout: 300
         FifoQueue: true
         ContentBasedDeduplication: true
@@ -35,24 +36,24 @@ resources:
     depQueryQueue:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: ${self:provider.stage}-${file(./vars.yaml):DEP_QUERY_QUEUE}
+        QueueName: ${self:provider.stage}-${file(./vars.yaml):dev.DEP_QUERY_QUEUE}
         VisibilityTimeout: 900
 
-    repoMetricsDB:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.stage}-${file(./vars.yaml):REPO_METRICS_TABLE}
-        AttributeDefinitions:
-          - AttributeName: name
-            AttributeType: S
-          - AttributeName: owner
-            AttributeType: S
-        KeySchema:
-          - AttributeName: name
-            KeyType: HASH
-          - AttributeName: owner
-            KeyType: RANGE
-        BillingMode: PAY_PER_REQUEST
+    # repoMetricsDB:
+    #   Type: AWS::DynamoDB::Table
+    #   Properties:
+    #     TableName: ${self:provider.stage}-${file(./vars.yaml):dev.REPO_METRICS_TABLE}
+    #     AttributeDefinitions:
+    #       - AttributeName: name
+    #         AttributeType: S
+    #       - AttributeName: owner
+    #         AttributeType: S
+    #     KeySchema:
+    #       - AttributeName: name
+    #         KeyType: HASH
+    #       - AttributeName: owner
+    #         KeyType: RANGE
+    #     BillingMode: PAY_PER_REQUEST
             
 
 functions:
@@ -61,19 +62,20 @@ functions:
     handler: bin/getScore
     timeout: 15
     iamRoleStatementsName: ${self:provider.stage}-get-score-role
-    iamRoleStatements:
-      - Effect: "Allow"
-        Action:
-          - dynamodb:GetItem 
-          - dynamodb:BatchGetItem
-        Resource: 
-            Fn::GetAtt:
-              - repoMetricsDB
-              - Arn
+    # iamRoleStatements:
+    #   - Effect: "Allow"
+    #     Action:
+    #       - dynamodb:GetItem 
+    #       - dynamodb:BatchGetItem
+    #     Resource: 
+    #         Fn::GetAtt:
+    #           - repoMetricsDB
+    #           - Arn
     package:
       patterns:
         - bin/getScore
         - util/scores/**
+        - util/mongo_cert.pem
     events:
       - http:
           path: catalog/{catalog}/owner/{owner}/name/{name}/type/{type}
@@ -92,19 +94,20 @@ functions:
     handler: bin/getMetric
     timeout: 15
     iamRoleStatementsName: ${self:provider.stage}-get-metric-role
-    iamRoleStatements:
-      - Effect: "Allow"
-        Action:
-          - dynamodb:GetItem 
-        Resource: 
-            Fn::GetAtt:
-              - repoMetricsDB
-              - Arn
+    # iamRoleStatements:
+    #   - Effect: "Allow"
+    #     Action:
+    #       - dynamodb:GetItem 
+    #     Resource: 
+    #         Fn::GetAtt:
+    #           - repoMetricsDB
+    #           - Arn
         
     package:
       patterns:
         - bin/getMetric
         - util/scores/**
+        - util/mongo_cert.pem
     events:
       - http:
           path: catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}
@@ -124,7 +127,7 @@ functions:
     timeout: 15
     environment:
       GIT_PAT: ${env:GIT_PAT_1}
-      QUEUE: ${self:provider.stage}-${file(./vars.yaml):REPO_QUERY_QUEUE}
+      QUEUE: ${self:provider.stage}-${file(./vars.yaml):dev.REPO_QUERY_QUEUE}
     iamRoleStatementsName: ${self:provider.stage}-query-repo-handler-role
     iamRoleStatements:
       - Effect: "Allow"
@@ -135,17 +138,18 @@ functions:
           Fn::GetAtt:
             - repoQueryQueue
             - Arn
-      - Effect: "Allow"
-        Action:
-          - dynamodb:UpdateItem
-          - dynamodb:GetItem 
-        Resource: 
-          Fn::GetAtt:
-            - repoMetricsDB
-            - Arn
+      # - Effect: "Allow"
+      #   Action:
+      #     - dynamodb:UpdateItem
+      #     - dynamodb:GetItem 
+      #   Resource: 
+      #     Fn::GetAtt:
+      #       - repoMetricsDB
+      #       - Arn
     package:
       patterns:
         - bin/queryRepoHandler
+        - util/mongo_cert.pem
 
     events:
       - http:
@@ -170,7 +174,7 @@ functions:
       GIT_PAT_3: ${env:GIT_PAT_4}
       GIT_PAT_4: ${env:GIT_PAT_5}
       GIT_PAT_5: ${env:GIT_PAT_6}
-      QUEUE: ${self:provider.stage}-${file(./vars.yaml):DEP_QUERY_QUEUE}
+      QUEUE: ${self:provider.stage}-${file(./vars.yaml):dev.DEP_QUERY_QUEUE}
     iamRoleStatementsName: ${self:provider.stage}-query-repo-processing-role
     iamRoleStatements:
       - Effect: "Allow"
@@ -181,19 +185,20 @@ functions:
           Fn::GetAtt:
             - depQueryQueue
             - Arn
-      - Effect: "Allow"
-        Action:
-          - dynamodb:GetItem 
-          - dynamodb:PutItem
-          - dynamodb:UpdateItem
-        Resource:
-          Fn::GetAtt:
-            - repoMetricsDB
-            - Arn
+      # - Effect: "Allow"
+      #   Action:
+      #     - dynamodb:GetItem 
+      #     - dynamodb:PutItem
+      #     - dynamodb:UpdateItem
+      #   Resource:
+      #     Fn::GetAtt:
+      #       - repoMetricsDB
+      #       - Arn
     package:
       patterns:
         - bin/queryRepoProcessing
         - 'util/queries/**'
+        - util/mongo_cert.pem
     events:
       - sqs:
           arn:
@@ -214,20 +219,21 @@ functions:
       GIT_PAT_4: ${env:GIT_PAT_10}
       GIT_PAT_5: ${env:GIT_PAT_11}
     iamRoleStatementsName: ${self:provider.stage}-query-dep-processing-role
-    iamRoleStatements:
-      - Effect: "Allow"
-        Action:
-          - dynamodb:GetItem 
-          - dynamodb:PutItem
-          - dynamodb:UpdateItem
-        Resource:
-          Fn::GetAtt:
-            - repoMetricsDB
-            - Arn
+    # iamRoleStatements:
+    #   - Effect: "Allow"
+    #     Action:
+    #       - dynamodb:GetItem 
+    #       - dynamodb:PutItem
+    #       - dynamodb:UpdateItem
+    #     Resource:
+    #       Fn::GetAtt:
+    #         - repoMetricsDB
+    #         - Arn
     package:
       patterns:
         - bin/queryDependency
         - 'util/queries/**'
+        - util/mongo_cert.pem
     events:
       - sqs:
           arn:

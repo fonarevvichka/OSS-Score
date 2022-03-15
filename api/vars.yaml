@@ -1,4 +1,8 @@
-SHELF_LIFE: 7
-REPO_QUERY_QUEUE: RepoQueryQueue.fifo
-DEP_QUERY_QUEUE: DependencyQueryQueue
-REPO_METRICS_TABLE: repoMetrics
+dev:
+  SHELF_LIFE: 7
+  REPO_QUERY_QUEUE: RepoQueryQueue.fifo
+  DEP_QUERY_QUEUE: DependencyQueryQueue
+  REPO_METRICS_TABLE: repoMetrics
+  MONGO_DB: oss-score-dev
+  MONGO_DEPLOYMENT: oss-score
+  MONGO_CERT: ./util/mongo_cert.pem
