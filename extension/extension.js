@@ -48,7 +48,6 @@ async function requestScores(owner, repo) {
 async function updateScores(scoreDiv, owner, repo) {
     promiseTimeout(15000).then(() => {
         console.log('Updating Score');
-        scoreDiv.innerHTML += "updating";
         getScores(owner, repo).then(scores => {
             if ((scores.activity != null) && (scores.license != null)) {
                 insertScores(scoreDiv, scores);
