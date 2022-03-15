@@ -116,7 +116,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 			case "dependencyActivityScore":
-				score, _ := util.CalculateDependencyActivityScore(ctx, dbClient, &repo, startPoint) //TODO: INGORING ERROR
+				score, _ := util.CalculateDependencyActivityScoreMongo(ctx, collection, &repo, startPoint) //TODO: INGORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 			case "repoLicenseScore":
@@ -127,7 +127,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				confidence = int(score.Confidence)
 			case "dependencyLicenseScore":
 				licenseMap := util.GetLicenseMap()
-				score, _ := util.CalculateDependencyLicenseScore(ctx, dbClient, &repo, licenseMap) //TODO: IGNORING ERROR
+				score, _ := util.CalculateDependencyLicenseScoreMongo(ctx, collection, &repo, licenseMap) //TODO: IGNORING ERROR
 
 				metricValue = score.Score
 				confidence = int(score.Confidence)
@@ -180,7 +180,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					Confidence: confidence,
 				}
 
-				score, _ = util.CalculateDependencyActivityScore(ctx, dbClient, &repo, startPoint) //TODO: INGORING ERROR
+				score, _ = util.CalculateDependencyActivityScoreMongo(ctx, collection, &repo, startPoint) //TODO: INGORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 				allMetrics.DependencyActivityScore = singleMetricRepsone{
@@ -196,7 +196,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					Confidence: confidence,
 				}
 
-				score, _ = util.CalculateDependencyLicenseScore(ctx, dbClient, &repo, licenseMap) //TODO: IGNORING ERROR
+				score, _ = util.CalculateDependencyLicenseScoreMongo(ctx, collection, &repo, licenseMap) //TODO: IGNORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 				allMetrics.DependencyLicenseScore = singleMetricRepsone{

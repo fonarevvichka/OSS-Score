@@ -14,8 +14,7 @@ provider:
   region: us-east-2
 
   environment:
-    MONGO_URI: |
-      mongodb+srv://${file(./vars.yaml):${self:provider.stage}.MONGO_DEPLOYMENT}.x0frg.mongodb.net/${file(./vars.yaml):${self:provider.stage}.MONGO_DB}?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&tlsCertificateKeyFile=${file(./vars.yaml):${self:provider.stage}.MONGO_CERT}
+    MONGO_URI: mongodb+srv://${file(./vars.yaml):${self:provider.stage}.MONGO_DEPLOYMENT}.x0frg.mongodb.net/${file(./vars.yaml):${self:provider.stage}.MONGO_DB}?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&tlsCertificateKeyFile=${file(./vars.yaml):${self:provider.stage}.MONGO_CERT}
     MONGO_DB: ${file(./vars.yaml):${self:provider.stage}.MONGO_DB}
     SHELF_LIFE: ${file(./vars.yaml):${self:provider.stage}.SHELF_LIFE}
 

@@ -324,6 +324,56 @@ func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 	return repo, nil
 }
 
+func addUpdateRepoMongo(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
+	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
+	if err != nil {
+		log.Println(err)
+		return RepoInfo{}, err
+	}
+
+	repo, found, err := GetRepoFromDBMongo(ctx, collection, owner, name)
+
+	if err != nil {
+		return RepoInfo{}, err
+	}
+
+	startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+
+	if !found { // No data on repo, essentially useless, since it will be inserted by handler
+		log.Println(owner + "/" + name + " Not in DB, need to do full query")
+		repo.DataStartPoint = startPoint
+
+		repo, err = QueryGithub(catalog, owner, name, startPoint)
+		if err != nil {
+			log.Println(err)
+			return repo, err
+		}
+		log.Println(owner + "/" + name + " Done querying github")
+	} else {
+		// Repo data expired, or empty
+		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || startPoint.Before(repo.DataStartPoint) {
+			log.Println(owner + "/" + name + " Need to query github")
+
+			if startPoint.Before(repo.UpdatedAt) { // set start point to collect only needed data
+				startPoint = repo.UpdatedAt
+			}
+
+			repo, err = QueryGithub(catalog, owner, name, startPoint)
+			if err != nil {
+				log.Println(err)
+				return repo, err
+			}
+
+			if repo.DataStartPoint.IsZero() || startPoint.Before(repo.DataStartPoint) {
+				repo.DataStartPoint = startPoint
+			}
+			log.Println(owner + "/" + name + " Done querying github")
+		}
+	}
+
+	return repo, nil
+}
+
 func GetLicenseMap() map[string]int {
 	// Get License Score map
 	licenseMap := make(map[string]int)
@@ -390,6 +440,19 @@ func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string
 	return nil
 }
 
+func SetScoreStateMongo(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, status int) error {
+	repo := RepoInfo{
+		Catalog: catalog,
+		Owner:   owner,
+		Name:    name,
+		Status:  status,
+	}
+
+	syncRepoWithDBMongo(ctx, collection, repo)
+
+	return nil
+}
+
 func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, status int) error {
 	repo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 
@@ -431,6 +494,7 @@ func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 
 	return nil
 }
+
 func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
 	repo, err := addUpdateRepo(ctx, dbClient, catalog, owner, name, timeFrame)
 
@@ -445,21 +509,21 @@ func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string
 	return repo, err
 }
 
-// func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
-// 	repo, err := addUpdateRepo(ctx, dbClient, catalog, owner, name, timeFrame)
+func QueryProjectMongo(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
+	repo, err := addUpdateRepoMongo(ctx, collection, catalog, owner, name, timeFrame)
 
-// 	if err != nil {
-// 		log.Println(err)
-// 		return RepoInfo{}, err
-// 	}
+	if err != nil {
+		log.Println(err)
+		return RepoInfo{}, err
+	}
 
-// 	repo.Status = 3
-// 	err = syncRepoWithDB(ctx, dbClient, repo)
+	repo.Status = 3
+	err = syncRepoWithDBMongo(ctx, collection, repo)
 
-// 	return repo, err
-// }
+	return repo, err
+}
 
-func SyncRepoWithDBMongo(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {
+func syncRepoWithDBMongo(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {
 	insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
 	filter := getRepoFilterMongo(repo.Owner, repo.Name)
 	upsert := true
