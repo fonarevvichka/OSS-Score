@@ -52,11 +52,11 @@ async function updateScores(scoreDiv, owner, repo) {
         getScores(owner, repo).then(scores => {
             if ((scores.activity != null) && (scores.license != null)) {
                 insertScores(scoreDiv, scores);
-                if ((scores.activity.confidence < 95) || (scores.license.confidence < 95)) {
+                if (scores.depRatio < 0.9) {
                     updateScores(scoreDiv, owner, repo);
                 }
             } else {
-                console.log("Error retrieving scores in updateScores")
+                console.log("Error retrieving scores in updateScores");
             }
         });
     });
@@ -66,7 +66,7 @@ async function awaitResults(scoreDiv, owner, repo) {
     promiseTimeout(500).then(() => {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
-            if (scores.activity != null) {
+            if (scores.activity != null && score.license != null) {
                 insertScores(scoreDiv, scores);
                 updateScores(scoreDiv, owner, repo);
             } else {
@@ -107,6 +107,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     scoresPromise.then(scores => {
         if (scores.activity != null && scores.license != null) { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
+            updateScores(scoreDiv, owner, repo);
         } else if (scores.message == 'Score not yet calculated' || scores.message == "Error querying score") { // not ideal display of message
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> <a href='https://oss-score-website.heroku.com'>OSS Score</a> </h2>"; 
             scoreDiv.innerHTML += scores.message;
@@ -129,7 +130,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
 }
 
 async function getScores(owner, repo) {
-    let scores = {license: null, activity: null, message: null};
+    let scores = {license: null, activity: null, message: null, depRatio: 0};
     let promises = [];    
     let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
     promises.push(
@@ -139,6 +140,7 @@ async function getScores(owner, repo) {
                 await scorePromise.then(response => {
                     if (response.message == "Score ready") {
                         scores.license = response.score;
+                        scores.depRatio = response.depRatio;
                     } else {
                         scores.message = response.message;
                     };
@@ -165,6 +167,7 @@ async function getScores(owner, repo) {
                 await scorePromise.then(response => {
                     if (response.message == "Score ready") {
                         scores.activity = response.score;
+                        scores.depRatio = (scores.depRatio + response.depRatio) / 2;
                     } else {
                         scores.message = response.message;
                     };
