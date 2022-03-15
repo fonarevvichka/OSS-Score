@@ -1,0 +1,4 @@
+SHELF_LIFE: 7
+REPO_QUERY_QUEUE: RepoQueryQueue.fifo
+DEP_QUERY_QUEUE: DependencyQueryQueue
+REPO_METRICS_TABLE: repoMetrics

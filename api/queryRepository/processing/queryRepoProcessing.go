@@ -35,11 +35,12 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		repo, err = util.QueryProject(ctx, dbClient, catalog, owner, name, timeFrame)
 		if err != nil {
 			log.Println(err)
+			util.SetScoreState(ctx, dbClient, catalog, owner, name, 4)
 			return err
 		}
 	}
 
-	queueName := os.Getenv("QUERY_QUEUE")
+	queueName := os.Getenv("QUEUE")
 	sqsClient := util.GetSqsClient(ctx)
 
 	gQInput := &sqs.GetQueueUrlInput{
