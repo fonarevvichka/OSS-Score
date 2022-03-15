@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // issues:
@@ -140,6 +141,67 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	return repoScore
 }
 
+func CalculateDependencyActivityScoreMongo(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) (Score, error) {
+	if len(repoInfo.Dependencies) == 0 {
+		return Score{
+			Score:      10,
+			Confidence: 100,
+		}, nil
+	}
+
+	var wg sync.WaitGroup
+	score := 0.0
+	confidence := 0.0
+	depsWithScores := 0
+
+	var repos []NameOwner
+	for _, dependency := range repoInfo.Dependencies {
+		repos = append(repos, NameOwner{
+			Owner: dependency.Owner,
+			Name:  dependency.Name,
+		})
+	}
+
+	deps, err := GetReposFromDBMongo(ctx, collection, repos)
+
+	if err != nil {
+		return Score{ // not sure if score should be 0 or 100 here
+			Score:      10,
+			Confidence: 0,
+		}, err
+	}
+
+	for _, dep := range deps {
+		wg.Add(1)
+		go func(dep RepoInfo, startPoint time.Time) {
+			defer wg.Done()
+
+			individualScore := CalculateActivityScore(&dep, startPoint)
+			score += individualScore.Score
+			confidence += individualScore.Confidence
+
+			depsWithScores++
+		}(dep, startPoint)
+	}
+	totalDeps := len(repoInfo.Dependencies)
+
+	wg.Wait()
+
+	if depsWithScores != 0 {
+		score /= float64(depsWithScores)
+		confidence /= float64(depsWithScores)
+		confidence *= (float64(depsWithScores) / float64(totalDeps))
+	} else {
+		score = 10
+		confidence = 0
+	}
+
+	return Score{
+		Score:      score,
+		Confidence: confidence,
+	}, nil
+}
+
 func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, startPoint time.Time) (Score, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
@@ -221,6 +283,66 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 	}
 
 	return repoScore
+}
+
+func CalculateDependencyLicenseScoreMongo(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) (Score, error) {
+	if len(repoInfo.Dependencies) == 0 {
+		return Score{
+			Score:      10,
+			Confidence: 100,
+		}, nil
+	}
+
+	var wg sync.WaitGroup
+	score := 0.0
+	confidence := 0.0
+	depsWithScores := 0
+
+	var repos []NameOwner
+	for _, dependency := range repoInfo.Dependencies {
+		repos = append(repos, NameOwner{
+			Owner: dependency.Owner,
+			Name:  dependency.Name,
+		})
+	}
+	deps, err := GetReposFromDBMongo(ctx, collection, repos)
+
+	if err != nil {
+		return Score{ // not sure if score should be 0 or 100 here
+			Score:      10,
+			Confidence: 0,
+		}, err
+	}
+
+	for _, dep := range deps {
+		wg.Add(1)
+		go func(dep RepoInfo) {
+			defer wg.Done()
+
+			individualScore := CalculateLicenseScore(&dep, licenseMap)
+			score += individualScore.Score
+			confidence += individualScore.Confidence
+
+			depsWithScores++
+		}(dep)
+	}
+	totalDeps := len(repoInfo.Dependencies)
+
+	wg.Wait()
+
+	if depsWithScores != 0 {
+		score /= float64(depsWithScores)
+		confidence /= float64(depsWithScores)
+		confidence *= (float64(depsWithScores) / float64(totalDeps))
+	} else {
+		score = 10
+		confidence = 0
+	}
+
+	return Score{
+		Score:      score,
+		Confidence: confidence,
+	}, nil
 }
 
 func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, licenseMap map[string]int) (Score, error) {

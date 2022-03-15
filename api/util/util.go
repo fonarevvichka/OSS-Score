@@ -17,6 +17,11 @@ import (
 	dynamoTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"golang.org/x/oauth2"
 	"golang.org/x/sync/errgroup"
 )
@@ -37,6 +42,100 @@ func GetDynamoDBClient(ctx context.Context) *dynamodb.Client {
 	}
 
 	return dynamodb.NewFromConfig(cfg)
+}
+
+func GetMongoClient(ctx context.Context) *mongo.Client {
+	uri := os.Getenv("MONGO_URI")
+	// Create a new mongo_client and connect to the server
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if err := mongoClient.Ping(ctx, readpref.Primary()); err != nil {
+		panic(err)
+	}
+	fmt.Println("Successfully connected and pinged.")
+
+	return mongoClient
+}
+
+func getRepoFilterMongo(owner string, name string) bson.D {
+	return bson.D{
+		{"$and",
+			bson.A{
+				bson.D{{"owner", owner}},
+				bson.D{{"name", name}},
+			}},
+	}
+}
+
+func getManyRepoFilterMongo(repos []NameOwner) bson.D {
+	var filters bson.A
+	for _, repo := range repos {
+		currFilter := bson.D{
+			{"$and",
+				bson.A{
+					bson.D{{"owner", repo.Owner}},
+					bson.D{{"name", repo.Name}},
+				}},
+		}
+
+		filters = append(filters, currFilter)
+	}
+
+	return bson.D{
+		{"$or", filters},
+	}
+}
+
+func GetRepoFromDBMongo(ctx context.Context, collection *mongo.Collection, owner string, name string) (RepoInfo, bool, error) {
+	var repo RepoInfo
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	res := collection.FindOne(ctx, getRepoFilterMongo(owner, name))
+
+	if res.Err() != mongo.ErrNoDocuments { // FOUND REPO
+		err := res.Decode(&repo)
+
+		if err != nil {
+			log.Println(err)
+			return repo, false, fmt.Errorf("SingleResult.Decode: %v", err)
+		}
+	} else { // NOT FOUND
+		return repo, false, nil
+	}
+
+	return repo, true, nil
+}
+
+func GetReposFromDBMongo(ctx context.Context, collection *mongo.Collection, repos []NameOwner) ([]RepoInfo, error) {
+	var deps []RepoInfo
+
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	cur, err := collection.Find(ctx, getManyRepoFilterMongo(repos))
+
+	if err != nil {
+		log.Println("Error on finding documents", err)
+		return deps, fmt.Errorf("collection.Find: %v", err)
+	}
+
+	for cur.Next(ctx) {
+		var dep RepoInfo
+		err := cur.Decode(&dep)
+
+		if err != nil {
+			log.Println("Error on Decoding the document", err)
+			return deps, fmt.Errorf("SingleResult.Decode: %v", err)
+		}
+		deps = append(deps, dep)
+	}
+
+	return deps, nil
 }
 
 // repo, found, error
@@ -128,8 +227,8 @@ func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []Nam
 	return repos, err
 }
 
-func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
-	repoInfo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
+func GetScore(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
+	repoInfo, found, err := GetRepoFromDBMongo(ctx, collection, owner, name)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -152,12 +251,12 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
 				repoScore = CalculateActivityScore(&repoInfo, startPoint)
-				depScore, err = CalculateDependencyActivityScore(ctx, dbClient, &repoInfo, startPoint)
+				depScore, err = CalculateDependencyActivityScoreMongo(ctx, collection, &repoInfo, startPoint)
 				log.Println(err)
 			} else if scoreType == "license" {
 				licenseMap := GetLicenseMap()
 				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
-				depScore, err = CalculateDependencyLicenseScore(ctx, dbClient, &repoInfo, licenseMap)
+				depScore, err = CalculateDependencyLicenseScoreMongo(ctx, collection, &repoInfo, licenseMap)
 				log.Println(err)
 			}
 			combinedScore = Score{
@@ -286,6 +385,48 @@ func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string
 	return nil
 }
 
+func SetScoreStateMongo(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, status int) error {
+	repo, found, err := GetRepoFromDBMongo(ctx, collection, owner, name)
+
+	if err != nil {
+		return err
+	}
+
+	if !found { // No match in DB
+		repo = RepoInfo{
+			Catalog: catalog,
+			Owner:   owner,
+			Name:    name,
+			Status:  status,
+		}
+	} else {
+		repo.Status = status
+	}
+
+	_, err = dbClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
+		Key: map[string]dynamoTypes.AttributeValue{
+			"name":  &dynamoTypes.AttributeValueMemberS{Value: repo.Name},
+			"owner": &dynamoTypes.AttributeValueMemberS{Value: repo.Owner},
+		},
+		UpdateExpression: aws.String("set #catalog = :catalog, #status = :status"),
+		ExpressionAttributeValues: map[string]dynamoTypes.AttributeValue{
+			":catalog": &dynamoTypes.AttributeValueMemberS{Value: repo.Catalog},
+			":status":  &dynamoTypes.AttributeValueMemberN{Value: strconv.Itoa(repo.Status)},
+		},
+		ExpressionAttributeNames: map[string]string{
+			"#catalog": "catalog",
+			"#status":  "status",
+		},
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error updating item %v", err)
+	}
+
+	return nil
+}
+
 func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, status int) error {
 	repo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 
@@ -340,6 +481,26 @@ func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string
 	err = syncRepoWithDB(ctx, dbClient, repo)
 
 	return repo, err
+}
+
+func syncRepoWithDBMongo(ctx context.Context, collection *mongo.Collection, repo RepoInfo, new bool) error {
+	if new {
+		_, err := collection.InsertOne(ctx, repo)
+		if err != nil {
+			log.Println(repo.Owner + "/" + repo.Name)
+			log.Fatal(err)
+			return fmt.Errorf("collection.InsertOne: %v", err)
+		}
+	} else {
+		insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
+		filter := getRepoFilterMongo(repo.Owner, repo.Name)
+		_, err := collection.UpdateOne(ctx, filter, insertableData)
+		if err != nil {
+			log.Fatal(err)
+			return fmt.Errorf("collection.UpdateOne: %v", err)
+		}
+	}
+	return nil
 }
 
 func syncRepoWithDB(ctx context.Context, client *dynamodb.Client, repo RepoInfo) error {

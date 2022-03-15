@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
@@ -33,8 +34,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
-	dbClient := util.GetDynamoDBClient(ctx)
-	score, scoreStatus := util.GetScore(ctx, dbClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
+	mongoClient := util.GetMongoClient(ctx)
+	defer mongoClient.Disconnect(ctx)
+	collection := mongoClient.Database(os.Getenv("DB")).Collection(catalog)
+
+	score, scoreStatus := util.GetScore(ctx, collection, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
 	var message string
 	if scoreStatus == 0 {
