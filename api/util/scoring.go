@@ -140,7 +140,7 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	return repoScore
 }
 
-func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, startPoint time.Time) (Score, int, error) {
+func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, startPoint time.Time) (Score, float64, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
@@ -195,12 +195,12 @@ func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Cl
 		confidence = 0
 	}
 
-	remainingDeps := totalDeps - depsWithScores
+	depRatio := float64(depsWithScores) / float64(totalDeps)
 
 	return Score{
 		Score:      score,
 		Confidence: confidence,
-	}, remainingDeps, nil
+	}, depRatio, nil
 }
 
 func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
@@ -225,7 +225,7 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 	return repoScore
 }
 
-func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, licenseMap map[string]int) (Score, int, error) {
+func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, licenseMap map[string]int) (Score, float64, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
@@ -279,10 +279,10 @@ func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Cli
 		confidence = 0
 	}
 
-	remainingDeps := totalDeps - depsWithScores
+	depRatio := float64(depsWithScores) / float64(totalDeps)
 
 	return Score{
 		Score:      score,
 		Confidence: confidence,
-	}, remainingDeps, nil
+	}, depRatio, nil
 }
