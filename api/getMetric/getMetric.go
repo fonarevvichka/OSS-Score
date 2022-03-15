@@ -68,6 +68,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			message = "Score calculation queued"
 		} else if repo.Status == 2 {
 			message = "Score calculation in progress"
+		} else if repo.Status == 4 {
+			message = "Error querying score"
 		} else {
 			timeFrame := 12
 			startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
