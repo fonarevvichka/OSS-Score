@@ -46,7 +46,7 @@ async function requestScores(owner, repo) {
 }
 
 async function updateScores(scoreDiv, owner, repo) {
-    promiseTimeout(30000).then(() => {
+    promiseTimeout(15000).then(() => {
         console.log('Updating Score');
         scoreDiv.innerHTML += "updating";
         getScores(owner, repo).then(scores => {
@@ -63,7 +63,7 @@ async function updateScores(scoreDiv, owner, repo) {
 }
 
 async function awaitResults(scoreDiv, owner, repo) {
-    promiseTimeout(500).then(() => {
+    promiseTimeout(1000).then(() => {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
             if (scores.activity != null && score.license != null) {
@@ -140,7 +140,7 @@ async function getScores(owner, repo) {
                 await scorePromise.then(response => {
                     if (response.message == "Score ready") {
                         scores.license = response.score;
-                        scores.depRatio = response.depRatio;
+                        scores.depRatio += response.depRatio / 2;
                     } else {
                         scores.message = response.message;
                     };
@@ -167,7 +167,7 @@ async function getScores(owner, repo) {
                 await scorePromise.then(response => {
                     if (response.message == "Score ready") {
                         scores.activity = response.score;
-                        scores.depRatio = (scores.depRatio + response.depRatio) / 2;
+                        scores.depRatio += response.depRatio / 2;
                     } else {
                         scores.message = response.message;
                     };
