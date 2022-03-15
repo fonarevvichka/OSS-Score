@@ -66,7 +66,7 @@ async function awaitResults(scoreDiv, owner, repo) {
     promiseTimeout(1000).then(() => {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
-            if (scores.activity != null && score.license != null) {
+            if (scores.activity != null && scores.license != null) {
                 insertScores(scoreDiv, scores);
                 updateScores(scoreDiv, owner, repo);
             } else {
