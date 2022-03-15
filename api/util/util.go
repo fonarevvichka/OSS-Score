@@ -44,21 +44,26 @@ func GetDynamoDBClient(ctx context.Context) *dynamodb.Client {
 	return dynamodb.NewFromConfig(cfg)
 }
 
-func GetMongoClient(ctx context.Context) *mongo.Client {
+func GetMongoClient(ctx context.Context) (*mongo.Client, bool, error) {
 	uri := os.Getenv("MONGO_URI")
 	// Create a new mongo_client and connect to the server
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	serverAPIOptions := options.ServerAPI(options.ServerAPIVersion1)
+	clientOptions := options.Client().
+		ApplyURI(uri).
+		SetServerAPIOptions(serverAPIOptions)
+
+	mongoClient, err := mongo.Connect(ctx, clientOptions)
 
 	if err != nil {
-		log.Fatalln(err)
+		return mongoClient, false, fmt.Errorf("mongo.Connect: %v", err)
 	}
 
 	if err := mongoClient.Ping(ctx, readpref.Primary()); err != nil {
-		panic(err)
+		return mongoClient, true, fmt.Errorf("mongo.Ping: %v", err)
 	}
 	fmt.Println("Successfully connected and pinged.")
 
-	return mongoClient
+	return mongoClient, true, nil
 }
 
 func getRepoFilterMongo(owner string, name string) bson.D {
@@ -385,48 +390,6 @@ func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string
 	return nil
 }
 
-func SetScoreStateMongo(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, status int) error {
-	repo, found, err := GetRepoFromDBMongo(ctx, collection, owner, name)
-
-	if err != nil {
-		return err
-	}
-
-	if !found { // No match in DB
-		repo = RepoInfo{
-			Catalog: catalog,
-			Owner:   owner,
-			Name:    name,
-			Status:  status,
-		}
-	} else {
-		repo.Status = status
-	}
-
-	_, err = dbClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
-		TableName: aws.String(os.Getenv("DYNAMODB_TABLE")),
-		Key: map[string]dynamoTypes.AttributeValue{
-			"name":  &dynamoTypes.AttributeValueMemberS{Value: repo.Name},
-			"owner": &dynamoTypes.AttributeValueMemberS{Value: repo.Owner},
-		},
-		UpdateExpression: aws.String("set #catalog = :catalog, #status = :status"),
-		ExpressionAttributeValues: map[string]dynamoTypes.AttributeValue{
-			":catalog": &dynamoTypes.AttributeValueMemberS{Value: repo.Catalog},
-			":status":  &dynamoTypes.AttributeValueMemberN{Value: strconv.Itoa(repo.Status)},
-		},
-		ExpressionAttributeNames: map[string]string{
-			"#catalog": "catalog",
-			"#status":  "status",
-		},
-	})
-
-	if err != nil {
-		return fmt.Errorf("Error updating item %v", err)
-	}
-
-	return nil
-}
-
 func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, status int) error {
 	repo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 
@@ -468,7 +431,6 @@ func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog strin
 
 	return nil
 }
-
 func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
 	repo, err := addUpdateRepo(ctx, dbClient, catalog, owner, name, timeFrame)
 
@@ -483,23 +445,34 @@ func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string
 	return repo, err
 }
 
-func syncRepoWithDBMongo(ctx context.Context, collection *mongo.Collection, repo RepoInfo, new bool) error {
-	if new {
-		_, err := collection.InsertOne(ctx, repo)
-		if err != nil {
-			log.Println(repo.Owner + "/" + repo.Name)
-			log.Fatal(err)
-			return fmt.Errorf("collection.InsertOne: %v", err)
-		}
-	} else {
-		insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
-		filter := getRepoFilterMongo(repo.Owner, repo.Name)
-		_, err := collection.UpdateOne(ctx, filter, insertableData)
-		if err != nil {
-			log.Fatal(err)
-			return fmt.Errorf("collection.UpdateOne: %v", err)
-		}
+// func QueryProject(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
+// 	repo, err := addUpdateRepo(ctx, dbClient, catalog, owner, name, timeFrame)
+
+// 	if err != nil {
+// 		log.Println(err)
+// 		return RepoInfo{}, err
+// 	}
+
+// 	repo.Status = 3
+// 	err = syncRepoWithDB(ctx, dbClient, repo)
+
+// 	return repo, err
+// }
+
+func SyncRepoWithDBMongo(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {
+	insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
+	filter := getRepoFilterMongo(repo.Owner, repo.Name)
+	upsert := true
+
+	opts := options.UpdateOptions{
+		Upsert: &upsert,
 	}
+	_, err := collection.UpdateOne(ctx, filter, insertableData, &opts)
+	if err != nil {
+		log.Fatal(err)
+		return fmt.Errorf("collection.UpdateOne: %v", err)
+	}
+
 	return nil
 }
 

@@ -114,8 +114,30 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return events.APIGatewayProxyResponse{StatusCode: 503, Body: string("Got an error sending the message:")}, err
 	}
 
-	dbClient := util.GetDynamoDBClient(ctx)
-	err = util.SetScoreState(ctx, dbClient, catalog, owner, name, 1)
+	mongoClient, connected, err := util.GetMongoClient(ctx)
+	if connected {
+		defer mongoClient.Disconnect(ctx)
+	}
+
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Methods": "POST",
+			},
+			Body: "Error connecting to MongoDB",
+		}, err
+	}
+
+	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
+	err = util.SyncRepoWithDBMongo(ctx, collection, util.RepoInfo{
+		Catalog: catalog,
+		Owner:   owner,
+		Name:    name,
+		Status:  1,
+	})
 
 	if err != nil {
 		return events.APIGatewayProxyResponse{

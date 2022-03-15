@@ -34,9 +34,24 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
-	mongoClient := util.GetMongoClient(ctx)
-	defer mongoClient.Disconnect(ctx)
-	collection := mongoClient.Database(os.Getenv("DB")).Collection(catalog)
+	mongoClient, connected, err := util.GetMongoClient(ctx)
+	if connected {
+		defer mongoClient.Disconnect(ctx)
+	}
+
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Methods": "POST",
+			},
+			Body: "Error connecting to MongoDB",
+		}, err
+	}
+
+	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
 
 	score, scoreStatus := util.GetScore(ctx, collection, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
