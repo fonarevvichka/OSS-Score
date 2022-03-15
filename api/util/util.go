@@ -128,7 +128,7 @@ func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []Nam
 	return repos, err
 }
 
-func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
+func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int, int) {
 	repoInfo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 	if err != nil {
 		log.Fatalln(err)
@@ -137,6 +137,7 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 	var combinedScore Score
 	var repoScore Score
 	var depScore Score
+	var unknowns int
 
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
@@ -152,12 +153,12 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
 				repoScore = CalculateActivityScore(&repoInfo, startPoint)
-				depScore, err = CalculateDependencyActivityScore(ctx, dbClient, &repoInfo, startPoint)
+				depScore, unknowns, err = CalculateDependencyActivityScore(ctx, dbClient, &repoInfo, startPoint)
 				log.Println(err)
 			} else if scoreType == "license" {
 				licenseMap := GetLicenseMap()
 				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
-				depScore, err = CalculateDependencyLicenseScore(ctx, dbClient, &repoInfo, licenseMap)
+				depScore, unknowns, err = CalculateDependencyLicenseScore(ctx, dbClient, &repoInfo, licenseMap)
 				log.Println(err)
 			}
 			combinedScore = Score{
@@ -167,7 +168,7 @@ func GetScore(ctx context.Context, dbClient *dynamodb.Client, catalog string, ow
 		}
 	}
 
-	return combinedScore, repoInfo.Status
+	return combinedScore, unknowns, repoInfo.Status
 }
 
 func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
