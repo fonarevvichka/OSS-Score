@@ -34,6 +34,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
+	headers := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Methods": "POST",
+	}
+
 	mongoClient, connected, err := util.GetMongoClient(ctx)
 	if connected {
 		defer mongoClient.Disconnect(ctx)
@@ -42,12 +48,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
-			Headers: map[string]string{
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Headers": "Content-Type",
-				"Access-Control-Allow-Methods": "POST",
-			},
-			Body: "Error connecting to MongoDB",
+			Headers:    headers,
+			Body:       "Error connecting to MongoDB",
 		}, err
 	}
 
@@ -74,12 +76,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	response, _ := json.Marshal(response{Message: message, Score: score})
 	resp := events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Headers: map[string]string{
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Access-Control-Allow-Methods": "GET",
-		},
-		Body: string(response)}
+		Headers:    headers,
+		Body:       string(response)}
 
 	return resp, nil
 }

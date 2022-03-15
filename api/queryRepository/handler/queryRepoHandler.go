@@ -35,6 +35,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no name variable in path")
 	}
 
+	headers := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Methods": "POST",
+	}
+
 	log.Println("Ready to submit request for ", owner, "/", name)
 	// CHECK IF REPO IS VALID AND PUBLIC
 	src := oauth2.StaticTokenSource(
@@ -51,12 +57,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		message, _ := json.Marshal(response{Message: "Could not access repo, check that it was inputted correctly and is public"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 406,
-			Headers: map[string]string{
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Headers": "Content-Type",
-				"Access-Control-Allow-Methods": "POST",
-			},
-			Body: string(message),
+			Headers:    headers,
+			Body:       string(message),
 		}, err
 	}
 
@@ -72,12 +74,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Println(err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: 503,
-			Headers: map[string]string{
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Headers": "Content-Type",
-				"Access-Control-Allow-Methods": "POST",
-			},
-			Body: string("Error while getting the queue URL"),
+			Headers:    headers,
+			Body:       string("Error while getting the queue URL"),
 		}, err
 	}
 
@@ -122,12 +120,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
-			Headers: map[string]string{
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Headers": "Content-Type",
-				"Access-Control-Allow-Methods": "POST",
-			},
-			Body: "Error connecting to MongoDB",
+			Headers:    headers,
+			Body:       "Error connecting to MongoDB",
 		}, err
 	}
 
@@ -142,24 +136,16 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
-			Headers: map[string]string{
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Headers": "Content-Type",
-				"Access-Control-Allow-Methods": "POST",
-			},
-			Body: "Error updating state in DynamoDB",
+			Headers:    headers,
+			Body:       "Error updating state in DynamoDB",
 		}, err
 	}
 
 	response, _ := json.Marshal(response{Message: "Score calculation request queued"})
 	resp := events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Headers: map[string]string{
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Access-Control-Allow-Methods": "POST",
-		},
-		Body: string(response),
+		Headers:    headers,
+		Body:       string(response),
 	}
 
 	return resp, nil
