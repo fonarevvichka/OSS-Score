@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -33,7 +34,7 @@ type allMetricsResponse struct {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	_, found := request.PathParameters["catalog"]
+	catalog, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
 	}
@@ -50,8 +51,25 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no metric variable in path")
 	}
 
-	dbClient := util.GetDynamoDBClient(ctx)
-	repo, found, err := util.GetRepoFromDB(ctx, dbClient, owner, name)
+	mongoClient, connected, err := util.GetMongoClient(ctx)
+	if connected {
+		defer mongoClient.Disconnect(ctx)
+	}
+
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Methods": "POST",
+			},
+			Body: "Error connecting to MongoDB",
+		}, err
+	}
+
+	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
+	repo, found, err := util.GetRepoFromDBMongo(ctx, collection, owner, name)
 	if err != nil {
 		log.Fatalln(err)
 		//TODO: This should be handeled properly
