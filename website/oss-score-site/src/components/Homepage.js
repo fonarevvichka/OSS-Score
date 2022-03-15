@@ -49,6 +49,7 @@ export default function Home(props) {
         document.getElementById("error-message" + repoNum).style.visibility = "visible"
     }
 
+    /* function to hide error */
     const hideError = (repoNum) => {
         document.getElementById("search" + repoNum).style.borderColor = "#000000"
         document.getElementById("error-message" + repoNum).style.visibility = "hidden"
@@ -66,7 +67,7 @@ export default function Home(props) {
         }
 
         // displaying errors if invalid
-        if (!validateURL(event.target.value, repoNum) && event.target.value != "") {
+        if (!validateURL(event.target.value, repoNum) && event.target.value !== "") {
             displayError(repoNum)
         } else {
             hideError(repoNum)
@@ -206,6 +207,18 @@ export default function Home(props) {
         return null
     }
 
+    /* function to display error for invalid github URL */
+    const highlightBetterMetric = (scoreDisplay) => {
+        alert("highlight better metric")
+        let scoreDisplayDom = new DOMParser().parseFromString(scoreDisplay, "text/xml");
+        console.log(scoreDisplayDom)
+        let elems = scoreDisplayDom.getElementsByClassName('metric');
+        console.log(elems.length)
+        for(let i = 0; i < elems.length; i++) {
+            console.log(elems[i].innerHTML)
+        }
+    }
+
 
     /* handleSubmit function that does everything */
     const handleSubmit = async (evt) => {
@@ -248,6 +261,9 @@ export default function Home(props) {
         // Hide loading gear/clear all html in head2head
         document.getElementById("loading").innerHTML = ''
         document.getElementById("head2head").innerHTML = ''
+
+        console.log(scoreDisplay)
+        highlightBetterMetric(scoreDisplay)
         document.getElementById("head2head").innerHTML += scoreDisplay
 
         // Enable button
