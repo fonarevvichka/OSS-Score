@@ -16,12 +16,14 @@ provider:
   environment:
     MONGO_URI: |
       mongodb+srv://${file(./vars.yaml):${self:provider.stage}.MONGO_DEPLOYMENT}.x0frg.mongodb.net/${file(./vars.yaml):${self:provider.stage}.MONGO_DB}?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&tlsCertificateKeyFile=${file(./vars.yaml):${self:provider.stage}.MONGO_CERT}
+    MONGO_DB: ${file(./vars.yaml):${self:provider.stage}.MONGO_DB}
     SHELF_LIFE: ${file(./vars.yaml):${self:provider.stage}.SHELF_LIFE}
 
 package:
   individually: true
   patterns:
     - '!**'
+    - util/mongo_cert.pem
 
 resources: 
   Resources:
@@ -75,7 +77,6 @@ functions:
       patterns:
         - bin/getScore
         - util/scores/**
-        - util/mongo_cert.pem
     events:
       - http:
           path: catalog/{catalog}/owner/{owner}/name/{name}/type/{type}
@@ -107,7 +108,6 @@ functions:
       patterns:
         - bin/getMetric
         - util/scores/**
-        - util/mongo_cert.pem
     events:
       - http:
           path: catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}
@@ -149,7 +149,6 @@ functions:
     package:
       patterns:
         - bin/queryRepoHandler
-        - util/mongo_cert.pem
 
     events:
       - http:
@@ -198,7 +197,6 @@ functions:
       patterns:
         - bin/queryRepoProcessing
         - 'util/queries/**'
-        - util/mongo_cert.pem
     events:
       - sqs:
           arn:
@@ -233,7 +231,6 @@ functions:
       patterns:
         - bin/queryDependency
         - 'util/queries/**'
-        - util/mongo_cert.pem
     events:
       - sqs:
           arn:
