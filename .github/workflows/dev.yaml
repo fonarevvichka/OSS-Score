@@ -40,5 +40,5 @@ jobs:
         AUTH: ${{ secrets.MONGO_CERT }}
       run: |
         cd api
-        echo AUTH | base64 --decode > ./util/mongo_cert.pem
+        echo $AUTH | base64 --decode > ./util/mongo_cert.pem
         sls deploy -s dev
