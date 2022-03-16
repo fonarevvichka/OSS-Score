@@ -40,38 +40,12 @@ resources:
         QueueName: ${self:provider.stage}-${file(./vars.yaml):dev.DEP_QUERY_QUEUE}
         VisibilityTimeout: 900
 
-    # repoMetricsDB:
-    #   Type: AWS::DynamoDB::Table
-    #   Properties:
-    #     TableName: ${self:provider.stage}-${file(./vars.yaml):dev.REPO_METRICS_TABLE}
-    #     AttributeDefinitions:
-    #       - AttributeName: name
-    #         AttributeType: S
-    #       - AttributeName: owner
-    #         AttributeType: S
-    #     KeySchema:
-    #       - AttributeName: name
-    #         KeyType: HASH
-    #       - AttributeName: owner
-    #         KeyType: RANGE
-    #     BillingMode: PAY_PER_REQUEST
-            
-
 functions:
   getScore:
     name: ${self:provider.stage}-get-score
     handler: bin/getScore
     timeout: 15
     iamRoleStatementsName: ${self:provider.stage}-get-score-role
-    # iamRoleStatements:
-    #   - Effect: "Allow"
-    #     Action:
-    #       - dynamodb:GetItem 
-    #       - dynamodb:BatchGetItem
-    #     Resource: 
-    #         Fn::GetAtt:
-    #           - repoMetricsDB
-    #           - Arn
     package:
       patterns:
         - bin/getScore
@@ -94,14 +68,6 @@ functions:
     handler: bin/getMetric
     timeout: 15
     iamRoleStatementsName: ${self:provider.stage}-get-metric-role
-    # iamRoleStatements:
-    #   - Effect: "Allow"
-    #     Action:
-    #       - dynamodb:GetItem 
-    #     Resource: 
-    #         Fn::GetAtt:
-    #           - repoMetricsDB
-    #           - Arn
         
     package:
       patterns:
@@ -137,14 +103,6 @@ functions:
           Fn::GetAtt:
             - repoQueryQueue
             - Arn
-      # - Effect: "Allow"
-      #   Action:
-      #     - dynamodb:UpdateItem
-      #     - dynamodb:GetItem 
-      #   Resource: 
-      #     Fn::GetAtt:
-      #       - repoMetricsDB
-      #       - Arn
     package:
       patterns:
         - bin/queryRepoHandler
@@ -183,15 +141,6 @@ functions:
           Fn::GetAtt:
             - depQueryQueue
             - Arn
-      # - Effect: "Allow"
-      #   Action:
-      #     - dynamodb:GetItem 
-      #     - dynamodb:PutItem
-      #     - dynamodb:UpdateItem
-      #   Resource:
-      #     Fn::GetAtt:
-      #       - repoMetricsDB
-      #       - Arn
     package:
       patterns:
         - bin/queryRepoProcessing
@@ -216,16 +165,6 @@ functions:
       GIT_PAT_4: ${env:GIT_PAT_10}
       GIT_PAT_5: ${env:GIT_PAT_11}
     iamRoleStatementsName: ${self:provider.stage}-query-dep-processing-role
-    # iamRoleStatements:
-    #   - Effect: "Allow"
-    #     Action:
-    #       - dynamodb:GetItem 
-    #       - dynamodb:PutItem
-    #       - dynamodb:UpdateItem
-    #     Resource:
-    #       Fn::GetAtt:
-    #         - repoMetricsDB
-    #         - Arn
     package:
       patterns:
         - bin/queryDependency
