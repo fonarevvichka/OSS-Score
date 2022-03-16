@@ -58,29 +58,27 @@ func getRepoFilter(owner string, name string) bson.D {
 	return bson.D{
 		{Key: "$and",
 			Value: bson.A{
-				bson.D{{Key: "owner", Value: owner}},
-				bson.D{{Key: "name", Value: name}},
+				bson.M{"owner": owner},
+				bson.M{"name": name},
 			}},
 	}
 }
 
-func getManyRepoFilter(repos []NameOwner) bson.D {
+func getManyRepoFilter(repos []NameOwner) bson.M {
 	var filters bson.A
 	for _, repo := range repos {
 		currFilter := bson.D{
 			{Key: "$and",
 				Value: bson.A{
-					bson.D{{Key: "owner", Value: repo.Owner}},
-					bson.D{{Key: "name", Value: repo.Name}},
+					bson.M{"owner": repo.Owner},
+					bson.M{"name": repo.Name},
 				}},
 		}
 
 		filters = append(filters, currFilter)
 	}
 
-	return bson.D{
-		{Key: "$or", Value: filters},
-	}
+	return bson.M{"$or": filters}
 }
 
 func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, owner string, name string) (RepoInfo, bool, error) {
