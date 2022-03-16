@@ -232,7 +232,7 @@ func GetReposFromDB(ctx context.Context, client *dynamodb.Client, repoKeys []Nam
 	return repos, err
 }
 
-func GetScore(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, int) {
+func GetScore(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, float64, int) {
 	repoInfo, found, err := GetRepoFromDBMongo(ctx, collection, owner, name)
 	if err != nil {
 		log.Fatalln(err)
@@ -241,6 +241,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 	var combinedScore Score
 	var repoScore Score
 	var depScore Score
+	var depRatio float64
 
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
@@ -256,12 +257,12 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
 				repoScore = CalculateActivityScore(&repoInfo, startPoint)
-				depScore, err = CalculateDependencyActivityScoreMongo(ctx, collection, &repoInfo, startPoint)
+				depScore, depRatio, err = CalculateDependencyActivityScoreMongo(ctx, collection, &repoInfo, startPoint)
 				log.Println(err)
 			} else if scoreType == "license" {
 				licenseMap := GetLicenseMap()
 				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
-				depScore, err = CalculateDependencyLicenseScoreMongo(ctx, collection, &repoInfo, licenseMap)
+				depScore, depRatio, err = CalculateDependencyLicenseScoreMongo(ctx, collection, &repoInfo, licenseMap)
 				log.Println(err)
 			}
 			combinedScore = Score{
@@ -271,7 +272,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 		}
 	}
 
-	return combinedScore, repoInfo.Status
+	return combinedScore, depRatio, repoInfo.Status
 }
 
 func addUpdateRepo(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {

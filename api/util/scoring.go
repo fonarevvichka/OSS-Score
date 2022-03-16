@@ -141,12 +141,12 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	return repoScore
 }
 
-func CalculateDependencyActivityScoreMongo(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) (Score, error) {
+func CalculateDependencyActivityScoreMongo(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) (Score, float64, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
 			Confidence: 100,
-		}, nil
+		}, 1, nil
 	}
 
 	var wg sync.WaitGroup
@@ -168,7 +168,7 @@ func CalculateDependencyActivityScoreMongo(ctx context.Context, collection *mong
 		return Score{ // not sure if score should be 0 or 100 here
 			Score:      10,
 			Confidence: 0,
-		}, err
+		}, 1, err
 	}
 
 	for _, dep := range deps {
@@ -196,18 +196,19 @@ func CalculateDependencyActivityScoreMongo(ctx context.Context, collection *mong
 		confidence = 0
 	}
 
+	depRatio := float64(depsWithScores) / float64(totalDeps)
 	return Score{
 		Score:      score,
 		Confidence: confidence,
-	}, nil
+	}, depRatio, nil
 }
 
-func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, startPoint time.Time) (Score, error) {
+func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, startPoint time.Time) (Score, float64, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
 			Confidence: 100,
-		}, nil
+		}, 0, nil
 	}
 
 	var wg sync.WaitGroup
@@ -229,7 +230,7 @@ func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Cl
 		return Score{ // not sure if score should be 0 or 100 here
 			Score:      10,
 			Confidence: 0,
-		}, err
+		}, 0, err
 	}
 
 	for _, dep := range deps {
@@ -257,10 +258,12 @@ func CalculateDependencyActivityScore(ctx context.Context, dbClient *dynamodb.Cl
 		confidence = 0
 	}
 
+	depRatio := float64(depsWithScores) / float64(totalDeps)
+
 	return Score{
 		Score:      score,
 		Confidence: confidence,
-	}, nil
+	}, depRatio, nil
 }
 
 func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
@@ -285,12 +288,12 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 	return repoScore
 }
 
-func CalculateDependencyLicenseScoreMongo(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) (Score, error) {
+func CalculateDependencyLicenseScoreMongo(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) (Score, float64, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
 			Confidence: 100,
-		}, nil
+		}, 1, nil
 	}
 
 	var wg sync.WaitGroup
@@ -311,7 +314,7 @@ func CalculateDependencyLicenseScoreMongo(ctx context.Context, collection *mongo
 		return Score{ // not sure if score should be 0 or 100 here
 			Score:      10,
 			Confidence: 0,
-		}, err
+		}, 1, err
 	}
 
 	for _, dep := range deps {
@@ -339,18 +342,19 @@ func CalculateDependencyLicenseScoreMongo(ctx context.Context, collection *mongo
 		confidence = 0
 	}
 
+	depRatio := float64(depsWithScores) / float64(totalDeps)
 	return Score{
 		Score:      score,
 		Confidence: confidence,
-	}, nil
+	}, depRatio, nil
 }
 
-func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, licenseMap map[string]int) (Score, error) {
+func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Client, repoInfo *RepoInfo, licenseMap map[string]int) (Score, float64, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
 			Confidence: 100,
-		}, nil
+		}, 0, nil
 	}
 
 	var wg sync.WaitGroup
@@ -371,7 +375,7 @@ func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Cli
 		return Score{ // not sure if score should be 0 or 100 here
 			Score:      10,
 			Confidence: 0,
-		}, err
+		}, 0, err
 	}
 
 	for _, dep := range deps {
@@ -399,8 +403,10 @@ func CalculateDependencyLicenseScore(ctx context.Context, dbClient *dynamodb.Cli
 		confidence = 0
 	}
 
+	depRatio := float64(depsWithScores) / float64(totalDeps)
+
 	return Score{
 		Score:      score,
 		Confidence: confidence,
-	}, nil
+	}, depRatio, nil
 }

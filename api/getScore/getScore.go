@@ -12,8 +12,9 @@ import (
 )
 
 type response struct {
-	Message string     `json:"message"`
-	Score   util.Score `json:"score"`
+	Message  string     `json:"message"`
+	DepRatio float64    `json:"depRatio"`
+	Score    util.Score `json:"score"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -34,6 +35,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
+<<<<<<< HEAD
 	headers := map[string]string{
 		"Access-Control-Allow-Origin":  "*",
 		"Access-Control-Allow-Headers": "Content-Type",
@@ -56,6 +58,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
 
 	score, scoreStatus := util.GetScore(ctx, collection, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
+=======
+	dbClient := util.GetDynamoDBClient(ctx)
+	score, depRatio, scoreStatus := util.GetScore(ctx, dbClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
+>>>>>>> dd4f4ad88975b1ded46ee452c56b87900b8cd372
 
 	var message string
 	if scoreStatus == 0 {
@@ -73,7 +79,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	//if score not in database send wait / error message
 	//if score in database send score
 
-	response, _ := json.Marshal(response{Message: message, Score: score})
+	response, _ := json.Marshal(response{Message: message, Score: score, DepRatio: depRatio})
 	resp := events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Headers:    headers,
