@@ -26,16 +26,25 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return err
 		}
 
-		dbClient := util.GetDynamoDBClient(ctx)
-		err = util.SetScoreState(ctx, dbClient, catalog, owner, name, 2)
+		mongoClient, connected, err := util.GetMongoClient(ctx)
+		if connected {
+			defer mongoClient.Disconnect(ctx)
+		}
+
+		if err != nil {
+			return err
+		}
+		collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
+
+		err = util.SetScoreState(ctx, collection, owner, name, 2)
 		if err != nil {
 			return err
 		}
 
-		repo, err = util.QueryProject(ctx, dbClient, catalog, owner, name, timeFrame)
+		repo, err = util.QueryProject(ctx, collection, catalog, owner, name, timeFrame)
 		if err != nil {
 			log.Println(err)
-			util.SetScoreState(ctx, dbClient, catalog, owner, name, 4)
+			util.SetScoreState(ctx, collection, owner, name, 4)
 			return err
 		}
 	}

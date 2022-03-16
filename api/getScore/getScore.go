@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
@@ -34,8 +35,28 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
-	dbClient := util.GetDynamoDBClient(ctx)
-	score, depRatio, scoreStatus := util.GetScore(ctx, dbClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
+	headers := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Methods": "POST",
+	}
+
+	mongoClient, connected, err := util.GetMongoClient(ctx)
+	if connected {
+		defer mongoClient.Disconnect(ctx)
+	}
+
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers:    headers,
+			Body:       "Error connecting to MongoDB",
+		}, err
+	}
+
+	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
+
+	score, depRatio, scoreStatus := util.GetScore(ctx, collection, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
 	var message string
 	if scoreStatus == 0 {
@@ -56,12 +77,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	response, _ := json.Marshal(response{Message: message, Score: score, DepRatio: depRatio})
 	resp := events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Headers: map[string]string{
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Access-Control-Allow-Methods": "GET",
-		},
-		Body: string(response)}
+		Headers:    headers,
+		Body:       string(response)}
 
 	return resp, nil
 }

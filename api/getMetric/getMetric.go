@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -33,7 +34,7 @@ type allMetricsResponse struct {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	_, found := request.PathParameters["catalog"]
+	catalog, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
 	}
@@ -50,8 +51,27 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no metric variable in path")
 	}
 
-	dbClient := util.GetDynamoDBClient(ctx)
-	repo, found, err := util.GetRepoFromDB(ctx, dbClient, owner, name)
+	headers := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Methods": "POST",
+	}
+
+	mongoClient, connected, err := util.GetMongoClient(ctx)
+	if connected {
+		defer mongoClient.Disconnect(ctx)
+	}
+
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers:    headers,
+			Body:       "Error connecting to MongoDB",
+		}, err
+	}
+
+	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
+	repo, found, err := util.GetRepoFromDB(ctx, collection, owner, name)
 	if err != nil {
 		log.Fatalln(err)
 		//TODO: This should be handeled properly
@@ -96,7 +116,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 			case "dependencyActivityScore":
-				score, _, _ := util.CalculateDependencyActivityScore(ctx, dbClient, &repo, startPoint) //TODO: INGORING ERROR
+				score, _, _ := util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint) //TODO: INGORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 			case "repoLicenseScore":
@@ -107,7 +127,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				confidence = int(score.Confidence)
 			case "dependencyLicenseScore":
 				licenseMap := util.GetLicenseMap()
-				score, _, _ := util.CalculateDependencyLicenseScore(ctx, dbClient, &repo, licenseMap) //TODO: IGNORING ERROR
+				score, _, _ := util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap) //TODO: IGNORING ERROR
 
 				metricValue = score.Score
 				confidence = int(score.Confidence)
@@ -160,7 +180,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					Confidence: confidence,
 				}
 
-				score, _, _ = util.CalculateDependencyActivityScore(ctx, dbClient, &repo, startPoint) //TODO: INGORING ERROR
+				score, _, _ = util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint) //TODO: INGORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 				allMetrics.DependencyActivityScore = singleMetricRepsone{
@@ -176,7 +196,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					Confidence: confidence,
 				}
 
-				score, _, _ = util.CalculateDependencyLicenseScore(ctx, dbClient, &repo, licenseMap) //TODO: IGNORING ERROR
+				score, _, _ = util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap) //TODO: IGNORING ERROR
 				metricValue = score.Score
 				confidence = int(score.Confidence)
 				allMetrics.DependencyLicenseScore = singleMetricRepsone{
@@ -202,12 +222,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	resp := events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Headers: map[string]string{
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Access-Control-Allow-Methods": "GET",
-		},
-		Body: string(response),
+		Headers:    headers,
+		Body:       string(response),
 	}
 
 	return resp, nil
