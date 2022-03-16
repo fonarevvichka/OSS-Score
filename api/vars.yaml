@@ -3,7 +3,7 @@ staging:
   REPO_QUERY_QUEUE: RepoQueryQueue.fifo
   DEP_QUERY_QUEUE: DependencyQueryQueue
   REPO_METRICS_TABLE: repoMetrics
-  MONGO_DB: oss-score-dev
+  MONGO_DB: oss-score-staging
   MONGO_DEPLOYMENT: oss-score
   MONGO_CERT: ./util/mongo_cert.pem
 
