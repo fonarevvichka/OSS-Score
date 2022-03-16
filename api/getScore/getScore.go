@@ -35,7 +35,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
-<<<<<<< HEAD
 	headers := map[string]string{
 		"Access-Control-Allow-Origin":  "*",
 		"Access-Control-Allow-Headers": "Content-Type",
@@ -57,11 +56,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
 
-	score, scoreStatus := util.GetScore(ctx, collection, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
-=======
-	dbClient := util.GetDynamoDBClient(ctx)
-	score, depRatio, scoreStatus := util.GetScore(ctx, dbClient, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
->>>>>>> dd4f4ad88975b1ded46ee452c56b87900b8cd372
+	score, depRatio, scoreStatus := util.GetScore(ctx, collection, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
 
 	var message string
 	if scoreStatus == 0 {
