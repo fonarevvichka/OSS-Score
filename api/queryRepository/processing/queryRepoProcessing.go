@@ -36,15 +36,15 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 		collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
 
-		err = util.SetScoreStateMongo(ctx, collection, owner, name, 2)
+		err = util.SetScoreState(ctx, collection, owner, name, 2)
 		if err != nil {
 			return err
 		}
 
-		repo, err = util.QueryProjectMongo(ctx, collection, catalog, owner, name, timeFrame)
+		repo, err = util.QueryProject(ctx, collection, catalog, owner, name, timeFrame)
 		if err != nil {
 			log.Println(err)
-			util.SetScoreStateMongo(ctx, collection, owner, name, 4)
+			util.SetScoreState(ctx, collection, owner, name, 4)
 			return err
 		}
 	}
