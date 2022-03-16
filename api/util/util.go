@@ -441,19 +441,6 @@ func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string
 	return nil
 }
 
-func SetScoreStateMongo(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, status int) error {
-	repo := RepoInfo{
-		Catalog: catalog,
-		Owner:   owner,
-		Name:    name,
-		Status:  status,
-	}
-
-	syncRepoWithDBMongo(ctx, collection, repo)
-
-	return nil
-}
-
 func SetScoreState(ctx context.Context, dbClient *dynamodb.Client, catalog string, owner string, name string, status int) error {
 	repo, found, err := GetRepoFromDB(ctx, dbClient, owner, name)
 
@@ -522,6 +509,24 @@ func QueryProjectMongo(ctx context.Context, collection *mongo.Collection, catalo
 	err = syncRepoWithDBMongo(ctx, collection, repo)
 
 	return repo, err
+}
+
+func SetScoreStateMongo(ctx context.Context, collection *mongo.Collection, owner string, name string, status int) error {
+	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status}}} //ctalog being left null here
+	filter := getRepoFilterMongo(owner, name)
+	upsert := true
+
+	opts := options.UpdateOptions{
+		Upsert: &upsert,
+	}
+
+	_, err := collection.UpdateOne(ctx, filter, insertableData, &opts)
+	if err != nil {
+		log.Fatal(err)
+		return fmt.Errorf("collection.UpdateOne: %v", err)
+	}
+
+	return nil
 }
 
 func syncRepoWithDBMongo(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {

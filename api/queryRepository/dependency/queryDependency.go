@@ -36,7 +36,7 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		util.QueryProjectMongo(ctx, collection, catalog, owner, name, timeFrame)
 		if err != nil {
 			log.Println(err)
-			util.SetScoreStateMongo(ctx, collection, catalog, owner, name, 4)
+			util.SetScoreStateMongo(ctx, collection, owner, name, 4)
 			return err
 		}
 	}
