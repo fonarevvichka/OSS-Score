@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - fix-mongo-github-actions-deployment
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
@@ -36,6 +37,8 @@ jobs:
         GIT_PAT_9: ${{ secrets.GIT_PAT_9 }}
         GIT_PAT_10: ${{ secrets.GIT_PAT_10 }}
         GIT_PAT_11: ${{ secrets.GIT_PAT_11 }}
+        AUTH: ${{ secrets.MONGO_CERT }}
       run: |
         cd api
+        base64 --decode > ./util/mongo_cert.pem
         sls deploy -s dev
