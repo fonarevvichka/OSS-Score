@@ -30,16 +30,15 @@ export default function Home(props) {
         const validgitHub = new RegExp('^(https://)?github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
         const validgitHubTree = new RegExp('^(https://)?github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
 
-        const validgitHubNoPrefix = new RegExp('^[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
-        const validgitHubTreeNoPrefix = new RegExp('^[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
+        const validgitHubNoPrefix = new RegExp('^(?!github.com/)[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
+        const validgitHubTreeNoPrefix = new RegExp('^(?!github.com/)[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
         
         if (!validgitHub.test(url) && !validgitHubTree.test(url) &&
             !validgitHubNoPrefix.test(url) && !validgitHubTreeNoPrefix.test(url)) {
             return false
         }
 
-        document.getElementById("search" + repoNum).style.borderColor = "#000000"
-        document.getElementById("error-message" + repoNum).style.display = "none"
+        hideError(repoNum)
         return true;
     }
 
@@ -47,7 +46,12 @@ export default function Home(props) {
     const displayError = (repoNum) => {
         // changing css
         document.getElementById("search" + repoNum).style.borderColor = "#cc0000"  
-        document.getElementById("error-message" + repoNum).style.display = "block"
+        document.getElementById("error-message" + repoNum).style.visibility = "visible"
+    }
+
+    const hideError = (repoNum) => {
+        document.getElementById("search" + repoNum).style.borderColor = "#000000"
+        document.getElementById("error-message" + repoNum).style.visibility = "hidden"
     }
 
 
@@ -62,8 +66,10 @@ export default function Home(props) {
         }
 
         // displaying errors if invalid
-        if (!validateURL(event.target.value, repoNum)) {
+        if (!validateURL(event.target.value, repoNum) && event.target.value != "") {
             displayError(repoNum)
+        } else {
+            hideError(repoNum)
         }
     }
 
@@ -268,7 +274,7 @@ export default function Home(props) {
                     </div>
                 </div>
                 <div class="compare">
-                    <button id="compare-button" class="compare-button" type="submit" value="Submit">Compare</button>
+                    <button id="compare-button" class="compare-button" type="submit" value="Submit">Get Metrics</button>
                 </div>
             </form>
             <div id="loading"></div>
