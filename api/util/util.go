@@ -129,27 +129,29 @@ func GetReposFromDB(ctx context.Context, collection *mongo.Collection, repos []N
 	return deps, nil
 }
 
-func GetScore(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, float64, int) {
-	repoInfo, found, err := GetRepoFromDB(ctx, collection, owner, name)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
+func GetScore(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, scoreType string, timeFrame int) (Score, float64, int, string, error) {
 	var combinedScore Score
 	var repoScore Score
 	var depScore Score
 	var depRatio float64
+	var message string
+	
+	repoInfo, found, err := GetRepoFromDB(ctx, collection, owner, name)
+	if err != nil {
+		return combinedScore, depRatio, repoInfo.Status, "", err
+	}
+
 
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
-		log.Fatalln(err)
+		return combinedScore, depRatio, repoInfo.Status, "", err
 	}
 
 	if found { // Match in DB
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-		if repoInfo.UpdatedAt.After(expireDate) && repoInfo.Status == 3 {
+		if repoInfo.Status == 3 && repoInfo.UpdatedAt.After(expireDate) && repoInfo.DataStartPoint.Before(startPoint) {
 			repoWeight := 0.75
 			dependencyWeight := 1 - repoWeight
 			if scoreType == "activity" {
@@ -166,10 +168,12 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 				Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
 				Confidence: (repoScore.Confidence * repoWeight) + (depScore.Confidence * dependencyWeight),
 			}
+		} else {
+			message = "Data out of date"
 		}
 	}
 
-	return combinedScore, depRatio, repoInfo.Status
+	return combinedScore, depRatio, repoInfo.Status, message, nil
 }
 
 func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
