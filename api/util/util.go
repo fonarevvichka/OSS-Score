@@ -151,25 +151,27 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-		if repoInfo.Status == 3 && repoInfo.UpdatedAt.After(expireDate) && repoInfo.DataStartPoint.Before(startPoint) {
-			repoWeight := 0.75
-			dependencyWeight := 1 - repoWeight
-			if scoreType == "activity" {
-				repoScore = CalculateActivityScore(&repoInfo, startPoint)
-				depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repoInfo, startPoint)
-				log.Println(err)
-			} else if scoreType == "license" {
-				licenseMap := GetLicenseMap()
-				repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
-				depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repoInfo, licenseMap)
-				log.Println(err)
+		if repoInfo.Status == 3 {
+			if repoInfo.UpdatedAt.After(expireDate) && repoInfo.DataStartPoint.Before(startPoint) {
+				repoWeight := 0.75
+				dependencyWeight := 1 - repoWeight
+				if scoreType == "activity" {
+					repoScore = CalculateActivityScore(&repoInfo, startPoint)
+					depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repoInfo, startPoint)
+					log.Println(err)
+				} else if scoreType == "license" {
+					licenseMap := GetLicenseMap()
+					repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
+					depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repoInfo, licenseMap)
+					log.Println(err)
+				}
+				combinedScore = Score{
+					Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
+					Confidence: (repoScore.Confidence * repoWeight) + (depScore.Confidence * dependencyWeight),
+				}
+			} else {
+				message = "Data out of date"
 			}
-			combinedScore = Score{
-				Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
-				Confidence: (repoScore.Confidence * repoWeight) + (depScore.Confidence * dependencyWeight),
-			}
-		} else {
-			message = "Data out of date"
 		}
 	}
 
@@ -203,10 +205,10 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		log.Println(owner + "/" + name + " Done querying github")
 	} else {
 		// Repo data expired, or empty
-		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || startPoint.Before(repo.DataStartPoint) {
+		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || repo.DataStartPoint.After(startPoint) {
 			log.Println(owner + "/" + name + " Need to query github")
 
-			if startPoint.Before(repo.UpdatedAt) { // set start point to collect only needed data
+			if startPoint.Before(repo.UpdatedAt) && repo.DataStartPoint.Before(startPoint) { // set start point to collect only needed data
 				startPoint = repo.UpdatedAt
 			}
 

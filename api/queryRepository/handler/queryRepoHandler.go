@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
@@ -62,6 +63,20 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}, err
 	}
 
+	var body util.ScoreRequestBody
+	timeFrame := 12
+	if request.Body != "" {
+		err := json.Unmarshal([]byte(request.Body), &body)
+		if err != nil {
+			return events.APIGatewayProxyResponse{
+				StatusCode: 409, //TODO: might need a more accurate code
+				Headers:    headers,
+				Body:       "Error parsing body of request",
+			}, err
+		}
+		timeFrame = body.TimeFrame
+	}
+
 	client := util.GetSqsClient(ctx)
 
 	gQInput := &sqs.GetQueueUrlInput{
@@ -98,7 +113,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			},
 			"timeFrame": {
 				DataType:    aws.String("String"),
-				StringValue: aws.String("12"), // temp hardcoded
+				StringValue: aws.String(strconv.Itoa(timeFrame)), // temp hardcoded
 			},
 		},
 		MessageBody: aws.String(messageBody),
