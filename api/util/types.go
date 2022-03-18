@@ -223,3 +223,7 @@ type NameOwner struct {
 	Owner string
 	Name  string
 }
+
+type ScoreRequestBody struct {
+	TimeFrame int `json:"timeFrame"`
+}
