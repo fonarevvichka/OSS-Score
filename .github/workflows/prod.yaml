@@ -1,8 +1,8 @@
 name: Deploy Prod
 on:
-  create:
+  push:
     tag:
-      - '^v[0-9]+\.[0-9]+\.[0-9]+'
+      - 'v*'
 jobs:
   deploy-prod:
     runs-on: ubuntu-latest
