@@ -294,7 +294,6 @@ func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDa
 }
 
 func CheckRepoAccess(client *http.Client, owner string, name string) (bool, error) {
-	var respBody GitRestBody
 
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
 
@@ -312,14 +311,26 @@ func CheckRepoAccess(client *http.Client, owner string, name string) (bool, erro
 	}
 
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		
 
-
+	switch resp.StatusCode {
+	case 200:
+		return true, nil
+	case 404:
+		decoder := json.NewDecoder(resp.Body)
+		var respBody GitRestBody
+		err :=  decoder.Decode(&respBody)
+		if err != nil {
+			return false, err
+		}
+		if respBody.Message == "Not Found" {
+			return false, nil
+		} else {
+			return false, fmt.Errorf("rate limit exceeded")
+		}
+	default:
 		return false, nil
-	}
 
-	return true, nil
+	}
 }
 // API rate limit exceeded
 
