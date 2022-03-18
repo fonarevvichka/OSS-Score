@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
+	"golang.org/x/oauth2"
 )
 
 type response struct {
@@ -56,7 +57,25 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			}, err
 		}
 	}
-	
+
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	)
+	httpClient := oauth2.NewClient(ctx, src)
+	access, err := util.CheckRepoAccess(httpClient, owner, name)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if access == 0 {
+		message, _ := json.Marshal(response{Message: "Could not access repo, check that it was inputted correctly and is public"})
+		return events.APIGatewayProxyResponse{
+			StatusCode: 406,
+			Headers:    headers,
+			Body:       string(message),
+		}, err
+	}
+
 	mongoClient, connected, err := util.GetMongoClient(ctx)
 	if connected {
 		defer mongoClient.Disconnect(ctx)

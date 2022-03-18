@@ -49,15 +49,22 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	)
 	httpClient := oauth2.NewClient(ctx, src)
 
-	valid, err := util.CheckRepoAccess(httpClient, owner, name)
+	access, err := util.CheckRepoAccess(httpClient, owner, name)
 	if err != nil {
 		log.Println(err)
 	}
 
-	if !valid {
+	if access == 0 {
 		message, _ := json.Marshal(response{Message: "Could not access repo, check that it was inputted correctly and is public"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 406,
+			Headers:    headers,
+			Body:       string(message),
+		}, err
+	} else if access == -1 {
+		message, _ := json.Marshal(response{Message: "Github API rate limiting exceeded, cannot submit new repos at this time"})
+		return events.APIGatewayProxyResponse{
+			StatusCode: 503,
 			Headers:    headers,
 			Body:       string(message),
 		}, err

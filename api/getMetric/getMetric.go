@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
+	"golang.org/x/oauth2"
 )
 
 type singleMetricRepsone struct {
@@ -82,6 +83,28 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 	
 
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	)
+	httpClient := oauth2.NewClient(ctx, src)
+	access, err := util.CheckRepoAccess(httpClient, owner, name)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers:    headers,
+			Body:       err.Error(),
+		}, err
+	}
+
+	if access == 0 {
+		message, _ := json.Marshal(singleMetricRepsone{Message: "Could not access repo, check that it was inputted correctly and is public"})
+		return events.APIGatewayProxyResponse{
+			StatusCode: 406,
+			Headers:    headers,
+			Body:       string(message),
+		}, err
+	}
+
 	mongoClient, connected, err := util.GetMongoClient(ctx)
 	if connected {
 		defer mongoClient.Disconnect(ctx)
@@ -98,8 +121,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
 	repo, found, err := util.GetRepoFromDB(ctx, collection, owner, name)
 	if err != nil {
-		log.Fatalln(err)
-		//TODO: This should be handeled properly
+		message, _ := json.Marshal(singleMetricRepsone{Message: "Error getting repos from mongoDB"})
+		return events.APIGatewayProxyResponse{
+			StatusCode: 406,
+			Headers:    headers,
+			Body:       string(message),
+		}, err
 	}
 
 	var metricValue float64
