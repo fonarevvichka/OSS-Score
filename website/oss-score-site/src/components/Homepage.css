@@ -26,15 +26,16 @@ header {
 .compare {
     text-align: center;
     font-size: 20px;
-    padding: 5px
 }
 
 .compare-button {
-    padding: 3px;
+    padding-top:3px;
+    padding-bottom:3px;
 }
 
 .error-message {
-    display: none;
+    display: block;
+    visibility: hidden;
     color: #cc0000;
     text-align: left;
     font-size: 10px;

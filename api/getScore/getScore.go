@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
@@ -19,6 +20,13 @@ type response struct {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	headers := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Methods": "POST",
+	}
+
+	//TODO RETURN PROPER ERRORS RATHER THAN JUST LOG.FATAL
 	catalog, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
@@ -36,10 +44,18 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
-	headers := map[string]string{
-		"Access-Control-Allow-Origin":  "*",
-		"Access-Control-Allow-Headers": "Content-Type",
-		"Access-Control-Allow-Methods": "POST",
+	timeFrame := 12	
+	timeFrameString, found := request.QueryStringParameters["timeFrame"]
+	if found {
+		var err error
+		timeFrame, err = strconv.Atoi(timeFrameString)
+		if err != nil {
+			return events.APIGatewayProxyResponse{
+				StatusCode: 401,
+				Headers:    headers,
+				Body:       "timeFrame parameter must be an integer",
+			}, err
+		}
 	}
 
 	src := oauth2.StaticTokenSource(
@@ -74,20 +90,28 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
+	score, depRatio, scoreStatus, message, err := util.GetScore(ctx, collection, catalog, owner, name, scoreType, timeFrame)
 
-	score, depRatio, scoreStatus := util.GetScore(ctx, collection, catalog, owner, name, scoreType, 12) // TEMP HARDCODED TO 12 MONTHS
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 501,
+			Headers:    headers,
+			Body:       "Error calculating score",
+		}, err
+	}
 
-	var message string
-	if scoreStatus == 0 {
-		message = "Score not yet calculated"
-	} else if scoreStatus == 1 {
-		message = "Score calculation queued"
-	} else if scoreStatus == 2 {
-		message = "Score calculation in progress"
-	} else if scoreStatus == 3 {
-		message = "Score ready"
-	} else {
-		message = "Error querying score"
+	if message == "" {
+		if scoreStatus == 0 {
+			message = "Score not yet calculated"
+		} else if scoreStatus == 1 {
+			message = "Score calculation queued"
+		} else if scoreStatus == 2 {
+			message = "Score calculation in progress"
+		} else if scoreStatus == 3 {
+			message = "Score ready"
+		} else {
+			message = "Error querying score"
+		}
 	}
 	// retrieve score from database
 	//if score not in database send wait / error message
