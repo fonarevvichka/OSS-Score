@@ -330,7 +330,6 @@ func CheckRepoAccess(client *http.Client, owner string, name string) (int, error
 		return 0, nil
 	}
 }
-// API rate limit exceeded
 
 func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) error {
 	hasNextPage := true
