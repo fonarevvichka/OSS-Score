@@ -225,8 +225,8 @@ type NameOwner struct {
 }
 
 type GitRestBody struct {
-	Message string `json:"message`
-	DocUrl string `json:"documentation_url`
+	Message string `json:"message"`
+	DocUrl  string `json:"documentation_url"`
 }
 
 type ScoreRequestBody struct {
