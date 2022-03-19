@@ -4,7 +4,8 @@ on:
     tag:
       - 'v*'
 jobs:
-  deploy-prod:
+  deploy:
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
