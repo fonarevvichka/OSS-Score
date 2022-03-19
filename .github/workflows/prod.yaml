@@ -4,7 +4,7 @@ on:
     tag:
       - 'v*'
 jobs:
-  deploy-prod:
+  deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
