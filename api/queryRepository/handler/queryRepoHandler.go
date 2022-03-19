@@ -22,7 +22,6 @@ type response struct {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	queueName := os.Getenv("QUEUE")
 	catalog, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
@@ -86,22 +85,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	client := util.GetSqsClient(ctx)
 
-	gQInput := &sqs.GetQueueUrlInput{
-		QueueName: &queueName,
-	}
-
-	result, err := client.GetQueueUrl(ctx, gQInput)
-	if err != nil {
-		log.Println("Got an error getting the queue URL:")
-		log.Println(err)
-		return events.APIGatewayProxyResponse{
-			StatusCode: 503,
-			Headers:    headers,
-			Body:       string("Error while getting the queue URL"),
-		}, err
-	}
-
-	queueURL := result.QueueUrl
+	queueURL := os.Getenv("QUEUE_URL")
 	messageBody := fmt.Sprintf("%s/%s", owner, name)
 	sMInput := &sqs.SendMessageInput{
 		MessageGroupId: aws.String(messageBody),
@@ -120,11 +104,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			},
 			"timeFrame": {
 				DataType:    aws.String("String"),
-				StringValue: aws.String(strconv.Itoa(timeFrame)), // temp hardcoded
+				StringValue: aws.String(strconv.Itoa(timeFrame)),
 			},
 		},
 		MessageBody: aws.String(messageBody),
-		QueueUrl:    queueURL,
+		QueueUrl:    &queueURL,
 	}
 
 	_, err = client.SendMessage(ctx, sMInput)
@@ -154,7 +138,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
 			Headers:    headers,
-			Body:       "Error updating state in DynamoDB",
+			Body:       "Error updating state in MongoDB",
 		}, err
 	}
 
