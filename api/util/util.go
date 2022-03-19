@@ -135,12 +135,11 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 	var depScore Score
 	var depRatio float64
 	var message string
-	
+
 	repoInfo, found, err := GetRepoFromDB(ctx, collection, owner, name)
 	if err != nil {
 		return combinedScore, depRatio, repoInfo.Status, "", err
 	}
-
 
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {

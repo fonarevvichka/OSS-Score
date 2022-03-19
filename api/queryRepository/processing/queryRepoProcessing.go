@@ -3,14 +3,12 @@ package main
 import (
 	"api/util"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
 func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
@@ -49,23 +47,11 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 	}
 
-	queueName := os.Getenv("QUEUE")
 	sqsClient := util.GetSqsClient(ctx)
-
-	gQInput := &sqs.GetQueueUrlInput{
-		QueueName: &queueName,
-	}
-
-	result, err := sqsClient.GetQueueUrl(ctx, gQInput)
-	if err != nil {
-		log.Println("Got an error getting the queue URL:")
-		log.Println(err)
-		return fmt.Errorf("GetQueueUrl %v", err)
-	}
-
+	queueURL := os.Getenv("QUEUE_URL")
 	for _, dependency := range repo.Dependencies {
-		fmt.Println("submitting dep to queue")
-		util.SubmitDependencies(ctx, sqsClient, *result.QueueUrl, dependency.Catalog, dependency.Owner, dependency.Name)
+		log.Println("submitting dep to queue")
+		util.SubmitDependencies(ctx, sqsClient, queueURL, dependency.Catalog, dependency.Owner, dependency.Name)
 	}
 
 	return nil
