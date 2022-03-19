@@ -14,4 +14,4 @@ jobs:
     - name: Push to Heroku
       run: |
         cd website/oss-score-site
-        git push -f https://heroku:${{ secrets.HEROKU_API_TOKEN }}@git.heroku.com/${{ secrets.HEROKU_APP_NAME}}.git origin/master:master
+        git push -f https://heroku:${{ secrets.HEROKU_API_TOKEN }}@git.heroku.com/${{ secrets.HEROKU_APP_NAME}}.git origin/main:main
