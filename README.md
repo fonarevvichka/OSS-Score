@@ -29,7 +29,7 @@ Categories
   * Linear Scale: 26 -- 0 weeks since last release
 * Release Cadence
   * Weight: 12.5%
-  * Linear Scale:
+  * Linear Scale: 0 -- 0.33 releases a month
 
 ### License Score
 
