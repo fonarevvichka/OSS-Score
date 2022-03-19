@@ -1,4 +1,4 @@
-name: Push Container to Heroku
+name: Deploy to Heroku
 
 on: 
   push:
@@ -10,8 +10,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Push to Heroku
-      run: |
-        cd website/oss-score-site
-        git push -f https://heroku:${{ secrets.HEROKU_API_TOKEN }}@git.heroku.com/${{ secrets.HEROKU_APP_NAME}}.git origin/main:main
+      - uses: actions/checkout@v2
+      - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: "oss-score@gmail.com"
+          appdir: "website/oss-score-site" # <- This will point to the api folder in your project
