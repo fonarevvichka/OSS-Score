@@ -1,3 +1,8 @@
+# Deploying to Heroku
+`heroku create $APP_NAME --buildpack mars/create-react-app`
+`git push --prefix website/oss-score-site heroku main`
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
