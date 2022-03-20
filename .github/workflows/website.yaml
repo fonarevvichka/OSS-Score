@@ -4,16 +4,15 @@ on:
   push:
     branches:
       - main
-      - 67-add-action-to-deploy-to-heroku # TEMP TEMP TEMP
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
+      - uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
           heroku_email: "oss-score@gmail.com"
-          appdir: "website/oss-score-site" # <- This will point to the api folder in your project
+          appdir: "website/oss-score-site"
