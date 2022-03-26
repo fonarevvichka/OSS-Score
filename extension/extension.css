@@ -12,6 +12,11 @@ button {
   button:hover {
     filter: brightness(115%);
   }
+
+  dot-extension {
+    padding: 0px 3px;
+    font-size: x-large;
+  }
   
   /* CSS FOR LOADING SVG */
   .loading-extension {
