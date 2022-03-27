@@ -98,6 +98,7 @@ func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, owner stri
 	} else { // NOT FOUND
 		return repo, false, nil
 	}
+	log.Println(repo.DataStartPoint)
 
 	return repo, true, nil
 }
@@ -204,7 +205,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		log.Println(owner + "/" + name + " Done querying github")
 	} else {
 		// Repo data expired, or empty
-		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || repo.DataStartPoint.After(startPoint) {
+		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || startPoint.Before(repo.DataStartPoint) {
 			log.Println(owner + "/" + name + " Need to query github")
 
 			if startPoint.Before(repo.UpdatedAt) && repo.DataStartPoint.Before(startPoint) { // set start point to collect only needed data
@@ -216,8 +217,9 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 				log.Println(err)
 				return repo, err
 			}
-
+			log.Println(repo.DataStartPoint)
 			if repo.DataStartPoint.IsZero() || startPoint.Before(repo.DataStartPoint) {
+				log.Println("UPDATING DATA STARTPOINT")
 				repo.DataStartPoint = startPoint
 			}
 			log.Println(owner + "/" + name + " Done querying github")
@@ -308,7 +310,7 @@ func QueryProject(ctx context.Context, collection *mongo.Collection, catalog str
 }
 
 func SetScoreState(ctx context.Context, collection *mongo.Collection, owner string, name string, status int) error {
-	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status}}} //ctalog being left null here
+	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status}}} //catalog being left null here
 	filter := getRepoFilter(owner, name)
 	upsert := true
 
