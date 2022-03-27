@@ -49,7 +49,10 @@ export default function Home(props) {
         document.getElementById("error-message" + repoNum).style.visibility = "visible"
     }
 
+<<<<<<< HEAD
     /* function to hide error */
+=======
+>>>>>>> fa6b48ea348a66435929753f096f0bb1005251eb
     const hideError = (repoNum) => {
         document.getElementById("search" + repoNum).style.borderColor = "#000000"
         document.getElementById("error-message" + repoNum).style.visibility = "hidden"
@@ -67,7 +70,11 @@ export default function Home(props) {
         }
 
         // displaying errors if invalid
+<<<<<<< HEAD
         if (!validateURL(event.target.value, repoNum) && event.target.value !== "") {
+=======
+        if (!validateURL(event.target.value, repoNum) && event.target.value != "") {
+>>>>>>> fa6b48ea348a66435929753f096f0bb1005251eb
             displayError(repoNum)
         } else {
             hideError(repoNum)

@@ -223,3 +223,12 @@ type NameOwner struct {
 	Owner string
 	Name  string
 }
+
+type GitRestBody struct {
+	Message string `json:"message"`
+	DocUrl  string `json:"documentation_url"`
+}
+
+type ScoreRequestBody struct {
+	TimeFrame int `json:"timeFrame"`
+}
