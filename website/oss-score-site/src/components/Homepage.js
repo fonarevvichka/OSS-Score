@@ -263,7 +263,7 @@ export default function Home(props) {
         document.getElementById("head2head").innerHTML = ''
 
         console.log(scoreDisplay)
-        highlightBetterMetric(scoreDisplay)
+        //highlightBetterMetric(scoreDisplay)
         document.getElementById("head2head").innerHTML += scoreDisplay
 
         // Enable button
