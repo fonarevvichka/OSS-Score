@@ -15,6 +15,7 @@ const Navigation = () => {
                         <Nav.Link class="nav-link" href="/generate-scores">How We Generate Score</Nav.Link>
                         <Nav.Link class="nav-link" href="/categories">Categories</Nav.Link>
                         <Nav.Link class="nav-link" href="/workforus">Work For Us</Nav.Link>
+                        <Nav.Link class="nav-link" href="/privacypolicy">Privacy Policy</Nav.Link>
                     </Nav>
                 </Container>
             </Navbar>

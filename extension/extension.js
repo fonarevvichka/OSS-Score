@@ -1,6 +1,7 @@
 // const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
 const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
 const ossScoreSite = 'https://oss-score.herokuapp.com'
+const calculationMessages = ['Score not yet calculated', 'Error querying score', 'Data out of date']
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -108,7 +109,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
         if (scores.activity != null && scores.license != null) { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
             updateScores(scoreDiv, owner, repo);
-        } else if (scores.message == 'Score not yet calculated' || scores.message == "Error querying score") { // not ideal display of message
+        } else if (calculationMessages.includes(scores.message)) { // not ideal display of message
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> <a href=\"" + ossScoreSite + "/generate-scores" + "\">OSS Score</a> </h2>"; 
             scoreDiv.innerHTML += scores.message;
             scoreDiv.innerHTML += '<br><br>'
