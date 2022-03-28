@@ -1,6 +1,6 @@
 button {
     background-color: rgb(33, 38, 45);
-    color: rgba(255, 255, 255, 0.822);
+    color: rgba(201, 209, 217, 0.822);
     padding: 5px 16px;
     border-radius: 7px !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
@@ -37,10 +37,10 @@ button {
   
   .machine-extension {
     width: 60vmin;
-    fill: black; }
+    fill: rgb(201,209,217); }
   
   .small-shadow-extension, .medium-shadow-extension, .large-shadow-extension {
-    fill: rgba(0, 0, 0, 0.05); }
+    fill: rgba(201, 209, 217, 0.05); }
   
   .small-extension {
     -webkit-animation: counter-rotation 2.5s infinite linear;

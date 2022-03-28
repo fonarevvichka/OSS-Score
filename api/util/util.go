@@ -81,7 +81,7 @@ func getManyRepoFilter(repos []NameOwner) bson.M {
 	return bson.M{"$or": filters}
 }
 
-func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, owner string, name string) (RepoInfo, bool, error) {
+func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string) (RepoInfo, bool, error) {
 	var repo RepoInfo
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -96,7 +96,11 @@ func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, owner stri
 			return repo, false, fmt.Errorf("SingleResult.Decode: %v", err)
 		}
 	} else { // NOT FOUND
-		return repo, false, nil
+		return RepoInfo{
+			Catalog: catalog,
+			Owner: owner,
+			Name: name,
+		}, false, nil
 	}
 
 	return repo, true, nil
@@ -136,7 +140,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 	var depRatio float64
 	var message string
 
-	repoInfo, found, err := GetRepoFromDB(ctx, collection, owner, name)
+	repoInfo, found, err := GetRepoFromDB(ctx, collection, catalog, owner, name)
 	if err != nil {
 		return combinedScore, depRatio, repoInfo.Status, "", err
 	}
@@ -184,7 +188,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		return RepoInfo{}, err
 	}
 
-	repo, found, err := GetRepoFromDB(ctx, collection, owner, name)
+	repo, found, err := GetRepoFromDB(ctx, collection, catalog, owner, name)
 
 	if err != nil {
 		return RepoInfo{}, err
@@ -196,7 +200,8 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		log.Println(owner + "/" + name + " Not in DB, need to do full query")
 		repo.DataStartPoint = startPoint
 
-		repo, err = QueryGithub(catalog, owner, name, startPoint)
+		err = QueryGithub(&repo, startPoint)
+
 		if err != nil {
 			log.Println(err)
 			return repo, err
@@ -204,19 +209,19 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		log.Println(owner + "/" + name + " Done querying github")
 	} else {
 		// Repo data expired, or empty
-		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || repo.DataStartPoint.After(startPoint) {
+		if repo.UpdatedAt.Before(time.Now().AddDate(0, 0, -shelfLife)) || startPoint.Before(repo.DataStartPoint) {
 			log.Println(owner + "/" + name + " Need to query github")
 
 			if startPoint.Before(repo.UpdatedAt) && repo.DataStartPoint.Before(startPoint) { // set start point to collect only needed data
 				startPoint = repo.UpdatedAt
 			}
 
-			repo, err = QueryGithub(catalog, owner, name, startPoint)
+			err = QueryGithub(&repo, startPoint)
 			if err != nil {
 				log.Println(err)
 				return repo, err
 			}
-
+			
 			if repo.DataStartPoint.IsZero() || startPoint.Before(repo.DataStartPoint) {
 				repo.DataStartPoint = startPoint
 			}
@@ -224,6 +229,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		}
 	}
 
+	repo.UpdatedAt = time.Now()
 	return repo, nil
 }
 
@@ -302,13 +308,13 @@ func QueryProject(ctx context.Context, collection *mongo.Collection, catalog str
 	}
 
 	repo.Status = 3
-	err = syncRepoWithDB(ctx, collection, repo)
+	err = SyncRepoWithDB(ctx, collection, repo)
 
 	return repo, err
 }
 
 func SetScoreState(ctx context.Context, collection *mongo.Collection, owner string, name string, status int) error {
-	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status}}} //ctalog being left null here
+	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status}}} //catalog being left null here
 	filter := getRepoFilter(owner, name)
 	upsert := true
 
@@ -325,7 +331,7 @@ func SetScoreState(ctx context.Context, collection *mongo.Collection, owner stri
 	return nil
 }
 
-func syncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {
+func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {
 	insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
 	filter := getRepoFilter(repo.Owner, repo.Name)
 	upsert := true
@@ -342,7 +348,7 @@ func syncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 	return nil
 }
 
-func QueryGithub(catalog string, owner string, name string, startPoint time.Time) (RepoInfo, error) {
+func QueryGithub(repoInfo *RepoInfo, startPoint time.Time) error {
 	errs, ctx := errgroup.WithContext(context.Background())
 
 	src1 := oauth2.StaticTokenSource(
@@ -361,17 +367,6 @@ func QueryGithub(catalog string, owner string, name string, startPoint time.Time
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_5")},
 	)
 
-	repoInfo := RepoInfo{
-		Catalog:      catalog,
-		Owner:        owner,
-		Name:         name,
-		UpdatedAt:    time.Now(),
-		Dependencies: make([]Dependency, 0),
-		Issues: Issues{
-			OpenIssues:   make([]OpenIssue, 0),
-			ClosedIssues: make([]ClosedIssue, 0),
-		},
-	}
 	httpClient1 := oauth2.NewClient(ctx, src1)
 	httpClient2 := oauth2.NewClient(ctx, src2)
 	httpClient3 := oauth2.NewClient(ctx, src3)
@@ -379,27 +374,26 @@ func QueryGithub(catalog string, owner string, name string, startPoint time.Time
 	httpClient5 := oauth2.NewClient(ctx, src5)
 
 	errs.Go(func() error {
-		return GetGithubIssuesRest(httpClient1, &repoInfo, startPoint.Format(time.RFC3339))
+		return GetGithubIssuesRest(httpClient1, repoInfo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetGithubDependencies(httpClient2, &repoInfo)
+		return GetGithubDependencies(httpClient2, repoInfo)
 	})
 
 	errs.Go(func() error {
-		return GetGithubReleases(httpClient3, &repoInfo, startPoint.Format(time.RFC3339))
+		return GetGithubReleases(httpClient3, repoInfo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetCoreRepoInfo(httpClient4, &repoInfo)
+		return GetCoreRepoInfo(httpClient4, repoInfo)
 	})
 
 	errs.Go(func() error {
-		return GetGithubCommitsRest(httpClient5, &repoInfo, startPoint.Format(time.RFC3339))
+		return GetGithubCommitsRest(httpClient5, repoInfo, startPoint.Format(time.RFC3339))
 	})
 
-	err := errs.Wait()
-	return repoInfo, err
+	return errs.Wait()
 }
 
 func dependencyInSlice(dependency Dependency, dependencies []Dependency) bool {
