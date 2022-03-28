@@ -173,8 +173,6 @@ const DisplayScores = (metrics) => {
 
         result += getMetricContainerWSubContainers('Release Score', releaseMetrics)
         result += '</div >'
-       // result += '</div >'
-
         
             // subMetrics is list of tuples (nameOfMetric, Metric, barDisplay)
 
