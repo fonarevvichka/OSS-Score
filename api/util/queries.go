@@ -87,7 +87,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 
 	// hasNextGraphPage := true
 	hasNextDependencyPage := true
-	var dependencies []Dependency
+	// var dependencies []Dependency
 	var data DependencyResponse
 
 	// temp: not iterating over all manifests, only primary one
@@ -143,8 +143,8 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 				Version: node.Node.Requirements,
 			}
 			// not pulling enough info out, this shouldn't be needed
-			if !dependencyInSlice(newDep, dependencies) && newDep.Name != "" && newDep.Owner != "" {
-				dependencies = append(dependencies, newDep)
+			if !dependencyInSlice(newDep, repo.Dependencies) && newDep.Name != "" && newDep.Owner != "" {
+				repo.Dependencies = append(repo.Dependencies, newDep)
 			}
 		}
 		hasNextDependencyPage = data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.PageInfo.HasNextPage
@@ -154,7 +154,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 	// graphCursor = data.Data.Repository.DependencyGraphManifests.PageInfo.EndCursor
 	// }
 
-	repo.Dependencies = append(repo.Dependencies, dependencies...)
+	// repo.Dependencies = append(repo.Dependencies, dependencies...)
 
 	return nil
 }

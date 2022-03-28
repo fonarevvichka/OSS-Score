@@ -81,7 +81,7 @@ func getManyRepoFilter(repos []NameOwner) bson.M {
 	return bson.M{"$or": filters}
 }
 
-func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, owner string, name string) (RepoInfo, bool, error) {
+func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string) (RepoInfo, bool, error) {
 	var repo RepoInfo
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -96,7 +96,11 @@ func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, owner stri
 			return repo, false, fmt.Errorf("SingleResult.Decode: %v", err)
 		}
 	} else { // NOT FOUND
-		return repo, false, nil
+		return RepoInfo{
+			Catalog: catalog,
+			Owner: owner,
+			Name: name,
+		}, false, nil
 	}
 
 	return repo, true, nil
@@ -136,7 +140,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 	var depRatio float64
 	var message string
 
-	repoInfo, found, err := GetRepoFromDB(ctx, collection, owner, name)
+	repoInfo, found, err := GetRepoFromDB(ctx, collection, catalog, owner, name)
 	if err != nil {
 		return combinedScore, depRatio, repoInfo.Status, "", err
 	}
@@ -184,7 +188,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		return RepoInfo{}, err
 	}
 
-	repo, found, err := GetRepoFromDB(ctx, collection, owner, name)
+	repo, found, err := GetRepoFromDB(ctx, collection, catalog, owner, name)
 
 	if err != nil {
 		return RepoInfo{}, err
@@ -304,7 +308,7 @@ func QueryProject(ctx context.Context, collection *mongo.Collection, catalog str
 	}
 
 	repo.Status = 3
-	err = syncRepoWithDB(ctx, collection, repo)
+	err = SyncRepoWithDB(ctx, collection, repo)
 
 	return repo, err
 }
@@ -327,7 +331,7 @@ func SetScoreState(ctx context.Context, collection *mongo.Collection, owner stri
 	return nil
 }
 
-func syncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {
+func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {
 	insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
 	filter := getRepoFilter(repo.Owner, repo.Name)
 	upsert := true
