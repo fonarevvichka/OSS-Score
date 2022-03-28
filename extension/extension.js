@@ -105,7 +105,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
         if (scores.activity != null && scores.license != null) { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
             updateScores(scoreDiv, owner, repo);
-        } else if (scores.message == 'Score not yet calculated' || scores.message == "Error querying score") { // not ideal display of message
+        } else if (calculationMessages.includes(scores.message)) { // SCORES NEED TO BE CALCULATED
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> <a style='text-decoration: none; color: rgb(201,209,217)' href='https://oss-score-website.heroku.com'>OSS Score</a> </h2>";
             scoreDiv.innerHTML += scores.message;
             scoreDiv.innerHTML += '<br><br>'
