@@ -87,7 +87,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 
 	// hasNextGraphPage := true
 	hasNextDependencyPage := true
-	var dependencies []Dependency
+	// var dependencies []Dependency
 	var data DependencyResponse
 
 	// temp: not iterating over all manifests, only primary one
@@ -143,8 +143,8 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 				Version: node.Node.Requirements,
 			}
 			// not pulling enough info out, this shouldn't be needed
-			if !dependencyInSlice(newDep, dependencies) && newDep.Name != "" && newDep.Owner != "" {
-				dependencies = append(dependencies, newDep)
+			if !dependencyInSlice(newDep, repo.Dependencies) && newDep.Name != "" && newDep.Owner != "" {
+				repo.Dependencies = append(repo.Dependencies, newDep)
 			}
 		}
 		hasNextDependencyPage = data.Data.Repository.DependencyGraphManifests.Edges[0].Node.Dependencies.PageInfo.HasNextPage
@@ -154,7 +154,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 	// graphCursor = data.Data.Repository.DependencyGraphManifests.PageInfo.EndCursor
 	// }
 
-	repo.Dependencies = append(repo.Dependencies, dependencies...)
+	// repo.Dependencies = append(repo.Dependencies, dependencies...)
 
 	return nil
 }
@@ -293,28 +293,42 @@ func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDa
 	return len(commits) == 100, nil
 }
 
-func CheckRepoAccess(client *http.Client, owner string, name string) (bool, error) {
+func CheckRepoAccess(client *http.Client, owner string, name string) (int, error) {
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
 
 	body := bytes.NewBuffer(make([]byte, 0))
 	request, err := http.NewRequest("GET", requestUrl, body)
 	if err != nil {
 		log.Println(err)
-		return false, err
+		return 0, err
 	}
 
 	resp, err := client.Do(request)
 	if err != nil {
 		log.Println(err)
-		return false, err
+		return 0, err
 	}
 
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return false, nil
-	}
 
-	return true, nil
+	switch resp.StatusCode {
+	case 200:
+		return 1, nil
+	case 404:
+		decoder := json.NewDecoder(resp.Body)
+		var respBody GitRestBody
+		err :=  decoder.Decode(&respBody)
+		if err != nil {
+			return 0, err
+		}
+		if respBody.Message == "Not Found" {
+			return 0, nil
+		} else {
+			return -1, nil
+		}
+	default:
+		return 0, nil
+	}
 }
 
 func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) error {

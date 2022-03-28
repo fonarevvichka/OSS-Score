@@ -1,10 +1,11 @@
 name: Deploy Prod
 on:
-  create:
+  push:
     tag:
-      - v*
+      - 'v*'
 jobs:
-  deploy-prod:
+  deploy:
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -36,6 +37,9 @@ jobs:
         GIT_PAT_9: ${{ secrets.GIT_PAT_9 }}
         GIT_PAT_10: ${{ secrets.GIT_PAT_10 }}
         GIT_PAT_11: ${{ secrets.GIT_PAT_11 }}
+        GIT_PAT_12: ${{ secrets.GIT_PAT_12 }}
+        AUTH: ${{ secrets.MONGO_CERT }}
       run: |
         cd api
+        echo "$AUTH" | base64 --decode > ./util/mongo_cert.pem
         sls deploy -s prod

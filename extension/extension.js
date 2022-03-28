@@ -1,5 +1,6 @@
 // const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
 const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
+const calculationMessages = ['Score not yet calculated', 'Error querying score', 'Data out of date']
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -45,12 +46,29 @@ async function requestScores(owner, repo) {
     };
 }
 
+async function updateScores(scoreDiv, owner, repo) {
+    promiseTimeout(15000).then(() => {
+        console.log('Updating Score');
+        getScores(owner, repo).then(scores => {
+            if ((scores.activity != null) && (scores.license != null)) {
+                insertScores(scoreDiv, scores);
+                if (scores.depRatio < 0.9) {
+                    updateScores(scoreDiv, owner, repo);
+                }
+            } else {
+                console.log("Error retrieving scores in updateScores");
+            }
+        });
+    });
+}
+
 async function awaitResults(scoreDiv, owner, repo) {
-    promiseTimeout(500).then(() => {
+    promiseTimeout(1000).then(() => {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
-            if (scores.activity != null) {
+            if (scores.activity != null && scores.license != null) {
                 insertScores(scoreDiv, scores);
+                updateScores(scoreDiv, owner, repo);
             } else {
                 awaitResults(scoreDiv, owner, repo);
             }
@@ -86,6 +104,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
     scoresPromise.then(scores => {
         if (scores.activity != null && scores.license != null) { // VALID SCORES RETURNED
             insertScores(scoreDiv, scores);
+            updateScores(scoreDiv, owner, repo);
         } else if (scores.message == 'Score not yet calculated' || scores.message == "Error querying score") { // not ideal display of message
             scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> <a style='text-decoration: none; color: rgb(201,209,217)' href='https://oss-score-website.heroku.com'>OSS Score</a> </h2>";
             scoreDiv.innerHTML += scores.message;
@@ -110,7 +129,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
 }
 
 async function getScores(owner, repo) {
-    let scores = {license: null, activity: null, message: null};
+    let scores = {license: null, activity: null, message: null, depRatio: 0};
     let promises = [];    
     let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
     promises.push(
@@ -120,6 +139,7 @@ async function getScores(owner, repo) {
                 await scorePromise.then(response => {
                     if (response.message == "Score ready") {
                         scores.license = response.score;
+                        scores.depRatio += response.depRatio / 2;
                     } else {
                         scores.message = response.message;
                     };
@@ -146,6 +166,7 @@ async function getScores(owner, repo) {
                 await scorePromise.then(response => {
                     if (response.message == "Score ready") {
                         scores.activity = response.score;
+                        scores.depRatio += response.depRatio / 2;
                     } else {
                         scores.message = response.message;
                     };
