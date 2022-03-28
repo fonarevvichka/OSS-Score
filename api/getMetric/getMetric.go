@@ -119,7 +119,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
-	repo, found, err := util.GetRepoFromDB(ctx, collection, owner, name)
+	repo, found, err := util.GetRepoFromDB(ctx, collection, catalog, owner, name)
 	if err != nil {
 		message, _ := json.Marshal(singleMetricRepsone{Message: "Error getting repos from mongoDB"})
 		return events.APIGatewayProxyResponse{
