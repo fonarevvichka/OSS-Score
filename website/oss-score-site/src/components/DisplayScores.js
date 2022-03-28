@@ -7,49 +7,51 @@ const getMetricDisplay = (metricScore, barDisplay) => {
     metricScore = Math.round(metricScore * 100) / 100
     if (barDisplay) {
         // TODO: create bar graphic
-        return toString(metricScore)
+        return metricScore
     } else {
         // just display raw score
-        return toString(metricScore)
+        return metricScore
     }
 }
 
-const getMetricContainer = (metricName, metricScore, metricConf, barDisplay, highlight) => {
+const getMetricContainer = (metricName, metric, barDisplay) => {
 
-    if (highlight) {
+    if (metric.highlight) {
         // highlight score in green
-        return '<div class="metric-container" style="border-color: green;">\n' +
+        return '<div class="metric-container" style="color: green;">\n' +
             '<div class="metric-container-title">' + metricName + '</div>\n' +
-            '<div class="metric">' + getMetricDisplay(metricScore, barDisplay) + '</div>\n' +
-            '<div class="confidence">Confidence: ' + metricConf + '</div>\n' +
+            '<div class="metric">' + getMetricDisplay(metric.metric, barDisplay) + '</div>\n' +
+            '<div class="confidence">Confidence: ' + metric.confidence + '</div>\n' +
             '</div>\n'
     } else {
         // do not highlight score
         return '<div class="metric-container">\n' +
             '<div class="metric-container-title">' + metricName + '</div>\n' +
-            '<div class="metric">' + getMetricDisplay(metricScore, barDisplay) + '</div>\n' +
-            '<div class="confidence">Confidence: ' + metricConf + '</div>\n' +
+            '<div class="metric">' + getMetricDisplay(metric.metric, barDisplay) + '</div>\n' +
+            '<div class="confidence">Confidence: ' + metric.confidence + '</div>\n' +
             '</div>\n'
 
     }
 }
 
 // subMetrics is list of tuples (nameOfMetric, MetricScore, MetricConf, barDisplay, highlight)
-const getMetricContainerWSubContainers = (metricName, subMetrics, barDisplay, highlight) => {
+const getMetricContainerWSubContainers = (metricName, subMetrics) => {
     let subcontainers = ""
 
+    //    (nameOfMetric, Metric, barDisplay)
+
     for (let i = 0; i < subMetrics.length; i++) {
-        if (subMetrics[i][4]) {
-            subcontainers += '<div class="submetric-container" style="border-color: green;>\n' +
+        if (subMetrics[i][1].highlight) {
+            subcontainers += '<div class="submetric-container" style="color: green;">\n' +
                 '<div class="submetric-container-title">' + subMetrics[i][0] + '</div>\n' +
-                '<div class="metric" id="ageLastRelease">' + getMetricDisplay(subMetrics[i][1], subMetrics[i][3]) + '</div>\n' +
-                '<div class="confidence" id="ageLastReleaseConf">Confidence: ' + subMetrics[i][2] + '</div>\n' +
+                '<div class="metric">' + getMetricDisplay(subMetrics[i][1].metric, subMetrics[i][2]) + '</div>\n' +
+                '<div class="confidence">Confidence: ' + subMetrics[i][1].confidence + '</div>\n' +
                 '</div>\n'
         } else {
             subcontainers += '<div class="submetric-container">\n' +
                 '<div class="submetric-container-title">' + subMetrics[i][0] + '</div>\n' +
-                '<div class="metric" id="ageLastRelease">' + getMetricDisplay(subMetrics[i][1], subMetrics[i][3]) + '</div>\n' +
-                '<div class="confidence" id="ageLastReleaseConf">Confidence: ' + subMetrics[i][2] + '</div>\n' +
+                '<div class="metric">' + getMetricDisplay(subMetrics[i][1].metric, subMetrics[i][2]) + '</div>\n' +
+                '<div class="confidence">Confidence: ' + subMetrics[i][1].confidence + '</div>\n' +
                 '</div>\n'
         }
     }
@@ -61,36 +63,37 @@ const getMetricContainerWSubContainers = (metricName, subMetrics, barDisplay, hi
 
 // activityScore, licenseScore, stars, contributors are tuples (metricScore, confidence, highlight)
 const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, contributors) => {
-    let result = '<div class="basic-info-display"> \n'
+    let result = '<div class="basic-info-display"> \n' +
     '<div class="basic-info" id="repoOwnerName">' + owner + '/' + name + '</div>'
 
-    if (activityScore[2]) {
-        result += '<div class="basic-info" id="activityScore" style="border-color: green;> Activity Score: ' + activityScore[0] + '/10</div>'
+    if (activityScore.highlight) {
+        result += '<div class="basic-info" id="activityScore" style="color: green";> Activity Score: ' + getMetricDisplay(activityScore.metric, false) + '/10</div>'
     } else {
-        result += '<div class="basic-info" id="activityScore"> Activity Score: ' + activityScore[0] + '/10</div>'
+        //result += '<div class="basic-info" id="activityScore" style="border-color: green;> Activity Score: ' + getMetricDisplay(activityScore.metric, false) + '/10</div>'
+        result += '<div class="basic-info" id="activityScore"> Activity Score: ' + getMetricDisplay(activityScore.metric, false) + '/10</div>'
     }
-    result += '<div class="basic-info-conf" id="activityScoreConf"> Confidence: ' + activityScore[1] + '</div>'
+    result += '<div class="basic-info-conf" id="activityScoreConf"> Confidence: ' + activityScore.confidence + '</div>'
 
-    if (licenseScore[2]) {
-        result += '<div class="basic-info" id="licenseScore" style="border-color: green;> License Score: ' + licenseScore + '/10</div>'
+    if (licenseScore.highlight) {
+        result += '<div class="basic-info" id="licenseScore" style="color: green";> License Score: ' + getMetricDisplay(licenseScore.metric, false) + '/10</div>'
     } else {
-        result += '<div class="basic-info" id="licenseScore"> License Score: ' + licenseScore[0] + '/10</div>'
+        result += '<div class="basic-info" id="licenseScore"> License Score: ' + getMetricDisplay(licenseScore.metric, false) + '/10</div>'
     }
-    result += '<div class="basic-info-conf" id="licenseScoreConf"> Confidence: ' + licenseScore[1] + '</div>'
+    result += '<div class="basic-info-conf" id="licenseScoreConf"> Confidence: ' + licenseScore.confidence + '</div>'
 
-    if (stars[2]) {
-        result += '<div class="basic-info" id="stars" style="border-color: green;>Stars: ' + stars[0] + '</div>'
+    if (stars.highlight) {
+        result += '<div class="basic-info" id="stars" style="color: green";>Stars: ' + stars.metric + '</div>'
     } else {
-        result += '<div class="basic-info" id="stars">Stars: ' + stars[0] + '</div>'
+        result += '<div class="basic-info" id="stars">Stars: ' + stars.metric + '</div>'
     }
-    result += '<div class="basic-info-conf" id="stars">Confidence: ' + stars[1] + '</div>'
+    result += '<div class="basic-info-conf" id="stars">Confidence: ' + stars.confidence + '</div>'
 
-    if (contributors[2]) {
-        result += '<div class="basic-info" id="contributors" style="border-color: green;>Contributors: ' + contributors[0] + '</div>'
+    if (contributors.highlight) {
+        result += '<div class="basic-info" id="contributors" style="color: green";>Contributors: ' + contributors.metric + '</div>'
     } else {
-        result += '<div class="basic-info" id="contributors">Contributors: ' + contributors[0] + '</div>'
+        result += '<div class="basic-info" id="contributors">Contributors: ' + contributors.metric + '</div>'
     }
-    result += '<div class="basic-info-conf" id="contributors">Confidence: ' + contributors[1] + '</div>'
+    result += '<div class="basic-info-conf" id="contributors">Confidence: ' + contributors.confidence + '</div>'
 
 
 
@@ -99,35 +102,106 @@ const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, co
     return result
 }
 
-// metrics is array of json objects
-const DisplayScores1 = (owner, name, metrics) => {
-    let result = '<div class="repo-stats">'
+const AddHighlightJSON = (metricsAll) => {
+    // console.log(metricsAll)
+    // Add logic so that we add highlight bool to each thing 
+    if (metricsAll.length < 1) {
+        alert("Scores Unavailable")
+    }
+    for (var key in metricsAll[0]) {
+        //console.log(key)
+        if (key !== 'message') {
+            let maxOfMetric = 0;
+            let metricArray = [];
+            // Find max of metrics and store values for highlighting
+            for (let i = 0; i < metricsAll.length; i++) {
+                metricArray.push(metricsAll[i][key].metric)
+                if (metricsAll[i][key].metric > maxOfMetric) {
+                    maxOfMetric = metricsAll[i][key].metric;
+                }
+            }
 
-    result += getBasicInfoDisplay()
+            // Add highligt property metrics
+            for (let i = 0; i < metricArray.length; i++) {
+                if (metricArray[i] === maxOfMetric) {
+                    // Highlight metric
+                    metricsAll[i][key].highlight = true;
+                } else {
+                    // Don't highlight
+                    metricsAll[i][key].highlight = false;
+                }
+            }
+        }
+    }
 
-    result += '<div class="metrics-display">'
-    result += '<div class="metric-category">Activity Scores</div>'
-    result += getMetricContainer('Issue Closure Time')
-    result += getMetricContainer('Commit Cadence')
-    result += getMetricContainerWSubContainers('Release Score')
-    result += '</div >'
-    result += '</div >'
-
-    result += '<div class="repo-dependency-score">'
-    result += '<div class="metric-category">Dependency Scores</div>'
-    result += getMetricContainer('Dependency Activity Score')
-    result += getMetricContainer('Dependency License Score')
-
-    result += '</div >'
-    result += '</div >'
-
-    result += '</div >'
+    return metricsAll
 }
 
 
-const DisplayScores = (owner, name, metrics) => {
+const DisplayScores = (metrics) => {
+    console.log(metrics)
+
+    //let {owner1, name1, metricsAll} = allmetrics
+
+    let metricsAll = [] 
+    for (let i = 0; i < metrics.length; i++) {
+        metricsAll.push(metrics[i][2])
+    }
+    // console.log(metricsAll)
+    metricsAll = AddHighlightJSON(metricsAll)
+    // console.log(metricsAll)
+    
+    let result = ''
+
+    for (let i = 0; i < metrics.length; i++) {
+        result += '<div class="repo-stats">'
+
+        // owner, name, activityScore, licenseScore, stars, contributors
+        result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
+            metricsAll[i].repoLicenseScore, metricsAll[i].stars, metricsAll[i].contributors)
+
+
+
+            // metricName, metricScore, metricConf, barDisplay, highlight
+
+        result += '<div class="metrics-display">'
+        result += '<div class="metric-category">Activity Scores</div>'
+        result += getMetricContainer('Issue Closure Time', metricsAll[i].issueClosureTime, true)
+        result += getMetricContainer('Commit Cadence', metricsAll[i].commitCadence, true)
+
+        let releaseMetrics = [['Release Cadence', metricsAll[i].releaseCadence, true], ['Age of Last Release', metricsAll[i].ageLastRelease, true]]
+
+        result += getMetricContainerWSubContainers('Release Score', releaseMetrics)
+        result += '</div >'
+       // result += '</div >'
+
+        
+            // subMetrics is list of tuples (nameOfMetric, Metric, barDisplay)
+
+        result += '<div class="repo-dependency-score">'
+        result += '<div class="metric-category">Dependency Scores</div>'
+        result += getMetricContainer('Dependency Activity Score', metricsAll[i].dependencyActivityScore, true)
+        result += getMetricContainer('Dependency License Score', metricsAll[i].dependencyLicenseScore, true)
+
+        result += '</div >'
+        result += '</div >'
+
+        result += '</div >'
+    }
+
+    return result
+    
+    let owner = ""
+    let name = ""
+    
+    
+    
+    
+    
     // round scores
     
+    //console.log(metrics)
+
     // rounding scores will be done in getMetricDisplay
     for (var key in metrics) {
         if (key !== "message") {
@@ -210,6 +284,74 @@ const DisplayScores = (owner, name, metrics) => {
             '</div>\n' +
         '</div>'
     );
+}
+
+
+// metrics is array of json objects
+const DisplayScores1 = (metrics) => {
+    // Add logic so that we add highlight bool to each thing 
+    alert("inside displayscores 1")
+    console.log("inside display scores 1")
+    if (metrics.length < 1) {
+        alert("Scores Unavailable")
+    }
+
+    // Add attribute to json's to indicate which fields to highlight
+    for (var key in metrics[0]) {
+        if (key !== 'message') {
+            let maxOfMetric = 0;
+            let metricArray = [];
+            // Find max of metrics and store values for highlighting
+            for (let i = 0; i < metrics.length; i++) {
+                metricArray.push(metrics[i].key.metric)
+                if (metrics[i].key.metric > maxOfMetric) {
+                    maxOfMetric = metrics[i].key.metric;
+                }
+            }
+
+            // Add highligt property metrics
+            for (let i = 0; i < metricArray.length; i++) {
+                if (metricArray[i] === maxOfMetric) {
+                    // Highlight metric
+                    metrics[i].key.highlight = true;
+                } else {
+                    // Don't highlight
+                    metrics[i].key.highlight = false;
+                }
+            }
+        }
+    }
+
+    console.log(metrics)
+
+    // let result = ''
+
+    // for (let i = 0; i < metrics.length; i++) {
+    //     result += '<div class="repo-stats">'
+
+    //     // owner, name, activityScore, licenseScore, stars, contributors
+    //     result += getBasicInfoDisplay(owner, name, )
+
+    //     result += '<div class="metrics-display">'
+    //     result += '<div class="metric-category">Activity Scores</div>'
+    //     result += getMetricContainer('Issue Closure Time')
+    //     result += getMetricContainer('Commit Cadence')
+    //     result += getMetricContainerWSubContainers('Release Score')
+    //     result += '</div >'
+    //     result += '</div >'
+
+    //     result += '<div class="repo-dependency-score">'
+    //     result += '<div class="metric-category">Dependency Scores</div>'
+    //     result += getMetricContainer('Dependency Activity Score')
+    //     result += getMetricContainer('Dependency License Score')
+
+    //     result += '</div >'
+    //     result += '</div >'
+
+    //     result += '</div >'
+    // }
+
+    // return result
 }
 
 export default DisplayScores;

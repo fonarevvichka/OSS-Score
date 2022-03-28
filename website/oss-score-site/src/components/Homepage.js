@@ -4,6 +4,7 @@
 import React, {useState} from 'react'
 import './Homepage.css';
 import DisplayScores from './DisplayScores.js';
+import DisplayScores1 from './DisplayScores.js';
 
 /* functional component for homepage */
 export default function Home(props) {
@@ -160,12 +161,16 @@ export default function Home(props) {
             if (response.status === 200) {
                 let data = await response.json()
                 if (data.message === "Metric ready") {
-                    scoreDisplay += DisplayScores(owner, repo, data)
+                    // scoreDisplay += DisplayScores(owner, repo, data)
+                    // return 
+                    return [owner, repo, data];
                 } else if (data.message === "Metric not available") {
                     let requestResponse = await requestScores(owner, repo)
                     if (requestResponse.success) {
                         let metrics = await awaitResults(owner, repo)
-                        scoreDisplay += DisplayScores(owner, repo, metrics)
+                        // scoreDisplay += DisplayScores(owner, repo, metrics)
+                        // return 
+                        return [owner, repo, metrics];
                     }
                     // requestScores(owner, repo).then(async requestResponse => {
                     //     if (requestResponse.success) {
@@ -176,7 +181,9 @@ export default function Home(props) {
                 } else {
                     // score calculate queued, don't call request scores, go straight to awaitResults
                     let metrics = await awaitResults(owner, repo)
-                    scoreDisplay += DisplayScores(owner, repo, metrics)
+                    // scoreDisplay += DisplayScores(owner, repo, metrics)
+                    // return 
+                    return [owner, repo, metrics];
                 }
             } else if (response.status === 406) {
                 console.error("Repository entered does not exist")
@@ -242,7 +249,6 @@ export default function Home(props) {
             // parse Name and Author, call API
             let [owner1, name1] = getNameAuthor(inputs.search1)
             scorePromises.push(getMetrics(owner1, name1))
-
         } else {
             displayError("1");
         }
@@ -255,14 +261,25 @@ export default function Home(props) {
             displayError("2");
         }
 
-        // do promises
-        await Promise.all(scorePromises) 
+        // do promises (array of json objects) (owner, name, metrics)
+        let scores = await Promise.all(scorePromises)
+        
 
+        // for (let i = 0; i < scores.length; i ++) {
+        //     scoreDisplay += DisplayScores(scores[i][0], scores[i][1], scores[i][2], scores)
+        // } 
+
+        scoreDisplay += DisplayScores(scores)
+
+        // alert("Before display scores 1")
+        // DisplayScores1(scores);
+        // alert("After display scores 1")
+ 
         // Hide loading gear/clear all html in head2head
         document.getElementById("loading").innerHTML = ''
         document.getElementById("head2head").innerHTML = ''
 
-        console.log(scoreDisplay)
+        //console.log(scoreDisplay)
         //highlightBetterMetric(scoreDisplay)
         document.getElementById("head2head").innerHTML += scoreDisplay
 
