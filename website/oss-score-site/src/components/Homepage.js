@@ -214,19 +214,6 @@ export default function Home(props) {
         return null
     }
 
-    /* function to display error for invalid github URL */
-    const highlightBetterMetric = (scoreDisplay) => {
-        alert("highlight better metric")
-        let scoreDisplayDom = new DOMParser().parseFromString(scoreDisplay, "text/xml");
-        console.log(scoreDisplayDom)
-        let elems = scoreDisplayDom.getElementsByClassName('metric');
-        console.log(elems.length)
-        for(let i = 0; i < elems.length; i++) {
-            console.log(elems[i].innerHTML)
-        }
-    }
-
-
     /* handleSubmit function that does everything */
     const handleSubmit = async (evt) => {
         

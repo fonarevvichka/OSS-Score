@@ -95,16 +95,13 @@ const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, co
     }
     result += '<div class="basic-info-conf" id="contributors">Confidence: ' + contributors.confidence + '</div>'
 
-
-
     // close div
     result += '</div >'
     return result
 }
-
+// Given an array of JSON objects, add highlight bool to highlight fields with max values
 const AddHighlightJSON = (metricsAll) => {
-    // console.log(metricsAll)
-    // Add logic so that we add highlight bool to each thing 
+    // Add highlight bool to each thing field of the JSON
     if (metricsAll.length < 1) {
         alert("Scores Unavailable")
     }
@@ -133,36 +130,28 @@ const AddHighlightJSON = (metricsAll) => {
             }
         }
     }
-
-    return metricsAll
 }
 
 
 const DisplayScores = (metrics) => {
-    console.log(metrics)
-
-    //let {owner1, name1, metricsAll} = allmetrics
-
+    // Extract JSON objects from metrics
     let metricsAll = [] 
     for (let i = 0; i < metrics.length; i++) {
         metricsAll.push(metrics[i][2])
     }
-    // console.log(metricsAll)
-    metricsAll = AddHighlightJSON(metricsAll)
-    // console.log(metricsAll)
+
+    // Add fields to JSON for highlighting
+    AddHighlightJSON(metricsAll)
     
     let result = ''
 
+    // Create head to head display for each owner/name/metrics
     for (let i = 0; i < metrics.length; i++) {
         result += '<div class="repo-stats">'
 
         // owner, name, activityScore, licenseScore, stars, contributors
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
             metricsAll[i].repoLicenseScore, metricsAll[i].stars, metricsAll[i].contributors)
-
-
-
-            // metricName, metricScore, metricConf, barDisplay, highlight
 
         result += '<div class="metrics-display">'
         result += '<div class="metric-category">Activity Scores</div>'
@@ -174,7 +163,6 @@ const DisplayScores = (metrics) => {
         result += getMetricContainerWSubContainers('Release Score', releaseMetrics)
         result += '</div >'
         
-            // subMetrics is list of tuples (nameOfMetric, Metric, barDisplay)
 
         result += '<div class="repo-dependency-score">'
         result += '<div class="metric-category">Dependency Scores</div>'
@@ -188,168 +176,6 @@ const DisplayScores = (metrics) => {
     }
 
     return result
-    
-    let owner = ""
-    let name = ""
-    
-    
-    
-    
-    
-    // round scores
-    
-    //console.log(metrics)
-
-    // rounding scores will be done in getMetricDisplay
-    for (var key in metrics) {
-        if (key !== "message") {
-            metrics[key].metric = Math.round(metrics[key].metric * 100) / 100
-        }
-    }
-
-    return (
-        '<div class="repo-stats"> \n' +
-        '<div class="basic-info-display"> \n' +
-                '<div class="basic-info-title">Name</div>\n' +
-                '<div class="basic-info" id="repoName">' + name + '</div>\n' +
-                '<div class="basic-info-title">Author</div>\n' +
-                '<div class="basic-info" id="repoAuthor">' + owner + '</div>\n' +
-            '</div>\n' +
-            '<div class="metrics-display">\n' +
-                '<div class="metric-category">Activity Scores</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">Activity Score</div>\n' +
-                    '<div class="metric" id="repoActivityScore">' + metrics.repoActivityScore.metric + '</div>\n' +
-                    '<div class="confidence" id="repoActivityConfScore">Confidence: ' + metrics.repoActivityScore.confidence + '</div>\n' +
-                '</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">Issue Closure Time</div>\n' +
-                    '<div class="metric" id="issueClosureTime">' + metrics.issueClosureTime.metric + '</div>\n' +
-                    '<div class="confidence" id="issueClosureTimeConf">Confidence: ' + metrics.issueClosureTime.confidence + '</div>\n' +
-                '</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">Commit Cadence</div>\n' +
-                    '<div class="metric" id="commitCadence">' + metrics.commitCadence.metric + '</div>\n' +
-                    '<div class="confidence" id="commitCadenceConf">Confidence: ' + metrics.commitCadence.confidence + '</div>\n' +
-                '</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">Release Score</div>\n' +
-                    '<div class="submetric-container">\n' +
-                        '<div class="submetric-container-title">Age Last Release</div>\n' +
-                        '<div class="metric" id="ageLastRelease">' + metrics.ageLastRelease.metric + '</div>\n' +
-                        '<div class="confidence" id="ageLastReleaseConf">Confidence: ' + metrics.ageLastRelease.confidence + '</div>\n' +
-                    '</div>\n' +
-                    '<div class="submetric-container">\n' +
-                        '<div class="submetric-container-title">Release Cadence</div>\n' +
-                        '<div class="metric" id="releaseCadence">' + metrics.releaseCadence.metric + '</div>\n' +
-                        '<div class="confidence" id="releaseCadenceConf">Confidence: ' + metrics.releaseCadence.confidence + '</div>\n' +
-                    '</div>\n' +
-                '</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">Contributors</div>\n' +
-                    '<div class="metric" id="contributors">' + metrics.contributors.metric + '</div>\n' +
-                    '<div class="confidence" id="contributorsConf">Confidence: ' + metrics.contributors.confidence + '</div>\n' +
-                '</div>\n' +
-            '</div>\n' +
-            '<div class="repo-licence-score">\n' +
-                '<div class="metric-category">License Scores</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">License Score</div>\n' +
-                    '<div class="metric" id="repoLicenseScore">' + metrics.repoLicenseScore.metric + '</div>\n' +
-                    '<div class="confidence" id="repoLicenseConfScore">Confidence: ' + metrics.repoLicenseScore.confidence + '</div>\n' +
-                '</div>\n' +
-            '</div>\n' +
-            '<div class="repo-dependency-score">\n' +
-                '<div class="metric-category">Dependency Scores</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">Dependency Activity Score</div>\n' +
-                    '<div class="metric" id="dependencyActivityScore">' + metrics.dependencyActivityScore.metric + '</div>\n' +
-                    '<div class="confidence" id="dependencyActivityConfScore">Confidence: ' + metrics.dependencyActivityScore.confidence + '</div>\n' +
-                '</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">Dependency License Score</div>\n' +
-                    '<div class="metric" id="dependencyLicenseScore">' + metrics.dependencyLicenseScore.metric + '</div>\n' +
-                    '<div class="confidence" id="dependencyLicenseConfScore">Confidence: ' + metrics.dependencyLicenseScore.confidence + '</div>\n' +
-                '</div>\n' +
-            '</div>\n' +
-            '<div class="repo-stars">\n' +
-                '<div class="metric-category">Stars</div>\n' +
-                '<div class="metric-container">\n' +
-                    '<div class="metric-container-title">Stars</div>\n' +
-                    '<div class="metric" id="stars">' + metrics.stars.metric + '</div>\n' +
-                    '<div class="confidence" id="stars">Confidence: ' + metrics.stars.confidence + '</div>\n' +
-                '</div>\n' +
-            '</div>\n' +
-        '</div>'
-    );
-}
-
-
-// metrics is array of json objects
-const DisplayScores1 = (metrics) => {
-    // Add logic so that we add highlight bool to each thing 
-    alert("inside displayscores 1")
-    console.log("inside display scores 1")
-    if (metrics.length < 1) {
-        alert("Scores Unavailable")
-    }
-
-    // Add attribute to json's to indicate which fields to highlight
-    for (var key in metrics[0]) {
-        if (key !== 'message') {
-            let maxOfMetric = 0;
-            let metricArray = [];
-            // Find max of metrics and store values for highlighting
-            for (let i = 0; i < metrics.length; i++) {
-                metricArray.push(metrics[i].key.metric)
-                if (metrics[i].key.metric > maxOfMetric) {
-                    maxOfMetric = metrics[i].key.metric;
-                }
-            }
-
-            // Add highligt property metrics
-            for (let i = 0; i < metricArray.length; i++) {
-                if (metricArray[i] === maxOfMetric) {
-                    // Highlight metric
-                    metrics[i].key.highlight = true;
-                } else {
-                    // Don't highlight
-                    metrics[i].key.highlight = false;
-                }
-            }
-        }
-    }
-
-    console.log(metrics)
-
-    // let result = ''
-
-    // for (let i = 0; i < metrics.length; i++) {
-    //     result += '<div class="repo-stats">'
-
-    //     // owner, name, activityScore, licenseScore, stars, contributors
-    //     result += getBasicInfoDisplay(owner, name, )
-
-    //     result += '<div class="metrics-display">'
-    //     result += '<div class="metric-category">Activity Scores</div>'
-    //     result += getMetricContainer('Issue Closure Time')
-    //     result += getMetricContainer('Commit Cadence')
-    //     result += getMetricContainerWSubContainers('Release Score')
-    //     result += '</div >'
-    //     result += '</div >'
-
-    //     result += '<div class="repo-dependency-score">'
-    //     result += '<div class="metric-category">Dependency Scores</div>'
-    //     result += getMetricContainer('Dependency Activity Score')
-    //     result += getMetricContainer('Dependency License Score')
-
-    //     result += '</div >'
-    //     result += '</div >'
-
-    //     result += '</div >'
-    // }
-
-    // return result
 }
 
 export default DisplayScores;
