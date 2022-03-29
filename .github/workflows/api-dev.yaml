@@ -1,11 +1,10 @@
-name: Deploy Prod
+name: Deploy Dev
 on:
   push:
-    tag:
-      - 'v*'
+    branches:
+      - main
 jobs:
   deploy:
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -26,20 +25,20 @@ jobs:
         make clean build 
     - name: deploy
       env:
-        GIT_PAT_1: ${{ secrets.GIT_PAT_1 }}
-        GIT_PAT_2: ${{ secrets.GIT_PAT_2 }}
-        GIT_PAT_3: ${{ secrets.GIT_PAT_3 }}
-        GIT_PAT_4: ${{ secrets.GIT_PAT_4 }}
-        GIT_PAT_5: ${{ secrets.GIT_PAT_5 }}
-        GIT_PAT_6: ${{ secrets.GIT_PAT_6 }}
-        GIT_PAT_7: ${{ secrets.GIT_PAT_7 }}
-        GIT_PAT_8: ${{ secrets.GIT_PAT_8 }}
-        GIT_PAT_9: ${{ secrets.GIT_PAT_9 }}
-        GIT_PAT_10: ${{ secrets.GIT_PAT_10 }}
-        GIT_PAT_11: ${{ secrets.GIT_PAT_11 }}
-        GIT_PAT_12: ${{ secrets.GIT_PAT_12 }}
+        GIT_PAT_1: ${{ secrets.DEV_GIT_PAT_01 }}
+        GIT_PAT_2: ${{ secrets.DEV_GIT_PAT_02 }}
+        GIT_PAT_3: ${{ secrets.DEV_GIT_PAT_03 }}
+        GIT_PAT_4: ${{ secrets.DEV_GIT_PAT_04 }}
+        GIT_PAT_5: ${{ secrets.DEV_GIT_PAT_05 }}
+        GIT_PAT_6: ${{ secrets.DEV_GIT_PAT_06 }}
+        GIT_PAT_7: ${{ secrets.DEV_GIT_PAT_07 }}
+        GIT_PAT_8: ${{ secrets.DEV_GIT_PAT_08 }}
+        GIT_PAT_9: ${{ secrets.DEV_GIT_PAT_09 }}
+        GIT_PAT_10: ${{ secrets.DEV_GIT_PAT_10 }}
+        GIT_PAT_11: ${{ secrets.DEV_GIT_PAT_11 }}
+        GIT_PAT_12: ${{ secrets.DEV_GIT_PAT_12 }}
         AUTH: ${{ secrets.MONGO_CERT }}
       run: |
         cd api
         echo "$AUTH" | base64 --decode > ./util/mongo_cert.pem
-        sls deploy -s prod
+        sls deploy -s dev
