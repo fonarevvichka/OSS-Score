@@ -327,7 +327,7 @@ func SetScoreState(ctx context.Context, collection *mongo.Collection, owner stri
 
 	_, err := collection.UpdateOne(ctx, filter, insertableData, &opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("collection.UpdateOne: %v", err)
 		return fmt.Errorf("collection.UpdateOne: %v", err)
 	}
 
@@ -344,7 +344,7 @@ func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 	}
 	_, err := collection.UpdateOne(ctx, filter, insertableData, &opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("collection.UpdateOne: %v", err)
 		return fmt.Errorf("collection.UpdateOne: %v", err)
 	}
 
