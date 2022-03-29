@@ -1,5 +1,7 @@
 # OSS-Score
 
+We generate an activity and license score for open source projects based on their GitHub meta-data and the data of their dependencies. This data can be viewed in detail on our website, or inserted directly into the GitHub page via our Chrome extension
+
 ## Scoring
 
 Scores are calculated based on github metadata and the metadata for the projects dependencies. Dependencies account for 25% of the score and the rest is the project itself. If we do not have the score for a dependency its score will be reported as max, with zero confidence.
