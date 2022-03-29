@@ -41,7 +41,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		"Access-Control-Allow-Headers": "Content-Type",
 		"Access-Control-Allow-Methods": "POST",
 	}
-	
+
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
 		return events.APIGatewayProxyResponse{
@@ -50,7 +50,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			Body:       "Error converting shelf life env var to int",
 		}, err
 	}
-	
+
 	catalog, found := request.PathParameters["catalog"]
 	if !found {
 		log.Fatalln("no catalog variable in path")
@@ -67,8 +67,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no metric variable in path")
 	}
-	
-	timeFrame := 12	
+
+	timeFrame := 12
 	timeFrameString, found := request.QueryStringParameters["timeFrame"]
 	if found {
 		var err error
@@ -81,7 +81,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			}, err
 		}
 	}
-	
 
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
@@ -145,7 +144,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		} else {
 			expireDate := time.Now().AddDate(0, 0, -shelfLife)
 			startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
-			
+
 			if repo.UpdatedAt.After(expireDate) && repo.DataStartPoint.Before(startPoint) {
 				message = "Metric ready"
 
@@ -170,23 +169,39 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "dependencyActivityScore":
-					score, _, _ := util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint) //TODO: INGORING ERROR
+					score, _, err := util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
+					if err != nil {
+						break
+					}
+
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "repoLicenseScore":
-					licenseMap := util.GetLicenseMap()
+					licenseMap, err := util.GetLicenseMap()
+					if err != nil {
+						break
+					}
 					score := util.CalculateLicenseScore(&repo, licenseMap)
 
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "dependencyLicenseScore":
-					licenseMap := util.GetLicenseMap()
-					score, _, _ := util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap) //TODO: IGNORING ERROR
+					licenseMap, err := util.GetLicenseMap()
+					if err != nil {
+						break
+					}
+					score, _, err := util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
+					if err != nil {
+						break
+					}
 
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "all":
-					licenseMap := util.GetLicenseMap()
+					licenseMap, err := util.GetLicenseMap()
+					if err != nil {
+						break
+					}
 					var score util.Score
 
 					metricValue = float64(repo.Stars)
@@ -234,7 +249,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						Confidence: confidence,
 					}
 
-					score, _, _ = util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint) //TODO: INGORING ERROR
+					score, _, err = util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
+					if err != nil {
+						break
+					}
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 					allMetrics.DependencyActivityScore = singleMetricRepsone{
@@ -250,7 +268,10 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						Confidence: confidence,
 					}
 
-					score, _, _ = util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap) //TODO: IGNORING ERROR
+					score, _, err = util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
+					if err != nil {
+						break
+					}
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 					allMetrics.DependencyLicenseScore = singleMetricRepsone{
@@ -282,8 +303,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		Headers:    headers,
 		Body:       string(response),
 	}
+	if err != nil {
+		resp.Body = err.Error()
+	}
 
-	return resp, nil
+	return resp, err
 }
 
 func main() {
