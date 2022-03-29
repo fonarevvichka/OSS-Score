@@ -30,13 +30,22 @@ button {
         -ms-flex-align: center;
             align-items: center; }
   
-  .machine-extension {
+  .machine-extension-dark {
     width: 60vmin;
     fill: rgb(201,209,217); }
   
-  .small-shadow-extension, .medium-shadow-extension, .large-shadow-extension {
+  .small-shadow-extension-dark, .medium-shadow-extension-dark, .large-shadow-extension-dark {
     fill: rgba(201, 209, 217, 0.05); }
   
+  .machine-extension-light {
+    width: 60vmin;
+    fill: black; 
+  }
+  
+  .small-shadow-extension-light, .medium-shadow-extension-light, .large-shadow-extension-light {
+    fill: rgba(0, 0, 0, 0.05); 
+  }
+
   .small-extension {
     -webkit-animation: counter-rotation 2.5s infinite linear;
        -moz-animation: counter-rotation 2.5s infinite linear;
