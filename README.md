@@ -14,7 +14,6 @@ If this is the case our confidence rating for the provided score will decrease.
 Categories
 
 * Issue Closure Rate
-
   * Weight: 25%
   * Linear Scale: 176 -- 0 closure in days
 
@@ -43,7 +42,7 @@ Common Licenses:
 * apache-2.0: 95
 * bsd-3-clause: 85
 
-The full specification can be found in the `licenseScores.txt` (LINK TO FILE HERE).
+The full specification can be found in [`licenseScores.txt`](https://github.com/fonarevvichka/OSS-Score/blob/main/api/util/scores/licenseScores.txt)
 
 ## Components
 
@@ -70,9 +69,16 @@ NOTE: For now all chrome extension score calculations default to a 12 month time
 3. Select load unpacked and then select the `OSS-Score/extension` directory
 4. Enable the extension and watch the magic happen
 
-## Disclaimer / Limitation
+### Deploy Yourself
+TODO
+
+## Disclaimer / Limitations
+
+TODO
 
 ## Endpoints
+
+TODO
 
 * getScore
 * getMetric
