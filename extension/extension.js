@@ -130,12 +130,12 @@ function numberToColorHsl(i, min, max) {
 }
 
 function insertScores(scoreDiv, scores) {
-    let activityColor = numberToColorHsl(scores.activity.score/10, 0, 1);
     scoreDiv.innerHTML = "<h2 class=\"h4 mb-3\"> <a href=\"" + ossScoreSite + "/generate-scores" + "\">OSS Score</a> </h2>";
+    let activityColor = numberToColorHsl(scores.activity.score/10, 0, 1);
     scoreDiv.innerHTML += '<dot-extension style="color:' + activityColor + '">●</dot-extension>';
     scoreDiv.innerHTML += 'Activity: ' + (scores.activity.score).toFixed(1) + ' of 10';
-    scoreDiv.innerHTML += '&nbsp; | &nbsp; Confidence: ' + scores.activity.confidence.toFixed(0) + '%';
-    scoreDiv.innerHTML += '<br/><br/>';
+    scoreDiv.innerHTML += '&nbsp; &nbsp; | &nbsp; Confidence: ' + scores.activity.confidence.toFixed(0) + '%';
+    scoreDiv.innerHTML += '<br/>';
     let licenseColor = numberToColorHsl(scores.license.score/10, 0, 1);
     scoreDiv.innerHTML += '<dot-extension style="color:' + licenseColor + '">●</dot-extension>';
     scoreDiv.innerHTML += 'License: ' + (scores.license.score).toFixed(1) + ' of 10';
