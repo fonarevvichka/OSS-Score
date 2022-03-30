@@ -69,11 +69,17 @@ The full specification can be found in [`licenseScores.txt`](https://github.com/
 
 ### API
 
-stuff stuff stuff
+The API is a completley serverless and uses AWS' API Gateway, SQS, and Lambda functions.
 
+[TODO: DIAGRAM]
+
+We use serverless for orchestration and deployment.
+### DB
+
+We use MongoDB since the large document sizes and NO-SQL structure suited us well. Hosted on Atlas beta serverless deployment.
 ### Website
 
-stuff stuff stuff
+React frontend hosted on Heroku.
 
 ### Chrome extension
 
@@ -98,13 +104,12 @@ We welcome you to deploy this project yourself!
 To deploy the backend you will need to deploy two components, the API itself and the Database
 
 #### DB
-We use MongoDB since the large document sizes and NO-SQL structure suited us well. We host ours on Atlas but you are welcome to use whatever hosting/managing service you like. If using Atlas you can use the following instructions.
+We host on Atlas but you are welcome to use whatever hosting/managing service you like. If using Atlas you can use the following instructions.
   1. Create an account with MongoDB and create your database. NOTE: Although MongoDB Atlas has a free tier we found that it often gets throttled to the point of unusability
   2. Once you have created your database make sure to allow access from any IP address and generate a `x509` certificate to be used by our lambda functions later.
   3. Name the certificate `mongo_cert.pem` and place it in `OSS-Score/api/util`
 
 #### API
-The API is a completley serverless and uses AWS' API Gateway, SQS, and Lambda functions.
 We use serverless as our deployment/orchestration tool and this will handle the majority of the deployment for you.
   1. Install and set up serverless as a global npm utility on your machine, make sure to add the correct AWS credentials.
   2. Navigate to `OSS-Score/api`. And run a build with `make`
