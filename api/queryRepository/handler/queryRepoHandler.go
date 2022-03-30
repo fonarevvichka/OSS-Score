@@ -59,14 +59,14 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			StatusCode: 406,
 			Headers:    headers,
 			Body:       string(message),
-		}, err
+		}, nil
 	} else if access == -1 {
 		message, _ := json.Marshal(response{Message: "Github API rate limiting exceeded, cannot submit new repos at this time"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 503,
 			Headers:    headers,
 			Body:       string(message),
-		}, err
+		}, nil
 	}
 
 	var body util.ScoreRequestBody
@@ -74,11 +74,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if request.Body != "" {
 		err := json.Unmarshal([]byte(request.Body), &body)
 		if err != nil {
+			message, _ := json.Marshal(response{Message: "Error parsing body of request"})
 			return events.APIGatewayProxyResponse{
 				StatusCode: 409, //TODO: might need a more accurate code
 				Headers:    headers,
-				Body:       "Error parsing body of request",
-			}, err
+				Body:       string(message),
+			}, nil
 		}
 		timeFrame = body.TimeFrame
 	}
@@ -124,27 +125,29 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	if err != nil {
+		message, _ := json.Marshal(response{Message: "Error connecting to MongoDB"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
 			Headers:    headers,
-			Body:       "Error connecting to MongoDB",
+			Body:       string(message),
 		}, err
 	}
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
-	
+
 	err = util.SyncRepoWithDB(ctx, collection, util.RepoInfo{
 		Catalog: catalog,
-		Owner: owner,
-		Name: name,
-		Status: 1,
+		Owner:   owner,
+		Name:    name,
+		Status:  1,
 	})
 
 	if err != nil {
+		message, _ := json.Marshal(response{Message: "Error updating state in MongoDB"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
 			Headers:    headers,
-			Body:       "Error updating state in MongoDB",
+			Body:       string(message),
 		}, err
 	}
 
