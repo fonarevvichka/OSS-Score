@@ -70,7 +70,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	var body util.ScoreRequestBody
-	timeFrame := 12
+	timeFrame := 12 // default to 12 months
 	if request.Body != "" {
 		err := json.Unmarshal([]byte(request.Body), &body)
 		if err != nil {
@@ -87,7 +87,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	client := util.GetSqsClient(ctx)
 
 	queueURL := os.Getenv("QUEUE_URL")
-	messageBody := fmt.Sprintf("%s/%s", owner, name)
+	messageBody := fmt.Sprintf("%s/%s/%d", owner, name, timeFrame)
 	sMInput := &sqs.SendMessageInput{
 		MessageGroupId: aws.String(messageBody),
 		MessageAttributes: map[string]types.MessageAttributeValue{
