@@ -125,13 +125,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	if err != nil {
-		log.Println(err)
 		message, _ := json.Marshal(response{Message: "Error connecting to MongoDB"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
 			Headers:    headers,
 			Body:       string(message),
-		}, nil
+		}, err
 	}
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
@@ -144,13 +143,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	})
 
 	if err != nil {
-		log.Println(err)
 		message, _ := json.Marshal(response{Message: "Error updating state in MongoDB"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
 			Headers:    headers,
 			Body:       string(message),
-		}, nil
+		}, err
 	}
 
 	response, _ := json.Marshal(response{Message: "Score calculation request queued"})
