@@ -96,7 +96,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			StatusCode: 501,
 			Headers:    headers,
 			Body:       string(message),
-		}, nil
+		}, err
 	}
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
@@ -109,7 +109,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			StatusCode: 501,
 			Headers:    headers,
 			Body:       string(message),
-		}, nil
+		}, err
 	}
 
 	if message == "" {
