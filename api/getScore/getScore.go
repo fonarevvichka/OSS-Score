@@ -123,9 +123,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			message = "Error querying score"
 		}
 	}
-	// retrieve score from database
-	//if score not in database send wait / error message
-	//if score in database send score
 
 	response, _ := json.Marshal(response{Message: message, Score: score, DepRatio: depRatio})
 	resp := events.APIGatewayProxyResponse{
