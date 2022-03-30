@@ -4,7 +4,6 @@
 import React, {useState} from 'react'
 import './Homepage.css';
 import DisplayScores from './DisplayScores.js';
-import DisplayScores1 from './DisplayScores.js';
 
 /* functional component for homepage */
 export default function Home(props) {
@@ -187,8 +186,10 @@ export default function Home(props) {
                 }
             } else if (response.status === 406) {
                 console.error("Repository entered does not exist")
+                //return null
             } else {
                 console.error("Error connecting to OSS-Score API")
+                //return null
             }
         } catch (error) {
             console.error(error)
@@ -198,6 +199,7 @@ export default function Home(props) {
 
     async function awaitResults(owner, repo) {
         // let catalog_name = 'github'
+        alert("awaiting results")
         let metric_name = 'all'
 
         let response = await fetch(basePath + '/owner/' + owner + '/name/' + repo + '/metric/'
@@ -250,11 +252,14 @@ export default function Home(props) {
 
         // do promises (array of json objects) (owner, name, metrics)
         let scores = await Promise.all(scorePromises)
-        
+        alert("finished awaiting promises")
 
         // for (let i = 0; i < scores.length; i ++) {
         //     scoreDisplay += DisplayScores(scores[i][0], scores[i][1], scores[i][2], scores)
-        // } 
+        // }
+
+        // make sure scores are in the same order they were entered in the inputs
+
 
         scoreDisplay += DisplayScores(scores)
 

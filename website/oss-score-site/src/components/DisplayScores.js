@@ -1,13 +1,15 @@
 import './DisplayScores.css';
 import './Homepage.css';
 
-
+// TODO: Add confidence to metric display 
 const getMetricDisplay = (metricScore, barDisplay) => {
     // round metric 
+    //metricScore.metric = Math.round(metricScore.metric * 100) / 100
     metricScore = Math.round(metricScore * 100) / 100
     if (barDisplay) {
         // TODO: create bar graphic
         return metricScore
+        //return '<div class="bar"></div>'
     } else {
         // just display raw score
         return metricScore
@@ -134,10 +136,21 @@ const AddHighlightJSON = (metricsAll) => {
 
 
 const DisplayScores = (metrics) => {
+    alert("In display scores")
+    console.log(metrics)
+    // If no metrics to display, don't display anything
+    if (metrics ) {
+        return "<div class='no-display'> No metrics to display </div>"
+    }
+    
     // Extract JSON objects from metrics
     let metricsAll = [] 
     for (let i = 0; i < metrics.length; i++) {
-        metricsAll.push(metrics[i][2])
+        if (metrics[i] != null) {
+            metricsAll.push(metrics[i][2])
+        } else {
+            metricsAll.push(null)
+        }
     }
 
     // Add fields to JSON for highlighting
@@ -148,6 +161,11 @@ const DisplayScores = (metrics) => {
     // Create head to head display for each owner/name/metrics
     for (let i = 0; i < metrics.length; i++) {
         result += '<div class="repo-stats">'
+        
+        if (metrics[i] == null) {
+            result += '<div class="no-metrics">No metrics to display</div>'
+            continue
+        }
 
         // owner, name, activityScore, licenseScore, stars, contributors
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,

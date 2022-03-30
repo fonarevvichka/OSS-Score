@@ -264,3 +264,21 @@ header {
       from {transform: rotate(359deg);}
       to   {transform: rotate(0deg);}
   }
+
+
+
+
+/* Bar display */
+
+.bar {
+  height: 20px;
+  background-color: red;
+  background-image:
+    linear-gradient(
+      to right, 
+      red, 
+      #f06d06, 
+      rgb(255, 255, 0), 
+      green
+    );
+}
