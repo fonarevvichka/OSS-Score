@@ -1,5 +1,6 @@
 import './DisplayScores.css';
 import './Homepage.css';
+import ReactTooltip from "react-tooltip";
 
 
 const getMetricDisplay = (metricScore, barDisplay) => {
@@ -19,6 +20,8 @@ const getMetricContainer = (metricName, metric, barDisplay) => {
     if (metric.highlight) {
         // highlight score in green
         return '<div class="metric-container" style="color: green;">\n' +
+            //'<button class="tool-tip" data-tip data-for="metrictip">?</button>\n' +
+            //'<ReactTooltip id="metrictip" place="right" effect="solid">Tooltip for Repo</ReactTooltip>\n' +
             '<div class="metric-container-title">' + metricName + '</div>\n' +
             '<div class="metric">' + getMetricDisplay(metric.metric, barDisplay) + '</div>\n' +
             '<div class="confidence">Confidence: ' + metric.confidence + '</div>\n' +

@@ -11,6 +11,14 @@ header {
 
 /*** form css ***/
 
+label {
+    text-align: left;
+}
+
+.tool-tip {
+    width: 25px;
+}
+
 #search1, #search2 {
     border-style: solid;
     border-width: 1.5px;
