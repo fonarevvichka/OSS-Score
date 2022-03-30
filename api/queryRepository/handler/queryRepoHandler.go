@@ -153,7 +153,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	response, _ := json.Marshal(response{Message: "Score calculation request queued"})
 	resp := events.APIGatewayProxyResponse{
-		StatusCode: 200,
+		StatusCode: 201,
 		Headers:    headers,
 		Body:       string(response),
 	}
