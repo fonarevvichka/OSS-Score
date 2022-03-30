@@ -74,7 +74,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			StatusCode: 406,
 			Headers:    headers,
 			Body:       string(message),
-		}, err
+		}, nil
 	} else if access == -1 {
 		message, _ := json.Marshal(response{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
 		return events.APIGatewayProxyResponse{
@@ -90,7 +90,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	if err != nil {
-		log.Println(err)
 		message, _ := json.Marshal(response{Message: "Error connecting to MongoDB"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
@@ -103,7 +102,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	score, depRatio, scoreStatus, message, err := util.GetScore(ctx, collection, catalog, owner, name, scoreType, timeFrame)
 
 	if err != nil {
-		log.Println(err)
 		message, _ := json.Marshal(response{Message: "Error calculating score"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
