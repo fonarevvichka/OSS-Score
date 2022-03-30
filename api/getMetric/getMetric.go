@@ -74,11 +74,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		var err error
 		timeFrame, err = strconv.Atoi(timeFrameString)
 		if err != nil {
+			message, _ := json.Marshal(singleMetricRepsone{Message: "timeFrame parameter must be an integer"})
 			return events.APIGatewayProxyResponse{
 				StatusCode: 401,
 				Headers:    headers,
-				Body:       "timeFrame parameter must be an integer",
-			}, err
+				Body:       string(message),
+			}, nil
 		}
 	}
 
@@ -88,11 +89,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	httpClient := oauth2.NewClient(ctx, src)
 	access, err := util.CheckRepoAccess(httpClient, owner, name)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 501,
-			Headers:    headers,
-			Body:       err.Error(),
-		}, err
+		log.Println(err)
 	}
 
 	if access == 0 {
@@ -102,6 +99,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			Headers:    headers,
 			Body:       string(message),
 		}, err
+	} else if access == -1 {
+		message, _ := json.Marshal(singleMetricRepsone{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
+		return events.APIGatewayProxyResponse{
+			StatusCode: 503,
+			Headers:    headers,
+			Body:       string(message),
+		}, nil
 	}
 
 	mongoClient, connected, err := util.GetMongoClient(ctx)
@@ -110,11 +114,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	if err != nil {
+		log.Println(err)
+		message, _ := json.Marshal(singleMetricRepsone{Message: "Error connecting to MongoDB"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
 			Headers:    headers,
-			Body:       "Error connecting to MongoDB",
-		}, err
+			Body:       string(message),
+		}, nil
 	}
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
@@ -125,7 +131,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			StatusCode: 406,
 			Headers:    headers,
 			Body:       string(message),
-		}, err
+		}, nil
 	}
 
 	var metricValue float64
@@ -171,6 +177,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "dependencyActivityScore":
 					score, _, err := util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
 					if err != nil {
+						message = err.Error()
 						break
 					}
 
@@ -179,6 +186,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "repoLicenseScore":
 					licenseMap, err := util.GetLicenseMap()
 					if err != nil {
+						message = "Error accessing license scoring file"
 						break
 					}
 					score := util.CalculateLicenseScore(&repo, licenseMap)
@@ -188,10 +196,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "dependencyLicenseScore":
 					licenseMap, err := util.GetLicenseMap()
 					if err != nil {
+						message = "Error accessing license scoring file"
 						break
 					}
 					score, _, err := util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
 					if err != nil {
+						message = "Error accessing license scoring file"
 						break
 					}
 
@@ -200,6 +210,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "all":
 					licenseMap, err := util.GetLicenseMap()
 					if err != nil {
+						message = "Error accessing license scoring file"
 						break
 					}
 					var score util.Score
@@ -251,6 +262,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 					score, _, err = util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
 					if err != nil {
+						message = "Error calculating activity score"
 						break
 					}
 					metricValue = score.Score
@@ -270,6 +282,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 					score, _, err = util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
 					if err != nil {
+						message = "Error calculating dependency activity score"
 						break
 					}
 					metricValue = score.Score
@@ -303,11 +316,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		Headers:    headers,
 		Body:       string(response),
 	}
-	if err != nil {
-		resp.Body = err.Error()
-	}
 
-	return resp, err
+	return resp, nil
 }
 
 func main() {

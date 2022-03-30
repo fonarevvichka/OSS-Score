@@ -44,17 +44,18 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
-	timeFrame := 12	
+	timeFrame := 12
 	timeFrameString, found := request.QueryStringParameters["timeFrame"]
 	if found {
 		var err error
 		timeFrame, err = strconv.Atoi(timeFrameString)
 		if err != nil {
+			message, _ := json.Marshal(response{Message: "timeFrame parameter must be an integer"})
 			return events.APIGatewayProxyResponse{
 				StatusCode: 401,
 				Headers:    headers,
-				Body:       "timeFrame parameter must be an integer",
-			}, err
+				Body:       string(message),
+			}, nil
 		}
 	}
 
@@ -74,6 +75,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			Headers:    headers,
 			Body:       string(message),
 		}, err
+	} else if access == -1 {
+		message, _ := json.Marshal(response{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
+		return events.APIGatewayProxyResponse{
+			StatusCode: 503,
+			Headers:    headers,
+			Body:       string(message),
+		}, nil
 	}
 
 	mongoClient, connected, err := util.GetMongoClient(ctx)
@@ -82,22 +90,26 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	if err != nil {
+		log.Println(err)
+		message, _ := json.Marshal(response{Message: "Error connecting to MongoDB"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
 			Headers:    headers,
-			Body:       "Error connecting to MongoDB",
-		}, err
+			Body:       string(message),
+		}, nil
 	}
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
 	score, depRatio, scoreStatus, message, err := util.GetScore(ctx, collection, catalog, owner, name, scoreType, timeFrame)
 
 	if err != nil {
+		log.Println(err)
+		message, _ := json.Marshal(response{Message: "Error calculating score"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 501,
 			Headers:    headers,
-			Body:       "Error calculating score",
-		}, err
+			Body:       string(message),
+		}, nil
 	}
 
 	if message == "" {

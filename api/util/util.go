@@ -161,15 +161,21 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 				if scoreType == "activity" {
 					repoScore = CalculateActivityScore(&repoInfo, startPoint)
 					depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repoInfo, startPoint)
-					log.Println(err)
+					if err != nil {
+						log.Println(err)
+						return combinedScore, depRatio, repoInfo.Status, "", err
+					}
 				} else if scoreType == "license" {
 					licenseMap, err := GetLicenseMap()
 					if err != nil {
+						log.Println(err)
 						return combinedScore, depRatio, repoInfo.Status, "", err
 					}
 					repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
 					depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repoInfo, licenseMap)
-					log.Println(err)
+					if err != nil {
+						return combinedScore, depRatio, repoInfo.Status, "", err
+					}
 				}
 				combinedScore = Score{
 					Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
