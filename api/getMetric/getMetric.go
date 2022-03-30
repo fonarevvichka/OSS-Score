@@ -36,6 +36,7 @@ type allMetricsResponse struct {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	var err error
 	headers := map[string]string{
 		"Access-Control-Allow-Origin":  "*",
 		"Access-Control-Allow-Headers": "Content-Type",
@@ -139,6 +140,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	var message string
 
 	var allMetrics allMetricsResponse
+	var score util.Score
+	var licenseMap map[string]int
 
 	if found { // match in DB
 		if repo.Status == 1 {
@@ -171,11 +174,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "issueClosureTime":
 					metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
 				case "repoActivityScore":
-					score := util.CalculateActivityScore(&repo, startPoint)
+					score = util.CalculateActivityScore(&repo, startPoint)
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "dependencyActivityScore":
-					score, _, err := util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
+					score, _, err = util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
 					if err != nil {
 						message = err.Error()
 						break
@@ -184,23 +187,24 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "repoLicenseScore":
-					licenseMap, err := util.GetLicenseMap()
+					licenseMap, err = util.GetLicenseMap()
 					if err != nil {
-						message = "Error accessing license scoring file"
+						message = "Error accessing license scoring file 1st"
 						break
 					}
-					score := util.CalculateLicenseScore(&repo, licenseMap)
+					score = util.CalculateLicenseScore(&repo, licenseMap)
 
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "dependencyLicenseScore":
-					licenseMap, err := util.GetLicenseMap()
+					licenseMap, err = util.GetLicenseMap()
 					if err != nil {
 						message = "Error accessing license scoring file"
 						break
 					}
-					score, _, err := util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
-					if err != nil {
+
+					score, _, altErr := util.CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
+					if altErr != nil {
 						message = "Error accessing license scoring file"
 						break
 					}
@@ -208,7 +212,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "all":
-					licenseMap, err := util.GetLicenseMap()
+					licenseMap, err = util.GetLicenseMap()
 					if err != nil {
 						message = "Error accessing license scoring file"
 						break
@@ -317,7 +321,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		Body:       string(response),
 	}
 
-	return resp, nil
+	return resp, err
 }
 
 func main() {
