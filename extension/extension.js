@@ -1,5 +1,6 @@
 // const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
 const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
+const ossScoreSite = 'https://oss-score.herokuapp.com'
 const calculationMessages = ['Score not yet calculated', 'Error querying score', 'Data out of date']
 
 function promiseTimeout (time) {

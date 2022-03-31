@@ -3,6 +3,7 @@ package main
 import (
 	"api/util"
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -27,11 +28,11 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		name := *message.MessageAttributes["name"].StringValue
 		timeFrame, err := strconv.Atoi(*message.MessageAttributes["timeFrame"].StringValue)
 
-		collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog) //FIND OUT IF THIS IS SLOW
-
 		if err != nil {
-			log.Fatalln("Error converting time frame to int")
+			return fmt.Errorf("strconv.Atoi: %v", err)
 		}
+
+		collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog) //FIND OUT IF THIS IS SLOW
 
 		util.QueryProject(ctx, collection, catalog, owner, name, timeFrame)
 		if err != nil {
