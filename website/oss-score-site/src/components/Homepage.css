@@ -2,8 +2,12 @@ header {
     font-size: 30px;
     text-align: center;
     padding: 6px;
+    /* background: #5B4693; */
 }
 
+/* .Home { 
+    background: #422C70;
+} */
 
 /*** form css ***/
 
@@ -129,7 +133,7 @@ header {
 }
 
 .metric {
-    color: green;
+    /* color: green; */
     font-size: 18px;
 }
 

@@ -22,7 +22,7 @@ gpl-3.0,90
 isc,85
 lppl-1.3c,50
 ms-pl,80
-mit,85
+mit,100
 mpl-2.0,95
 osl-3.0,92
 postgresql,85
