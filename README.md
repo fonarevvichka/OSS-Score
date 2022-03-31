@@ -16,22 +16,41 @@ If this is the case our confidence rating for the provided score will decrease.
 Categories
 
 * Issue Closure Rate
+
+  Average time for an issue in the project to be closed. NOTE: This is only calculated based on the closed issues.
   * Weight: 25%
   * Linear Scale: 176 -- 0 closure in days
 
 * Commit Cadence
+
+  Average pace of commits in the project. Total number of commits divided by the query time frame.
   * Weight: 25%
   * Linear Scale: 0 -- 2 commits / week
+
 * Contributors
+
+  The number of unique users who have contributed to the project over the given query time frame.
   * Weight: 25%
   * Linear Scale: 0 -- 10 individual contributors
+
 * Age of Last Release
+
+  Time since the last release release.
   * Weight: 12.5%
   * Linear Scale: 26 -- 0 weeks since last release
+
 * Release Cadence
+
+  Average pace of releases in the project. Total number of releases divided by the query time frame.
   * Weight: 12.5%
   * Linear Scale: 0 -- 0.33 releases a month
 
+* Pull Request Closure Rate (In progress)
+
+  Average time for a pull request in the project to be closed. NOTE: This is only calculated based on the closed pull requests.
+
+  * Weight: TBD
+  * Linear Scale: TBD
 ### License Score
 
 Direct mapping based on the license of the repo and the licenses of the dependencies.
@@ -50,11 +69,17 @@ The full specification can be found in [`licenseScores.txt`](https://github.com/
 
 ### API
 
-stuff stuff stuff
+The API is a completley serverless and uses AWS' API Gateway, SQS, and Lambda functions.
 
+[TODO: DIAGRAM]
+
+We use serverless for orchestration and deployment.
+### DB
+
+We use MongoDB since the large document sizes and NO-SQL structure suited us well. Hosted on Atlas beta serverless deployment.
 ### Website
 
-stuff stuff stuff
+React frontend hosted on Heroku.
 
 ### Chrome extension
 
@@ -72,16 +97,95 @@ NOTE: For now all chrome extension score calculations default to a 12 month time
 4. Enable the extension and watch the magic happen
 
 ### Deploy Yourself
-TODO
+
+We welcome you to deploy this project yourself!
+
+#### Backend
+To deploy the backend you will need to deploy two components, the API itself and the Database
+
+#### DB
+We host on Atlas but you are welcome to use whatever hosting/managing service you like. If using Atlas you can use the following instructions.
+  1. Create an account with MongoDB and create your database. NOTE: Although MongoDB Atlas has a free tier we found that it often gets throttled to the point of unusability
+  2. Once you have created your database make sure to allow access from any IP address and generate a `x509` certificate to be used by our lambda functions later.
+  3. Name the certificate `mongo_cert.pem` and place it in `OSS-Score/api/util`
+
+#### API
+We use serverless as our deployment/orchestration tool and this will handle the majority of the deployment for you.
+  1. Install and set up serverless as a global npm utility on your machine, make sure to add the correct AWS credentials.
+  2. Navigate to `OSS-Score/api`. And run a build with `make`
+  3. Run `sls deploy -s <env>`, the `-s` options lets you specify what environment you want to deploy to (the default is `dev`)
+
+#### Enviroment Variables
+DO NOT skip this section, if you do not set these up properly nothing will work.
+
+You will need 12 GitHub personal access tokens or PATs.
+[Instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token).
+* The only permissions these PATs need is `public_repo`. But if you want to be able to score your private repos then give them that additional permission.
+* These PAT's need to be stored in your enviroment under the following naming convention: `GIT_PAT_<NUMBER>`
+
+There are a number of other enviroment variables that are all stored in `OSS-Score/api/vars.yaml`. The default values are all set but these allow you to customize the `shelf_life` of your data as well as the naming of different queues and database naming scheme.
+
+### Frontend
+
+#### Chrome Extension
+Please see the above Chrome Extension section to see how to load the extension yourself.
+
+To configure it to use your own version of the deployed API, edit the `basePath` constant at the top of `OSS-Score/extension/extension.js`
+
+#### Website
+The website is run as react app.
+1. Navigate to `OSS-Score/website/oss-score-site` and run `npm install`
+2. Start the server with `npm start`
+
+To deploy to heroku follow their instructions and make sure to use `mars/create-react-app` buildpack
 
 ## Disclaimer / Limitations
-
 TODO
 
 ## Endpoints
+All paths for an API Gateway will have the following prefix: `https://<id>.execute-api.us-east-2.amazonaws.com/<env></env>/`
 
-TODO
+See full Swagger definition in `OSS-Score/api/oss-score.yaml`
 
-* getScore
-* getMetric
-* queryRepositoryScore
+### getScore
+* `OSS-Score/api/getScore/getScore.go`
+* /catalog/{catalog}/owner/{owner}/name/{name}/type/{type}
+* {catalog} is an enum
+  * github
+  * gitlab (Not yet supported)
+* {type} is an enum
+    * `license`
+    * `activity`
+* Query parameters
+    * timeFrame: integer
+
+### getMetric
+* `OSS-Score/api/getMetric/getMetric.go`
+* /catalog/{catalog}/owner/{owner}/name/{name}/metric/{metric}
+* {catalog} is an enum
+  * github
+  * gitlab (Not yet supported)
+* metric is an enum
+  * all
+  * stars
+  * releaseCadence
+  * ageLastRelease
+  * commitCadence
+  * contributors
+  * issueClosureTime
+  * repoActivityScore
+  * dependencyActivityScore
+  * repoLicenseScore
+  * dependencyLicenseScore
+
+* Query parameters
+    * timeFrame: integer
+
+### queryRepositoryScore
+* `OSS-Score/api/queryRepository/handler/queryRepoHandler.go`
+* /catalog/{catalog}/owner/{owner}/name/{name}
+* {catalog} is an enum
+  * github
+  * gitlab (Not yet supported)
+* Post BODY
+  * timeFrame: integer string
