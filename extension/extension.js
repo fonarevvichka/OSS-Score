@@ -19,7 +19,7 @@ async function requestScores(owner, repo) {
             method: 'POST',
             mode: 'cors'
         }).then(async (response) => {
-            if (response.status == 200) {
+            if (response.status == 201) {
                 let messagePromise = response.json();
                 await messagePromise.then(response => {
                     message = response.message;
