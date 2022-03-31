@@ -1,118 +1,97 @@
 import './DisplayScores.css';
 import './Homepage.css';
 
+// note: For stats where lower numbers are better, min and max are switched
+let MetricStats = {
+    "Issue Closure Time-min": 176,
+    "Issue Closure Time-max": 0,
+    "Issue Closure Time-units": "days",
 
+    "Commit Cadence-min": 0,
+    "Commit Cadence-max": 2,
+    "Commit Cadence-units": "commits/week",
 
-// const showFile = (e) => {
-//     e.preventDefault();
-//     const reader = new FileReader();
-//     reader.onload = (e) => {
-//         const text = e.target.result;
-//         console.log(text);
-//     };
-//     reader.readAsText(e.target.files[0]);
-// };
+    "Release Cadence-min": 0,
+    "Release Cadence-max": 0.33,
+    "Release Cadence-units": "releases/month",
 
-
-
-
-// TODO: Add confidence to metric display 
-const getMetricDisplay = (metricScore, barDisplay, metricMin, metricMax) => {
-    // round metric 
-    //metricScore.metric = Math.round(metricScore.metric * 100) / 100
-    metricScore = Math.round(metricScore * 100) / 100
-    if (barDisplay) {
-
-
-        // TODO:
-        //      make txt file and put metric mins and maxes, then load it in hash tables
-        //      figure out where to load the hash tabl, app.js??
-        //      finish styling for metric bar
-        //          Add low and high txt
-        //          Make black bar extend out of colored bar a bit
-        //          put confidence under bar
-        //          put score and name of score next to bar
-
-
-        //return metricScore
-        //return '<div class="bar"></div>'
-        // return '<table> \n'+
-        //     '<tr> \n' +
-        //     '<td></td> \n' +
-        //     '<td rowspan=2><div class="bar"></div></td> \n' +
-
-        //     '</tr>\n' +
-        //     '<tr>\n' +
-        //     '<td rowspan=2><div class="pointer"></div></td>\n' +
-        //     '</tr>\n' +
-        //     '</table>'
-
-        // style="right:' + metricScore'%
-
-        // TODO: make txt file and put metric mins and maxes, then load into
-        //       hash tables
-
-        let metricPercentage = metricScore.metric / (metricMax - metricMin) 
-        
-        // Cap percentage at 100%
-        if (metricPercentage > 100) {
-            metricPercentage = 100
-        }
-
-        return '<div class="metric-num">' + metricScore.metric +
-               '</div><div class="bar-display"> \n' +
-                '<div class="low">LOW</div>\n' +
-                '<div class="bar"></div>\n' +
-                '<div class="high">HIGH</div>\n' +
-                '<div class="pointer" style="left: ' + metricPercentage + '%;"></div>\n' +
-               '</div>'
-
-    } else {
-        // just display raw score
-        return metricScore
-    }
+    "Age of Last Release-min": 26,
+    "Age of Last Release-max": 0,
+    "Age of Last Release-units": "weeks",
 }
 
-const getMetricContainer = (metricName, metric, barDisplay) => {
 
-    if (metric.highlight) {
-        // highlight score in green
-        return '<div class="metric-container" style="color: green;">\n' +
-            '<div class="metric-container-title">' + metricName + '</div>\n' +
-            '<div class="metric">' + getMetricDisplay(metric.metric, barDisplay) + '</div>\n' +
-            '<div class="confidence">Confidence: ' + metric.confidence + '</div>\n' +
-            '</div>\n'
+// TODO: Highlighting better metric, when lower is better
+
+const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
+    // round metric 
+    metricScore.metric = Math.round(metricScore.metric * 100) / 100
+
+
+    let result = ''
+    
+    if (metricScore.highlight) {
+        result += '<div class="metric-container" style="background-color: #b0c4de;">\n' +
+        '<div class="metric-container-title">' + metricName + '</div>\n' +
+        '<div class="metrics">' 
+
     } else {
-        // do not highlight score
-        return '<div class="metric-container">\n' +
+        result += '<div class="metric-container" style="background-color: #d3d3d3;">\n' +
             '<div class="metric-container-title">' + metricName + '</div>\n' +
-            '<div class="metric">' + getMetricDisplay(metric.metric, barDisplay) + '</div>\n' +
-            '<div class="confidence">Confidence: ' + metric.confidence + '</div>\n' +
-            '</div>\n'
-
+            '<div class="metrics">'
     }
+
+    if (barDisplay) {
+
+        let metricMin = MetricStats[metricName + "-min"];
+        let metricMax = MetricStats[metricName + "-max"];
+        let metricUnits = MetricStats[metricName + "-units"];
+
+        let metricPercentage = ((metricScore.metric - metricMin) / (metricMax - metricMin)) * 100
+        
+        // Cap percentage at 0% and 100%
+        if (metricPercentage > 100) {
+            metricPercentage = 100
+        } else if (metricPercentage < 0) {
+            metricPercentage = 0
+        }
+
+        result += '<div class="metric-num">' + metricScore.metric + ' ' + MetricStats[metricName + "-units"] +
+                  '</div><div class="bar-display"> \n' +
+                            '<div class="bar">\n' + 
+                            '<div class="low">Low</div>\n' + 
+                            '<div class="high">High</div>\n' + 
+                        '</div>\n' +
+                        '<div class="pointer" style="left: ' + metricPercentage + '%;"></div>\n' +
+                  '</div>\n' +
+                  '<div class="metric-confidence"> Confidence: ' + metricScore.confidence + '</div>'
+
+    } else {
+        // display raw score and confidence
+        if (outOfTen) {
+            // display metric out of 10
+            result += '<div class="metric"> \n' + 
+                   '<div class="metric-num">' + metricScore.metric + '/10</div> \n' +
+                  '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '</div> \n' +
+                  '</div>' 
+        } else {
+            result += '<div class="metric"> \n' +
+                '<div class="metric-num">' + metricScore.metric + '</div> \n' +
+                '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '</div> \n' +
+                '</div>' 
+        }
+    }
+
+    result += '</div></div>'
+    return result
 }
 
 // subMetrics is list of tuples (nameOfMetric, MetricScore, MetricConf, barDisplay, highlight)
 const getMetricContainerWSubContainers = (metricName, subMetrics) => {
     let subcontainers = ""
 
-    //    (nameOfMetric, Metric, barDisplay)
-
     for (let i = 0; i < subMetrics.length; i++) {
-        if (subMetrics[i][1].highlight) {
-            subcontainers += '<div class="submetric-container" style="color: green;">\n' +
-                '<div class="submetric-container-title">' + subMetrics[i][0] + '</div>\n' +
-                '<div class="metric">' + getMetricDisplay(subMetrics[i][1].metric, subMetrics[i][2]) + '</div>\n' +
-                '<div class="confidence">Confidence: ' + subMetrics[i][1].confidence + '</div>\n' +
-                '</div>\n'
-        } else {
-            subcontainers += '<div class="submetric-container">\n' +
-                '<div class="submetric-container-title">' + subMetrics[i][0] + '</div>\n' +
-                '<div class="metric">' + getMetricDisplay(subMetrics[i][1].metric, subMetrics[i][2]) + '</div>\n' +
-                '<div class="confidence">Confidence: ' + subMetrics[i][1].confidence + '</div>\n' +
-                '</div>\n'
-        }
+        subcontainers += '<div class="submetric-container">\n' + getMetricDisplay(subMetrics[i][1], subMetrics[i][0], subMetrics[i][2], false)  + '</div>'
     }
 
 
@@ -125,39 +104,16 @@ const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, co
     let result = '<div class="basic-info-display"> \n' +
     '<div class="basic-info" id="repoOwnerName">' + owner + '/' + name + '</div>'
 
-    if (activityScore.highlight) {
-        result += '<div class="basic-info" id="activityScore" style="color: green";> Activity Score: ' + getMetricDisplay(activityScore.metric, false) + '/10</div>'
-    } else {
-        //result += '<div class="basic-info" id="activityScore" style="border-color: green;> Activity Score: ' + getMetricDisplay(activityScore.metric, false) + '/10</div>'
-        result += '<div class="basic-info" id="activityScore"> Activity Score: ' + getMetricDisplay(activityScore.metric, false) + '/10</div>'
-    }
-    result += '<div class="basic-info-conf" id="activityScoreConf"> Confidence: ' + activityScore.confidence + '</div>'
-
-    if (licenseScore.highlight) {
-        result += '<div class="basic-info" id="licenseScore" style="color: green";> License Score: ' + getMetricDisplay(licenseScore.metric, false) + '/10</div>'
-    } else {
-        result += '<div class="basic-info" id="licenseScore"> License Score: ' + getMetricDisplay(licenseScore.metric, false) + '/10</div>'
-    }
-    result += '<div class="basic-info-conf" id="licenseScoreConf"> Confidence: ' + licenseScore.confidence + '</div>'
-
-    if (stars.highlight) {
-        result += '<div class="basic-info" id="stars" style="color: green";>Stars: ' + stars.metric + '</div>'
-    } else {
-        result += '<div class="basic-info" id="stars">Stars: ' + stars.metric + '</div>'
-    }
-    result += '<div class="basic-info-conf" id="stars">Confidence: ' + stars.confidence + '</div>'
-
-    if (contributors.highlight) {
-        result += '<div class="basic-info" id="contributors" style="color: green";>Contributors: ' + contributors.metric + '</div>'
-    } else {
-        result += '<div class="basic-info" id="contributors">Contributors: ' + contributors.metric + '</div>'
-    }
-    result += '<div class="basic-info-conf" id="contributors">Confidence: ' + contributors.confidence + '</div>'
+    result += '<div class="basic-info" id="activityScore">' + getMetricDisplay(activityScore, "Activity Score", false, true) + '</div>'
+    result += '<div class="basic-info" id="licenseScore">' + getMetricDisplay(licenseScore, "License Score", false, true) + '</div>'
+    result += '<div class="basic-info" id="stars">' + getMetricDisplay(stars, "Stars", false, false) + '</div>'
+    result += '<div class="basic-info" id="contributors">' + getMetricDisplay(contributors, "Contributors", false, false) + '</div>'
 
     // close div
     result += '</div >'
     return result
 }
+
 // Given an array of JSON objects, add highlight bool to highlight fields with max values
 const AddHighlightJSON = (metricsAll) => {
     // Add highlight bool to each thing field of the JSON
@@ -213,32 +169,33 @@ const DisplayScores = (metrics) => {
     for (let i = 0; i < metrics.length; i++) {
         result += '<div class="repo-stats">'
         
-        // if (metrics[i] == null) {
-        //     result += '<div class="no-metrics">No metrics to display</div>'
-        //     continue
-        // }
-
         // owner, name, activityScore, licenseScore, stars, contributors
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
             metricsAll[i].repoLicenseScore, metricsAll[i].stars, metricsAll[i].contributors)
 
+        result += '<div class="repo-dependency-score">'
+        result += '<div class="metric-category">Dependency Scores</div>'
+        result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true)
+        result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true)
+        result += '</div >'
+
+        
         result += '<div class="metrics-display">'
+
         result += '<div class="metric-category">Activity Scores</div>'
-        result += getMetricContainer('Issue Closure Time', metricsAll[i].issueClosureTime, true)
-        result += getMetricContainer('Commit Cadence', metricsAll[i].commitCadence, true)
-
+        result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false)
+        result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false)
         let releaseMetrics = [['Release Cadence', metricsAll[i].releaseCadence, true], ['Age of Last Release', metricsAll[i].ageLastRelease, true]]
-
         result += getMetricContainerWSubContainers('Release Score', releaseMetrics)
         result += '</div >'
         
 
-        result += '<div class="repo-dependency-score">'
-        result += '<div class="metric-category">Dependency Scores</div>'
-        result += getMetricContainer('Dependency Activity Score', metricsAll[i].dependencyActivityScore, true)
-        result += getMetricContainer('Dependency License Score', metricsAll[i].dependencyLicenseScore, true)
+        // result += '<div class="repo-dependency-score">'
+        // result += '<div class="metric-category">Dependency Scores</div>'
+        // result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true)
+        // result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true)
+        // result += '</div >'
 
-        result += '</div >'
         result += '</div >'
 
         result += '</div >'

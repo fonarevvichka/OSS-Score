@@ -279,7 +279,6 @@ export default function Home(props) {
         <div className="Home">
             {/*<img src="../images/logo1.png" alt="OSS-SCORE"></img>*/}
             <header>OSS-SCORE</header>
-            <div>hello {process.env.REACT_APP_DATABASE}</div>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
                     <div>
