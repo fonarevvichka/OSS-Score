@@ -2,6 +2,7 @@
 const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
 const ossScoreSite = 'https://oss-score.herokuapp.com'
 const calculationMessages = ['Score not yet calculated', 'Error querying score', 'Data out of date']
+const errorMessages = ['Could not access repo, check that it was inputted correctly and is public', 'Cannot provide score for private repo']
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -139,8 +140,10 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
                     }
                 });
             });
-        } else { // Score calculation happening
-            insertHTML(scoreDiv, null, "loading")
+        } else if (errorMessages.includes(scores.message)) { // SCORES CAN NOT BE CALCULATED
+            insertHTML(scoreDiv, scores, "error");
+        } else { // SCORE CALCULATION HAPPENING
+            insertHTML(scoreDiv, null, "loading");
         }
     });
 }
