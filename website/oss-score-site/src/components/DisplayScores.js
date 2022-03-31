@@ -1,15 +1,72 @@
 import './DisplayScores.css';
 import './Homepage.css';
 
+
+
+// const showFile = (e) => {
+//     e.preventDefault();
+//     const reader = new FileReader();
+//     reader.onload = (e) => {
+//         const text = e.target.result;
+//         console.log(text);
+//     };
+//     reader.readAsText(e.target.files[0]);
+// };
+
+
+
+
 // TODO: Add confidence to metric display 
-const getMetricDisplay = (metricScore, barDisplay) => {
+const getMetricDisplay = (metricScore, barDisplay, metricMin, metricMax) => {
     // round metric 
     //metricScore.metric = Math.round(metricScore.metric * 100) / 100
     metricScore = Math.round(metricScore * 100) / 100
     if (barDisplay) {
-        // TODO: create bar graphic
-        return metricScore
+
+
+        // TODO:
+        //      make txt file and put metric mins and maxes, then load it in hash tables
+        //      figure out where to load the hash tabl, app.js??
+        //      finish styling for metric bar
+        //          Add low and high txt
+        //          Make black bar extend out of colored bar a bit
+        //          put confidence under bar
+        //          put score and name of score next to bar
+
+
+        //return metricScore
         //return '<div class="bar"></div>'
+        // return '<table> \n'+
+        //     '<tr> \n' +
+        //     '<td></td> \n' +
+        //     '<td rowspan=2><div class="bar"></div></td> \n' +
+
+        //     '</tr>\n' +
+        //     '<tr>\n' +
+        //     '<td rowspan=2><div class="pointer"></div></td>\n' +
+        //     '</tr>\n' +
+        //     '</table>'
+
+        // style="right:' + metricScore'%
+
+        // TODO: make txt file and put metric mins and maxes, then load into
+        //       hash tables
+
+        let metricPercentage = metricScore.metric / (metricMax - metricMin) 
+        
+        // Cap percentage at 100%
+        if (metricPercentage > 100) {
+            metricPercentage = 100
+        }
+
+        return '<div class="metric-num">' + metricScore.metric +
+               '</div><div class="bar-display"> \n' +
+                '<div class="low">LOW</div>\n' +
+                '<div class="bar"></div>\n' +
+                '<div class="high">HIGH</div>\n' +
+                '<div class="pointer" style="left: ' + metricPercentage + '%;"></div>\n' +
+               '</div>'
+
     } else {
         // just display raw score
         return metricScore
@@ -107,6 +164,7 @@ const AddHighlightJSON = (metricsAll) => {
     if (metricsAll.length < 1) {
         alert("Scores Unavailable")
     }
+
     for (var key in metricsAll[0]) {
         //console.log(key)
         if (key !== 'message') {
@@ -136,13 +194,6 @@ const AddHighlightJSON = (metricsAll) => {
 
 
 const DisplayScores = (metrics) => {
-    alert("In display scores")
-    console.log(metrics)
-    // If no metrics to display, don't display anything
-    if (metrics ) {
-        return "<div class='no-display'> No metrics to display </div>"
-    }
-    
     // Extract JSON objects from metrics
     let metricsAll = [] 
     for (let i = 0; i < metrics.length; i++) {
@@ -162,10 +213,10 @@ const DisplayScores = (metrics) => {
     for (let i = 0; i < metrics.length; i++) {
         result += '<div class="repo-stats">'
         
-        if (metrics[i] == null) {
-            result += '<div class="no-metrics">No metrics to display</div>'
-            continue
-        }
+        // if (metrics[i] == null) {
+        //     result += '<div class="no-metrics">No metrics to display</div>'
+        //     continue
+        // }
 
         // owner, name, activityScore, licenseScore, stars, contributors
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
