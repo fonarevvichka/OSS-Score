@@ -166,7 +166,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 						return combinedScore, depRatio, repoInfo.Status, "", err
 					}
 				} else if scoreType == "license" {
-					licenseMap, err := GetLicenseMap()
+					licenseMap, err := GetLicenseMap("./util/scores/licenseScores.txt")
 					if err != nil {
 						log.Println(err)
 						return combinedScore, depRatio, repoInfo.Status, "", err
@@ -242,11 +242,11 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 	return repo, nil
 }
 
-func GetLicenseMap() (map[string]int, error) {
+func GetLicenseMap(path string) (map[string]int, error) {
 	// Get License Score map
 	licenseMap := make(map[string]int)
 
-	licenseFile, err := os.Open("./util/scores/licenseScores.txt")
+	licenseFile, err := os.Open(path)
 
 	if err != nil {
 		return licenseMap, fmt.Errorf("os.Open: %v", err)

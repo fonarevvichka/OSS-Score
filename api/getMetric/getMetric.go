@@ -187,7 +187,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "repoLicenseScore":
-					licenseMap, err = util.GetLicenseMap()
+					licenseMap, err = util.GetLicenseMap("./util/scores/licenseScores.txt")
 					if err != nil {
 						message = "Error accessing license scoring file 1st"
 						break
@@ -197,7 +197,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "dependencyLicenseScore":
-					licenseMap, err = util.GetLicenseMap()
+					licenseMap, err = util.GetLicenseMap("./util/scores/licenseScores.txt")
 					if err != nil {
 						message = "Error accessing license scoring file"
 						break
@@ -212,7 +212,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					metricValue = score.Score
 					confidence = int(score.Confidence)
 				case "all":
-					licenseMap, err = util.GetLicenseMap()
+					licenseMap, err = util.GetLicenseMap("./util/scores/licenseScores.txt")
 					if err != nil {
 						message = "Error accessing license scoring file"
 						break
