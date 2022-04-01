@@ -154,6 +154,12 @@ paths:
             enum:
               - activity
               - license
+        - in: query
+          name: timeFrame
+          description: The time frame for which to query the metadata
+          required: false
+          schema:
+            type: integer
       responses:
         '200':
           description: Score for the repo
@@ -207,15 +213,23 @@ paths:
           schema:
             type: string
             enum:
-              - commitCadence
-              - releaseCadence
-              - releaseAge
-              - contributors
-              - issueClosureRate
-              - openIssues
-              - discussions
-              - forks
               - all
+              - stars
+              - releaseCadence
+              - ageLastRelease
+              - commitCadence
+              - contributors
+              - issueClosureTime
+              - repoActivityScore
+              - dependencyActivityScore
+              - repoLicenseScore
+              - dependencyLicenseScore
+        - in: query
+          name: timeFrame
+          description: The time frame for which to query the metadata
+          required: false
+          schema:
+            type: integer
       responses:
         '200':
           description: Requested metric for the repo
@@ -260,9 +274,9 @@ components:
     QueryModifier:
       type: object
       properties:
-        startPoint:
-          type: string
-          example: 2020-07-16T19:00:00Z
+        timeFrame:
+          type: integer
+          example: 12
     Wait:
       type: object
       required: 

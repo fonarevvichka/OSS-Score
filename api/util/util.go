@@ -98,8 +98,8 @@ func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, catalog st
 	} else { // NOT FOUND
 		return RepoInfo{
 			Catalog: catalog,
-			Owner: owner,
-			Name: name,
+			Owner:   owner,
+			Name:    name,
 		}, false, nil
 	}
 
@@ -161,12 +161,21 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 				if scoreType == "activity" {
 					repoScore = CalculateActivityScore(&repoInfo, startPoint)
 					depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repoInfo, startPoint)
-					log.Println(err)
+					if err != nil {
+						log.Println(err)
+						return combinedScore, depRatio, repoInfo.Status, "", err
+					}
 				} else if scoreType == "license" {
-					licenseMap := GetLicenseMap()
+					licenseMap, err := GetLicenseMap()
+					if err != nil {
+						log.Println(err)
+						return combinedScore, depRatio, repoInfo.Status, "", err
+					}
 					repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
 					depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repoInfo, licenseMap)
-					log.Println(err)
+					if err != nil {
+						return combinedScore, depRatio, repoInfo.Status, "", err
+					}
 				}
 				combinedScore = Score{
 					Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
@@ -221,7 +230,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 				log.Println(err)
 				return repo, err
 			}
-			
+
 			if repo.DataStartPoint.IsZero() || startPoint.Before(repo.DataStartPoint) {
 				repo.DataStartPoint = startPoint
 			}
@@ -233,14 +242,14 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 	return repo, nil
 }
 
-func GetLicenseMap() map[string]int {
+func GetLicenseMap() (map[string]int, error) {
 	// Get License Score map
 	licenseMap := make(map[string]int)
 
 	licenseFile, err := os.Open("./util/scores/licenseScores.txt")
 
 	if err != nil {
-		log.Fatalln(err)
+		return licenseMap, fmt.Errorf("os.Open: %v", err)
 	}
 
 	defer licenseFile.Close()
@@ -252,15 +261,15 @@ func GetLicenseMap() map[string]int {
 		values := strings.Split(line, ",")
 		score, err := strconv.Atoi(values[1])
 		if err != nil {
-			log.Fatalln(err)
+			return licenseMap, fmt.Errorf("strconv.Atoi: %v", err)
 		}
 		licenseMap[values[0]] = score
 	}
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		return licenseMap, fmt.Errorf("scanner.Scan(): %v", err)
 	}
 
-	return licenseMap
+	return licenseMap, nil
 }
 
 func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string, catalog string, owner string, name string) error {
@@ -324,7 +333,7 @@ func SetScoreState(ctx context.Context, collection *mongo.Collection, owner stri
 
 	_, err := collection.UpdateOne(ctx, filter, insertableData, &opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("collection.UpdateOne: %v", err)
 		return fmt.Errorf("collection.UpdateOne: %v", err)
 	}
 
@@ -341,7 +350,7 @@ func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 	}
 	_, err := collection.UpdateOne(ctx, filter, insertableData, &opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("collection.UpdateOne: %v", err)
 		return fmt.Errorf("collection.UpdateOne: %v", err)
 	}
 
