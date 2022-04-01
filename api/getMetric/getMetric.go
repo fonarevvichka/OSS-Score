@@ -18,7 +18,7 @@ import (
 type singleMetricRepsone struct {
 	Message    string  `json:"message"`
 	Metric     float64 `json:"metric"`
-	Confidence int     `json:"confidence"`
+	Confidence float64 `json:"confidence"`
 }
 
 type allMetricsResponse struct {
@@ -136,12 +136,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	}
 
 	var metricValue float64
-	var confidence int
+	var confidence float64
 	var message string
 
 	var allMetrics allMetricsResponse
 	var score util.Score
-	var licenseMap map[string]int
+	var licenseMap map[string]float64
 
 	if found { // match in DB
 		if repo.Status == 1 {
@@ -160,7 +160,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				switch metric {
 				case "stars":
 					metricValue = float64(repo.Stars)
-					confidence = 100
+					confidence = 100.0
 				case "releaseCadence":
 					_, metricValue, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
 				case "ageLastRelease":
@@ -176,7 +176,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "repoActivityScore":
 					score = util.CalculateActivityScore(&repo, startPoint)
 					metricValue = score.Score
-					confidence = int(score.Confidence)
+					confidence = score.Confidence
 				case "dependencyActivityScore":
 					score, _, err = util.CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
 					if err != nil {
@@ -185,9 +185,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					}
 
 					metricValue = score.Score
-					confidence = int(score.Confidence)
+					confidence = score.Confidence
 				case "repoLicenseScore":
-					licenseMap, err = util.GetLicenseMap("./util/scores/licenseScores.txt")
+					licenseMap, err = util.GetKeyValuePairs("./util/scores/licenseScores.txt")
 					if err != nil {
 						message = "Error accessing license scoring file 1st"
 						break
@@ -195,9 +195,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					score = util.CalculateLicenseScore(&repo, licenseMap)
 
 					metricValue = score.Score
-					confidence = int(score.Confidence)
+					confidence = score.Confidence
 				case "dependencyLicenseScore":
-					licenseMap, err = util.GetLicenseMap("./util/scores/licenseScores.txt")
+					licenseMap, err = util.GetKeyValuePairs("./util/scores/licenseScores.txt")
 					if err != nil {
 						message = "Error accessing license scoring file"
 						break
@@ -210,9 +210,9 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					}
 
 					metricValue = score.Score
-					confidence = int(score.Confidence)
+					confidence = score.Confidence
 				case "all":
-					licenseMap, err = util.GetLicenseMap("./util/scores/licenseScores.txt")
+					licenseMap, err = util.GetKeyValuePairs("./util/scores/licenseScores.txt")
 					if err != nil {
 						message = "Error accessing license scoring file"
 						break
@@ -258,7 +258,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 					score = util.CalculateActivityScore(&repo, startPoint)
 					metricValue = score.Score
-					confidence = int(score.Confidence)
+					confidence = score.Confidence
 					allMetrics.RepoActivityScore = singleMetricRepsone{
 						Metric:     metricValue,
 						Confidence: confidence,
@@ -270,7 +270,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						break
 					}
 					metricValue = score.Score
-					confidence = int(score.Confidence)
+					confidence = score.Confidence
 					allMetrics.DependencyActivityScore = singleMetricRepsone{
 						Metric:     metricValue,
 						Confidence: confidence,
@@ -278,7 +278,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 					score = util.CalculateLicenseScore(&repo, licenseMap)
 					metricValue = score.Score
-					confidence = int(score.Confidence)
+					confidence = score.Confidence
 					allMetrics.RepoLicenseScore = singleMetricRepsone{
 						Metric:     metricValue,
 						Confidence: confidence,
@@ -290,7 +290,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						break
 					}
 					metricValue = score.Score
-					confidence = int(score.Confidence)
+					confidence = score.Confidence
 					allMetrics.DependencyLicenseScore = singleMetricRepsone{
 						Metric:     metricValue,
 						Confidence: confidence,

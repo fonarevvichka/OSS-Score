@@ -6,7 +6,7 @@ import (
 )
 
 func TestValidateLicenseScores(t *testing.T) {
-	licenseMap, err := util.GetLicenseMap("../util/scores/licenseScores.txt")
+	licenseMap, err := util.GetKeyValuePairs("../util/scores/licenseScores.txt")
 
 	if err != nil {
 		t.Fatal(err.Error())

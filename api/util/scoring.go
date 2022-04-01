@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"log"
 	"math"
 	"sync"
 	"time"
@@ -12,7 +13,7 @@ import (
 // issues:
 // pull out all issues that are < X years old
 // of those closed issues calc avg issue closure time
-func ParseIssues(issues Issues, startPoint time.Time) (float64, int) {
+func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 	var totalClosureTime float64
 	var issueCounter float64 = 0
 	for _, closedIssue := range issues.ClosedIssues {
@@ -36,7 +37,7 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, int) {
 //NET: individual contributors and commit cadence, last commit
 
 // Return: commit cadence, contributors, confidence
-func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, int) {
+func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64) {
 	if len(commits) == 0 {
 		return 0, 0, 0
 	}
@@ -73,9 +74,8 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, int) {
 // pull out releases that are < X year old
 // releases / 12 = releases per month
 // NET: Last release age and release cadence
-func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.Time) (float64, float64, int) {
+func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.Time) (float64, float64, float64) {
 	if len(releases) == 0 {
-		// Decrease confidence score
 		return 10.0, 10.0, 0
 	}
 
@@ -98,15 +98,18 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 }
 
 func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
-	// Weights
-	commitWeight := 0.25
-	contributorWeight := 0.25
-	releaseWeight := 0.25
-	issueWeight := 0.25
+	categoryWeights, err := GetKeyValuePairs("./util/scores/categoryWeights.txt")
+	if err != nil {
+		// should make this return a tuple with an error
+		log.Println(err)
+	}
 
-	commitCadenceWeight := 1.0
-	ageLastReleaseWeight := 0.5
-	releaseCadenceWeight := 1 - ageLastReleaseWeight
+	// Weights
+	commitCadenceWeight := categoryWeights["commitCadence"]
+	contributorWeight := categoryWeights["contributors"]
+	releaseCadenceWeight := categoryWeights["releaseCadence"]
+	ageLastReleaseWeight := categoryWeights["ageLastRelease"]
+	issueClosureTimeWeight := categoryWeights["issueClosureRate"]
 
 	avgIssueClosureTime, issueConfidence := ParseIssues(repoInfo.Issues, startPoint)
 	commitCadence, contributors, commitConfidence := ParseCommits(repoInfo.Commits, startPoint)
@@ -119,18 +122,15 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	ageLastReleaseScore := 1 - minMaxScale(0, 26, ageLastRelease)
 	releaseCadenceScore := minMaxScale(0, 0.33, releaseCadence)
 
-	// Scores
-	commit_score := (commitCadenceWeight * commitCadenceScore) // + (ageLastCommitWeight * ageLastCommit)
-	contributer_score := contributorScore
-	release_score := (ageLastReleaseWeight * ageLastReleaseScore) + (releaseCadenceWeight * releaseCadenceScore)
-	issue_score := issueClosureTimeScore
+	score := (commitCadenceWeight * commitCadenceScore) +
+		(contributorWeight * contributorScore) +
+		(ageLastReleaseWeight * ageLastReleaseScore) +
+		(releaseCadenceWeight * releaseCadenceScore) +
+		(issueClosureTimeWeight * issueClosureTimeScore)
 
-	score := (commitWeight * commit_score) +
-		(contributorWeight * contributer_score) +
-		(releaseWeight * release_score) +
-		(issueWeight * issue_score)
-
-	confidence := ((contributorWeight + commitWeight) * float64(commitConfidence)) + (issueWeight * float64(issueConfidence)) + (releaseWeight * float64(releaseConfidence))
+	confidence := ((contributorWeight + commitCadenceWeight) * commitConfidence) +
+		(issueClosureTimeWeight * issueConfidence) +
+		((ageLastReleaseWeight + releaseCadenceWeight) * releaseConfidence)
 
 	repoScore := Score{
 		Score:      10 * score,
@@ -202,9 +202,9 @@ func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Col
 	}, depRatio, nil
 }
 
-func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score {
-	licenseScore := 0
-	confidence := 100
+func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]float64) Score {
+	licenseScore := 0.0
+	confidence := 100.0
 
 	license := repoInfo.License
 
@@ -217,14 +217,14 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]int) Score 
 	}
 
 	repoScore := Score{
-		Score:      float64(licenseScore),
-		Confidence: float64(confidence),
+		Score:      licenseScore,
+		Confidence: confidence,
 	}
 
 	return repoScore
 }
 
-func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]int) (Score, float64, error) {
+func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]float64) (Score, float64, error) {
 	if len(repoInfo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
@@ -235,7 +235,7 @@ func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Coll
 	var wg sync.WaitGroup
 	score := 0.0
 	confidence := 0.0
-	depsWithScores := 0
+	depsWithScores := 0.0
 
 	var repos []NameOwner
 	for _, dependency := range repoInfo.Dependencies {
@@ -265,14 +265,14 @@ func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Coll
 			depsWithScores++
 		}(dep)
 	}
-	totalDeps := len(repoInfo.Dependencies)
+	totalDeps := float64(len(repoInfo.Dependencies))
 
 	wg.Wait()
 
 	if depsWithScores != 0 {
 		score /= float64(depsWithScores)
-		confidence /= float64(depsWithScores)
-		confidence *= (float64(depsWithScores) / float64(totalDeps))
+		confidence /= depsWithScores
+		confidence *= (depsWithScores / totalDeps)
 	} else {
 		score = 10
 		confidence = 0
