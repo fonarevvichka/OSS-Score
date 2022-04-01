@@ -13,6 +13,16 @@ button {
     filter: brightness(115%);
   }
   
+  .requestScore-dark {
+    background-color: rgb(72, 72, 72);
+    color: rgba(201, 209, 217, 0.822);
+  }
+
+  .requestScore-light {
+    background-color: gray;
+    color: white(201, 209, 217, 0.822);
+  }
+  
   /* CSS FOR LOADING SVG */
   .loading-extension {
     height: 30%;
