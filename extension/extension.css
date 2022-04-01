@@ -1,5 +1,5 @@
 button {
-    background-color: rgb(33, 38, 45);
+    background-color: rgb(72, 72, 72);
     color: rgba(201, 209, 217, 0.822);
     padding: 5px 16px;
     border-radius: 7px !important;
@@ -9,8 +9,25 @@ button {
     border-width: 1px;
     border-style: solid;
   }
-  button:hover {
-    filter: brightness(115%);
+
+  .requestScore-dark {
+    background-color: #21262d;
+    color: #c9d1d9;
+    border-color: rbg(240, 246, 252, 0.1);
+    padding: 5px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+  }
+
+  .requestScore-light {
+    background-color: #f6f8fa;
+    color: #24292f;
+    border-color: rgba(27, 31, 36, 0.15);
+    padding: 5px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
   }
   
   /* CSS FOR LOADING SVG */
