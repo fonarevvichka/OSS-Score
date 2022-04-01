@@ -29,6 +29,11 @@ button {
     font-weight: 500;
     line-height: 20px;
   }
+
+  dot-extension {
+    padding: 0px 3px;
+    font-size: x-large;
+  }
   
   /* CSS FOR LOADING SVG */
   .loading-extension {
