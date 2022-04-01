@@ -1,6 +1,8 @@
+import React from 'react'
 import './DisplayScores.css';
 import './Homepage.css';
 import ReactTooltip from "react-tooltip";
+import ReactDOMServer from 'react-dom/server';
 
 
 const getMetricDisplay = (metricScore, barDisplay) => {
@@ -20,8 +22,9 @@ const getMetricContainer = (metricName, metric, barDisplay) => {
     if (metric.highlight) {
         // highlight score in green
         return '<div class="metric-container" style="color: green;">\n' +
-            //'<button class="tool-tip" data-tip data-for="metrictip">?</button>\n' +
-            //'<ReactTooltip id="metrictip" place="right" effect="solid">Tooltip for Repo</ReactTooltip>\n' +
+            '<button class="tool-tip" data-tip data-for="__react_component_tooltip tbc4455e2-8c91-4760-b33f-020704223d2b place-right type-dark">?</button>\n' +
+            ReactDOMServer.renderToString(<ReactTooltip id="__react_component_tooltip tbc4455e2-8c91-4760-b33f-020704223d2b place-right type-dark" place="right" effect="solid">Tooltip for Repo</ReactTooltip>) +
+            '<ReactTooltip id="repotip1" place="right" effect="solid">Tooltip for Repo</ReactTooltip>\n' +
             '<div class="metric-container-title">' + metricName + '</div>\n' +
             '<div class="metric">' + getMetricDisplay(metric.metric, barDisplay) + '</div>\n' +
             '<div class="confidence">Confidence: ' + metric.confidence + '</div>\n' +
@@ -160,6 +163,8 @@ const DisplayScores = (metrics) => {
         result += '<div class="metric-category">Activity Scores</div>'
         result += getMetricContainer('Issue Closure Time', metricsAll[i].issueClosureTime, true)
         result += getMetricContainer('Commit Cadence', metricsAll[i].commitCadence, true)
+        console.log(getMetricContainer('Commit Cadence', metricsAll[i].commitCadence, true))
+
 
         let releaseMetrics = [['Release Cadence', metricsAll[i].releaseCadence, true], ['Age of Last Release', metricsAll[i].ageLastRelease, true]]
 
