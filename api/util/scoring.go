@@ -164,7 +164,7 @@ func calculateCategoryScore(metric float64, confidence float64, scoreCategory Sc
 
 func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	// Scoring Info
-	categoryMap, err := GetActivityScoringData("./util/scores/categoryWeights.txt")
+	categoryMap, err := GetActivityScoringData("./util/scores/activityScoring.csv")
 	if err != nil {
 		// should make this return a tuple with an error
 		log.Println(err)
@@ -183,10 +183,15 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 
 	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
 	commitCadenceScore, commitCadenceConfidence := calculateCategoryScore(commitCadence, commitConfidence, commitCadenceInfo)
+	log.Println(commitCadenceScore / commitCadenceInfo.Weight)
 	issueClosureTimeScore, issueClosureTimeConfidence := calculateCategoryScore(avgIssueClosureTime, issueConfidence, issueClosureTimeInfo)
+	log.Println(issueClosureTimeScore / issueClosureTimeInfo.Weight)
 	contributorScore, contributorConfidence := calculateCategoryScore(float64(contributors), commitConfidence, contributorInfo)
+	log.Println(contributorScore / contributorInfo.Weight)
 	ageLastReleaseScore, ageLastReleaseConfidence := calculateCategoryScore(ageLastRelease, releaseConfidence, ageLastReleaseInfo)
+	log.Println(ageLastReleaseScore / ageLastReleaseInfo.Weight)
 	releaseCadenceScore, releaseCadenceConfidence := calculateCategoryScore(releaseCadence, releaseConfidence, releaseCadenceInfo)
+	log.Println(releaseCadenceScore / releaseCadenceInfo.Weight)
 
 	score := commitCadenceScore + contributorScore + ageLastReleaseScore + releaseCadenceScore + issueClosureTimeScore
 	confidence := commitCadenceConfidence + issueClosureTimeConfidence + contributorConfidence + ageLastReleaseConfidence + releaseCadenceConfidence
@@ -195,7 +200,7 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 		Score:      10 * score,
 		Confidence: confidence,
 	}
-
+	// log.Println(repo)
 	return repoScore
 }
 
