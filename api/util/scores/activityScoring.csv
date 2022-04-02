@@ -1,5 +1,5 @@
-issueClosureRate,0.25,0,10
-commitCadence,0.25,0,0.33
-contributors,0.25,0,0.123
-ageLastRelease,0.125,0,100
-releaseCadence,0.125,0,200
+issueClosureRate,0.25,0,176
+commitCadence,0.25,0,2
+contributors,0.25,0,10
+ageLastRelease,0.125,0,26
+releaseCadence,0.125,0,0.33
