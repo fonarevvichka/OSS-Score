@@ -173,8 +173,10 @@ export default function Home(props) {
                     return [owner, repo, metrics];
                 }
             } else if (response.status === 406) {
+                alert("At least one of the repositories entered is private or does not exist")
                 console.error("Repository entered does not exist")
             } else {
+                alert("Error connecting to OSS-Score API")
                 console.error("Error connecting to OSS-Score API")
             }
         } catch (error) {
