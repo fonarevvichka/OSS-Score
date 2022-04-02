@@ -12,18 +12,41 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetActivityScoringData(path string) error {
+func GetActivityScoringData(path string) (map[string]ScoreCategroy, error) {
+	categoryMap := make(map[string]ScoreCategroy)
+
 	data, err := readCsv(path)
 
 	if err != nil {
-		return fmt.Errorf("GetActivityScoringData: %v", err)
+		return categoryMap, fmt.Errorf("GetActivityScoringData: %v", err)
 	}
 
-	for _, val := range data {
-		fmt.Println(val)
+	for _, vals := range data {
+		category := vals[0]
+
+		weight, err := strconv.ParseFloat(vals[1], 64)
+		if err != nil {
+			return categoryMap, fmt.Errorf("weight: strconv.Parsefloat: %v", err)
+		}
+		min, err := strconv.ParseFloat(vals[2], 64)
+
+		if err != nil {
+			return categoryMap, fmt.Errorf("min: strconv.Parsefloat: %v", err)
+		}
+
+		max, err := strconv.ParseFloat(vals[3], 64)
+		if err != nil {
+			return categoryMap, fmt.Errorf("max:strconv.Parsefloat: %v", err)
+		}
+
+		categoryMap[category] = ScoreCategroy{
+			Weight: weight,
+			Min:    min,
+			Max:    max,
+		}
 	}
 
-	return nil
+	return categoryMap, nil
 }
 
 func GetLicenseMap(path string) (map[string]float64, error) {

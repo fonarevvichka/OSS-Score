@@ -19,9 +19,21 @@ func TestValidatelicenseScoring(t *testing.T) {
 }
 
 func TestValidateCategoryWeights(t *testing.T) {
-	err := util.GetActivityScoringData("../util/scores/activityScoring.csv")
+	categoryMap, err := util.GetActivityScoringData("../util/scores/activityScoring.csv")
 
 	if err != nil {
 		t.Fatal(err.Error())
+	}
+
+	weightSum := 0.0
+	for _, category := range categoryMap {
+		weightSum += category.Weight
+		if category.Max < category.Min {
+			t.Fatal("Max lower than min")
+		}
+	}
+
+	if weightSum != 1 {
+		t.Fatal("Total weights do not sum to 1")
 	}
 }
