@@ -188,15 +188,10 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 
 	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
 	commitCadenceScore, commitCadenceConfidence := calculateCategoryScore(commitCadence, commitConfidence, commitCadenceInfo, false)
-	log.Println(commitCadenceScore / commitCadenceInfo.Weight)
 	issueClosureTimeScore, issueClosureTimeConfidence := calculateCategoryScore(avgIssueClosureTime, issueConfidence, issueClosureTimeInfo, true)
-	log.Println(issueClosureTimeScore / issueClosureTimeInfo.Weight)
 	contributorScore, contributorConfidence := calculateCategoryScore(float64(contributors), commitConfidence, contributorInfo, false)
-	log.Println(contributorScore / contributorInfo.Weight)
 	ageLastReleaseScore, ageLastReleaseConfidence := calculateCategoryScore(ageLastRelease, releaseConfidence, ageLastReleaseInfo, true)
-	log.Println(ageLastReleaseScore / ageLastReleaseInfo.Weight)
 	releaseCadenceScore, releaseCadenceConfidence := calculateCategoryScore(releaseCadence, releaseConfidence, releaseCadenceInfo, false)
-	log.Println(releaseCadenceScore / releaseCadenceInfo.Weight)
 
 	score := commitCadenceScore + contributorScore + ageLastReleaseScore + releaseCadenceScore + issueClosureTimeScore
 	confidence := commitCadenceConfidence + issueClosureTimeConfidence + contributorConfidence + ageLastReleaseConfidence + releaseCadenceConfidence
