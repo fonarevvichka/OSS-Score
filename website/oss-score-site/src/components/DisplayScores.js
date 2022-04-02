@@ -1,28 +1,41 @@
 import React from 'react'
 import './DisplayScores.css';
 import './Homepage.css';
-import ReactTooltip from "react-tooltip";
-import ReactDOMServer from 'react-dom/server';
-import Tippy from '@tippyjs/react';
-import 'tippy.js/dist/tippy.css'; // optional
 
 // note: For stats where lower numbers are better, min and max are switched
 let MetricStats = {
+
+    "Activity Score-tooltip": "Overall activity score based on github metadata",
+
+    "License Score-tooltip": "Direct mapping based on the license of the repo",
+
+    "Stars-tooltip": "The number of stars gazers for the repository",
+
+    "Contributors-tooltip": "The number of unique users who have contributed to the project over the given query time frame",
+
+    "Dependency Activity Score-tooltip": "Overall activity score based on github metadata for project dependencies",
+
+    "Dependency License Score-tooltip": "Direct mapping based on the licenses of the dependencies",
+
     "Issue Closure Time-min": 176,
     "Issue Closure Time-max": 0,
     "Issue Closure Time-units": "days",
+    "Issue Closure Time-tooltip": "Average time for an issue in the project to be closed. NOTE: This is only calculated based on the closed issues",
 
     "Commit Cadence-min": 0,
     "Commit Cadence-max": 2,
     "Commit Cadence-units": "commits/week",
+    "Commit Cadence-tooltip": "Average pace of commits in the project. Total number of commits divided by the query time frame",
 
     "Release Cadence-min": 0,
     "Release Cadence-max": 0.33,
     "Release Cadence-units": "releases/month",
+    "Release Cadence-tooltip": "Average pace of releases in the project. Total number of releases divided by the query time frame",
 
     "Age of Last Release-min": 26,
     "Age of Last Release-max": 0,
     "Age of Last Release-units": "weeks",
+    "Age of Last Release-tooltip": "Time since the last release release",
 }
 
 
@@ -37,11 +50,17 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
     
     if (metricScore.highlight) {
         result += '<div class="metric-container" style="background-color: #b0c4de;">\n' +
+        '<div class="tool-tip">i\n' + 
+        '<span class="tooltiptext">' + MetricStats[metricName+"-tooltip"] + '</span>\n' +
+        '</div>\n' +
         '<div class="metric-container-title">' + metricName + '</div>\n' +
         '<div class="metrics">' 
 
     } else {
         result += '<div class="metric-container" style="background-color: #d3d3d3;">\n' +
+            '<div class="tool-tip">i\n' +
+            '<span class="tooltiptext">' + MetricStats[metricName+"-tooltip"] + '</span>\n' +
+            '</div>\n' +
             '<div class="metric-container-title">' + metricName + '</div>\n' +
             '<div class="metrics">'
     }
@@ -98,7 +117,7 @@ const getMetricContainerWSubContainers = (metricName, subMetrics) => {
     for (let i = 0; i < subMetrics.length; i++) {
         subcontainers += '<div class="submetric-container">\n' + getMetricDisplay(subMetrics[i][1], subMetrics[i][0], subMetrics[i][2], false)  + '</div>'
     }
-    
+
     return '<div class="metric-container">\n' +
         '<div class="metric-container-title">' + metricName + '</div>' + subcontainers + '</div>'
 }

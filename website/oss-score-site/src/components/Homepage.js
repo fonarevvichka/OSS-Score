@@ -4,9 +4,6 @@
 import React, {useState} from 'react'
 import './Homepage.css';
 import DisplayScores from './DisplayScores.js';
-import ReactTooltip from "react-tooltip";
-import Tippy from '@tippyjs/react';
-import 'tippy.js/dist/tippy.css'; // optional
 
 /* functional component for homepage */
 export default function Home(props) {
@@ -264,22 +261,22 @@ export default function Home(props) {
                         <label htmlFor="search1" >Link to Github repo #1</label><br></br>
                         <input key="search1" id="search1" name="search1" type="text" placeholder="Search Repo 1" onClick={() => document.getElementById('search1').style.borderColor = '#000000'}
                             onChange={handleChange("1")} value={inputs.search1}/>
-                        {/*<button class="tool-tip" data-tip data-for="repotip1">?</button>
-                        <ReactTooltip id="repotip1" place="top" effect="solid">Tooltip for Repo</ReactTooltip>*/}
-                        <Tippy content="Tooltip for Repo 1">
-                            <button type="button" class="tool-tip">?</button>
-                        </Tippy>
+                        <div class="tool-tip">i
+                            <span class="tooltiptext" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
+                                <div>owner/name</div><div>github.com/owner/name</div><div>https://github.com/owner/name</div>
+                            </span>
+                        </div>
                         <div class="error-message" id="error-message1" name="error-message1">Please enter a valid Github URL</div>
                     </div>
                     <div>
                         <label htmlFor="search2" >Link to Github repo #2</label><br></br>
                         <input key="search2" id="search2" name="search2" type="text" placeholder="Search Repo 2" onClick={() => document.getElementById('search2').style.borderColor = '#000000'}
                             onChange = {handleChange("2")} value={inputs.search2} />
-                        {/*<button class="tool-tip" data-tip data-for="repotip2">?</button>
-                        <ReactTooltip id="repotip2" place="right" effect="solid">Tooltip for Repo</ReactTooltip>*/}
-                        <Tippy content="Tooltip for Repo 2">
-                            <button type="button" class="tool-tip">?</button>
-                        </Tippy>
+                        <div class="tool-tip">i
+                             <span class="tooltiptext" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
+                                <div>owner/name</div><div>github.com/owner/name</div><div>https://github.com/owner/name</div>
+                            </span>
+                        </div>
                         <div class="error-message" id="error-message2" name="error-message2">Please enter a valid Github URL</div>
                     </div>
                 </div>
