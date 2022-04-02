@@ -272,3 +272,79 @@ label {
       from {transform: rotate(359deg);}
       to   {transform: rotate(0deg);}
   }
+
+
+
+
+/* Bar display */
+
+/* '<div class="bar-display"><div class="bar"></div><div class="pointer"></div></div>' */
+
+.bar-display {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding-top: 2%;
+    padding-bottom: 2%;
+    align-items: center;
+    width:50%;
+    /* position: relative; */
+    /* float:s; */
+}
+
+.bar-display div {
+    grid-row-start: 1;
+    grid-column-start: 1;
+}
+
+
+.bar {
+    justify-content: center;
+    grid-row: 1/3;
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 20px;
+    border-radius: 5px;
+    width: 101%;
+    /* position: absolute; */
+    /* left: 0; */
+    /* right: 0; */
+
+    background-image:
+        linear-gradient(
+        to right, 
+        red, 
+        rgb(255, 255, 0), 
+        green
+        );
+}
+
+.pointer {
+    /* margin: auto; */
+    margin-top: auto;
+    margin-bottom: auto;
+    grid-row: 2/3;
+    height: 120%;
+    width: 5px;
+    background-color: darkslategrey;
+    position: relative;
+    top: -10%;
+    border-radius: 5px;
+}
+
+.low {
+    position: relative;
+    float:left;
+    padding-left: 5%;
+    top: -20%;
+}
+
+.high {
+    position: relative;
+    float:right;
+    padding-right: 5%;
+    top: -20%;
+}
+
+.metric-confidence {
+    grid-row: 2/3;
+}
