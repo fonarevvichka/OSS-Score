@@ -12,8 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetActivityScoringData(path string) (map[string]ScoreCategroy, error) {
-	categoryMap := make(map[string]ScoreCategroy)
+func GetActivityScoringData(path string) (map[string]ScoreCategory, error) {
+	categoryMap := make(map[string]ScoreCategory)
 
 	data, err := readCsv(path)
 
@@ -39,7 +39,7 @@ func GetActivityScoringData(path string) (map[string]ScoreCategroy, error) {
 			return categoryMap, fmt.Errorf("max:strconv.Parsefloat: %v", err)
 		}
 
-		categoryMap[category] = ScoreCategroy{
+		categoryMap[category] = ScoreCategory{
 			Weight: weight,
 			Min:    min,
 			Max:    max,
@@ -157,9 +157,14 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 }
 
 // Metric Score, Metric Confidence
-func calculateCategoryScore(metric float64, confidence float64, scoreCategory ScoreCategroy) (float64, float64) {
-	return scoreCategory.Weight * (minMaxScale(scoreCategory.Min, scoreCategory.Max, metric)),
-		scoreCategory.Weight * confidence
+func calculateCategoryScore(metric float64, confidence float64, scoreCategory ScoreCategory, inverse bool) (float64, float64) {
+	score := minMaxScale(scoreCategory.Min, scoreCategory.Max, metric)
+
+	if inverse {
+		score = 1 - score
+	}
+
+	return scoreCategory.Weight * score, scoreCategory.Weight * confidence
 }
 
 func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
@@ -182,15 +187,15 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repoInfo.Releases, repoInfo.LatestRelease, startPoint)
 
 	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
-	commitCadenceScore, commitCadenceConfidence := calculateCategoryScore(commitCadence, commitConfidence, commitCadenceInfo)
+	commitCadenceScore, commitCadenceConfidence := calculateCategoryScore(commitCadence, commitConfidence, commitCadenceInfo, false)
 	log.Println(commitCadenceScore / commitCadenceInfo.Weight)
-	issueClosureTimeScore, issueClosureTimeConfidence := calculateCategoryScore(avgIssueClosureTime, issueConfidence, issueClosureTimeInfo)
+	issueClosureTimeScore, issueClosureTimeConfidence := calculateCategoryScore(avgIssueClosureTime, issueConfidence, issueClosureTimeInfo, true)
 	log.Println(issueClosureTimeScore / issueClosureTimeInfo.Weight)
-	contributorScore, contributorConfidence := calculateCategoryScore(float64(contributors), commitConfidence, contributorInfo)
+	contributorScore, contributorConfidence := calculateCategoryScore(float64(contributors), commitConfidence, contributorInfo, false)
 	log.Println(contributorScore / contributorInfo.Weight)
-	ageLastReleaseScore, ageLastReleaseConfidence := calculateCategoryScore(ageLastRelease, releaseConfidence, ageLastReleaseInfo)
+	ageLastReleaseScore, ageLastReleaseConfidence := calculateCategoryScore(ageLastRelease, releaseConfidence, ageLastReleaseInfo, true)
 	log.Println(ageLastReleaseScore / ageLastReleaseInfo.Weight)
-	releaseCadenceScore, releaseCadenceConfidence := calculateCategoryScore(releaseCadence, releaseConfidence, releaseCadenceInfo)
+	releaseCadenceScore, releaseCadenceConfidence := calculateCategoryScore(releaseCadence, releaseConfidence, releaseCadenceInfo, false)
 	log.Println(releaseCadenceScore / releaseCadenceInfo.Weight)
 
 	score := commitCadenceScore + contributorScore + ageLastReleaseScore + releaseCadenceScore + issueClosureTimeScore
