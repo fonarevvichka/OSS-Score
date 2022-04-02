@@ -156,40 +156,40 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 	return math.Min((val-min)/(max-min), 1)
 }
 
+// Metric Score, Metric Confidence
+func calculateCategoryScore(metric float64, confidence float64, scoreCategory ScoreCategroy) (float64, float64) {
+	return scoreCategory.Weight * (minMaxScale(scoreCategory.Min, scoreCategory.Max, metric)),
+		scoreCategory.Weight * confidence
+}
+
 func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
-	categoryWeights, err := GetLicenseMap("./util/scores/categoryWeights.txt")
+	// Scoring Info
+	categoryMap, err := GetActivityScoringData("./util/scores/categoryWeights.txt")
 	if err != nil {
 		// should make this return a tuple with an error
 		log.Println(err)
 	}
 
-	// Weights
-	commitCadenceWeight := categoryWeights["commitCadence"]
-	contributorWeight := categoryWeights["contributors"]
-	releaseCadenceWeight := categoryWeights["releaseCadence"]
-	ageLastReleaseWeight := categoryWeights["ageLastRelease"]
-	issueClosureTimeWeight := categoryWeights["issueClosureRate"]
+	commitCadenceInfo := categoryMap["commitCadence"]
+	issueClosureTimeInfo := categoryMap["issueClosureRate"]
+	contributorInfo := categoryMap["contributors"]
+	ageLastReleaseInfo := categoryMap["ageLastRelease"]
+	releaseCadenceInfo := categoryMap["releaseCadence"]
 
+	// Parse data
 	avgIssueClosureTime, issueConfidence := ParseIssues(repoInfo.Issues, startPoint)
 	commitCadence, contributors, commitConfidence := ParseCommits(repoInfo.Commits, startPoint)
 	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repoInfo.Releases, repoInfo.LatestRelease, startPoint)
 
 	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
-	issueClosureTimeScore := 1 - minMaxScale(0, 176, avgIssueClosureTime)
-	commitCadenceScore := minMaxScale(0, 2, commitCadence)
-	contributorScore := minMaxScale(0, 10, float64(contributors))
-	ageLastReleaseScore := 1 - minMaxScale(0, 26, ageLastRelease)
-	releaseCadenceScore := minMaxScale(0, 0.33, releaseCadence)
+	commitCadenceScore, commitCadenceConfidence := calculateCategoryScore(commitCadence, commitConfidence, commitCadenceInfo)
+	issueClosureTimeScore, issueClosureTimeConfidence := calculateCategoryScore(avgIssueClosureTime, issueConfidence, issueClosureTimeInfo)
+	contributorScore, contributorConfidence := calculateCategoryScore(float64(contributors), commitConfidence, contributorInfo)
+	ageLastReleaseScore, ageLastReleaseConfidence := calculateCategoryScore(ageLastRelease, releaseConfidence, ageLastReleaseInfo)
+	releaseCadenceScore, releaseCadenceConfidence := calculateCategoryScore(releaseCadence, releaseConfidence, releaseCadenceInfo)
 
-	score := (commitCadenceWeight * commitCadenceScore) +
-		(contributorWeight * contributorScore) +
-		(ageLastReleaseWeight * ageLastReleaseScore) +
-		(releaseCadenceWeight * releaseCadenceScore) +
-		(issueClosureTimeWeight * issueClosureTimeScore)
-
-	confidence := ((contributorWeight + commitCadenceWeight) * commitConfidence) +
-		(issueClosureTimeWeight * issueConfidence) +
-		((ageLastReleaseWeight + releaseCadenceWeight) * releaseConfidence)
+	score := commitCadenceScore + contributorScore + ageLastReleaseScore + releaseCadenceScore + issueClosureTimeScore
+	confidence := commitCadenceConfidence + issueClosureTimeConfidence + contributorConfidence + ageLastReleaseConfidence + releaseCadenceConfidence
 
 	repoScore := Score{
 		Score:      10 * score,
