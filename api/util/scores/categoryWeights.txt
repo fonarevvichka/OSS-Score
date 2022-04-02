@@ -1,5 +1,0 @@
-issueClosureRate, .25
-commitCadence, .25
-contributors, .25
-ageLastRelease, 0.125
-releaseCadence, 0.125

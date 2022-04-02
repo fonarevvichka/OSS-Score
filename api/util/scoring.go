@@ -2,13 +2,49 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math"
+	"strconv"
 	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+func GetActivityScoringData(path string) error {
+	data, err := readCsv(path)
+
+	if err != nil {
+		return fmt.Errorf("GetActivityScoringData: %v", err)
+	}
+
+	for _, val := range data {
+		fmt.Println(val)
+	}
+
+	return nil
+}
+
+func GetLicenseMap(path string) (map[string]float64, error) {
+	data, err := readCsv(path)
+	licenseMap := make(map[string]float64)
+
+	if err != nil {
+		return licenseMap, fmt.Errorf("GetLicenseMap: %v", err)
+	}
+
+	for _, vals := range data {
+		name := vals[0]
+		score, err := strconv.ParseFloat(vals[1], 64)
+		if err != nil {
+			return licenseMap, fmt.Errorf("strconv.ParseFloat: %v", err)
+		}
+		licenseMap[name] = score
+	}
+
+	return licenseMap, nil
+}
 
 // issues:
 // pull out all issues that are < X years old
@@ -98,7 +134,7 @@ func minMaxScale(min float64, max float64, val float64) float64 {
 }
 
 func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
-	categoryWeights, err := GetKeyValuePairs("./util/scores/categoryWeights.txt")
+	categoryWeights, err := GetLicenseMap("./util/scores/categoryWeights.txt")
 	if err != nil {
 		// should make this return a tuple with an error
 		log.Println(err)

@@ -232,3 +232,9 @@ type GitRestBody struct {
 type ScoreRequestBody struct {
 	TimeFrame int `json:"timeFrame"`
 }
+
+type ScoreCategroy struct {
+	Min    float64
+	Max    float64
+	Weight float64
+}

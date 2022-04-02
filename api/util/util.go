@@ -1,13 +1,12 @@
 package util
 
 import (
-	"bufio"
 	"context"
+	"encoding/csv"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -166,7 +165,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 						return combinedScore, depRatio, repoInfo.Status, "", err
 					}
 				} else if scoreType == "license" {
-					licenseMap, err := GetKeyValuePairs("./util/scores/licenseScores.txt")
+					licenseMap, err := GetLicenseMap("./util/scores/licenseScoring.csv")
 					if err != nil {
 						log.Println(err)
 						return combinedScore, depRatio, repoInfo.Status, "", err
@@ -240,36 +239,6 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 
 	repo.UpdatedAt = time.Now()
 	return repo, nil
-}
-
-func GetKeyValuePairs(path string) (map[string]float64, error) {
-	// Get License Score map
-	licenseMap := make(map[string]float64)
-
-	licenseFile, err := os.Open(path)
-
-	if err != nil {
-		return licenseMap, fmt.Errorf("os.Open: %v", err)
-	}
-
-	defer licenseFile.Close()
-
-	scanner := bufio.NewScanner(licenseFile)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		values := strings.Split(line, ",")
-		score, err := strconv.ParseFloat(values[1], 64)
-		if err != nil {
-			return licenseMap, fmt.Errorf("strconv.ParseFloat: %v", err)
-		}
-		licenseMap[values[0]] = score
-	}
-	if err := scanner.Err(); err != nil {
-		return licenseMap, fmt.Errorf("scanner.Scan(): %v", err)
-	}
-
-	return licenseMap, nil
 }
 
 func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string, catalog string, owner string, name string) error {
@@ -414,4 +383,21 @@ func dependencyInSlice(dependency Dependency, dependencies []Dependency) bool {
 		}
 	}
 	return false
+}
+
+func readCsv(path string) (data [][]string, err error) {
+	file, err := os.Open(path)
+
+	if err != nil {
+		return data, fmt.Errorf("os.Open: %v", err)
+	}
+	defer file.Close()
+
+	csvReader := csv.NewReader(file)
+	data, err = csvReader.ReadAll()
+	if err != nil {
+		return data, fmt.Errorf("csv.ReadAll: %v", err)
+	}
+
+	return data, err
 }
