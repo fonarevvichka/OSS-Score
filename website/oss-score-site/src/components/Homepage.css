@@ -1,7 +1,9 @@
 header {
+
     font-size: 30px;
     text-align: center;
     padding: 6px;
+    color: white;
     /* background: #5B4693; */
 }
 
@@ -12,9 +14,15 @@ header {
 /*** form css ***/
 
 #search1, #search2 {
+    background-color: #e6e6e6;
+
     border-style: solid;
     border-width: 1.5px;
     border-color: #000000
+}
+
+::placeholder {
+    color: #666666;
 }
 
 .searchbar {
@@ -24,6 +32,7 @@ header {
 }
 
 .searchbar > div {
+    margin-top: 10px;
     padding: 30px;
 }
 
