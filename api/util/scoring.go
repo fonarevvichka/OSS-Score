@@ -220,9 +220,8 @@ func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Col
 	var repos []NameOwner
 	for _, dependency := range repoInfo.Dependencies {
 		repos = append(repos, NameOwner{
-			Catalog: dependency.Catalog,
-			Owner:   dependency.Owner,
-			Name:    dependency.Name,
+			Owner: dependency.Owner,
+			Name:  dependency.Name,
 		})
 	}
 
