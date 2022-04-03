@@ -220,8 +220,9 @@ type Score struct {
 }
 
 type NameOwner struct {
-	Owner string
-	Name  string
+	Catalog string
+	Owner   string
+	Name    string
 }
 
 type GitRestBody struct {

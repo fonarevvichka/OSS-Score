@@ -53,12 +53,13 @@ func GetMongoClient(ctx context.Context) (*mongo.Client, bool, error) {
 	return mongoClient, true, nil
 }
 
-func getRepoFilter(owner string, name string) bson.D {
+func getRepoFilter(catalog string, owner string, name string) bson.D {
 	return bson.D{
 		{Key: "$and",
 			Value: bson.A{
 				bson.M{"owner": owner},
 				bson.M{"name": name},
+				bson.M{"catalog": catalog},
 			}},
 	}
 }
@@ -71,6 +72,7 @@ func getManyRepoFilter(repos []NameOwner) bson.M {
 				Value: bson.A{
 					bson.M{"owner": repo.Owner},
 					bson.M{"name": repo.Name},
+					bson.M{"catalog": repo.Catalog},
 				}},
 		}
 
@@ -85,7 +87,7 @@ func GetRepoFromDB(ctx context.Context, collection *mongo.Collection, catalog st
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	res := collection.FindOne(ctx, getRepoFilter(owner, name))
+	res := collection.FindOne(ctx, getRepoFilter(catalog, owner, name))
 
 	if res.Err() != mongo.ErrNoDocuments { // FOUND REPO
 		err := res.Decode(&repo)
@@ -291,9 +293,9 @@ func QueryProject(ctx context.Context, collection *mongo.Collection, catalog str
 	return repo, err
 }
 
-func SetScoreState(ctx context.Context, collection *mongo.Collection, owner string, name string, status int) error {
+func SetScoreState(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, status int) error {
 	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status}}} //catalog being left null here
-	filter := getRepoFilter(owner, name)
+	filter := getRepoFilter(catalog, owner, name)
 	upsert := true
 
 	opts := options.UpdateOptions{
@@ -311,7 +313,7 @@ func SetScoreState(ctx context.Context, collection *mongo.Collection, owner stri
 
 func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo RepoInfo) error {
 	insertableData := bson.D{primitive.E{Key: "$set", Value: repo}}
-	filter := getRepoFilter(repo.Owner, repo.Name)
+	filter := getRepoFilter(repo.Catalog, repo.Owner, repo.Name)
 	upsert := true
 
 	opts := options.UpdateOptions{
