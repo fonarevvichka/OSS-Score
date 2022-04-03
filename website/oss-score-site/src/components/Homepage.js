@@ -253,6 +253,7 @@ export default function Home(props) {
 
     return (
         <div className="Home">
+            <div className="logo"></div>
             {/*<img src="../images/logo1.png" alt="OSS-SCORE"></img>*/}
             <header>OSS-SCORE</header>
             <form onSubmit={handleSubmit}>
