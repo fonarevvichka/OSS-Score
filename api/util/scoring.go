@@ -84,7 +84,7 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 	if issueCounter == 0 {
 		return 0, 100
 	}
-	
+
 	return (totalClosureTime / 24.0) / issueCounter, 100
 }
 
@@ -135,7 +135,7 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64
 // NET: Last release age and release cadence
 func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.Time) (float64, float64, float64) {
 	if len(releases) == 0 {
-		return 0, 0, 100 
+		return 0, 0, 100
 	}
 
 	var releaseCounter float64
