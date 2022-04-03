@@ -291,8 +291,9 @@ func QueryProject(ctx context.Context, collection *mongo.Collection, catalog str
 	return repo, err
 }
 
-func SetScoreState(ctx context.Context, collection *mongo.Collection, owner string, name string, status int) error {
-	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status}}} //catalog being left null here
+func SetScoreState(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, status int) error {
+	// setting catalog here to be safe in case of upsert
+	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status, "catalog": catalog}}}
 	filter := getRepoFilter(owner, name)
 	upsert := true
 

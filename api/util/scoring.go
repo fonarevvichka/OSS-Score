@@ -82,9 +82,9 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 		}
 	}
 	if issueCounter == 0 {
-		// here we want to add some confidence score stuff
-		return 0, 0
+		return 0, 100
 	}
+
 	return (totalClosureTime / 24.0) / issueCounter, 100
 }
 
@@ -98,7 +98,7 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 // Return: commit cadence, contributors, confidence
 func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64) {
 	if len(commits) == 0 {
-		return 0, 0, 0
+		return 0, 0, 100
 	}
 
 	var totalCommits float64
@@ -119,7 +119,7 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64
 	}
 
 	if totalCommits == 0 {
-		return 0, 0, 0
+		return 0, 0, 100
 	}
 
 	// time since start point converted to weeks
@@ -135,7 +135,7 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64
 // NET: Last release age and release cadence
 func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.Time) (float64, float64, float64) {
 	if len(releases) == 0 {
-		return 10.0, 10.0, 0
+		return 0, 0, 100
 	}
 
 	var releaseCounter float64
