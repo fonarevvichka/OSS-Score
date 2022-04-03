@@ -1,14 +1,16 @@
 import React from 'react'
 import { Navbar, Container, Nav} from 'react-bootstrap'
+import './Navigation.css';
 
 import './Navigation.css';
 
 const Navigation = () => {
     return (
         <>
-            <Navbar expand="lg" bg="primary" variant="dark">
+            <Navbar className='navigation-bar' expand="lg" variant="dark">
                 <Container>
-                    <Nav className="ml-auto">
+                <Navbar.Brand href="/">OSS-Score</Navbar.Brand>
+                    <Nav className="me-auto ml-0">
                         <Nav.Link class="nav-home" href="/">Home</Nav.Link>
                         <Nav.Link class="nav-link" href="/about">About</Nav.Link>
                         <Nav.Link class="nav-link" href="/extension">Extension</Nav.Link>
