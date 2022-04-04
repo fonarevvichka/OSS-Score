@@ -1,13 +1,12 @@
 package util
 
 import (
-	"bufio"
 	"context"
+	"encoding/csv"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -166,7 +165,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 						return combinedScore, depRatio, repoInfo.Status, "", err
 					}
 				} else if scoreType == "license" {
-					licenseMap, err := GetLicenseMap()
+					licenseMap, err := GetLicenseMap("./util/scores/licenseScoring.csv")
 					if err != nil {
 						log.Println(err)
 						return combinedScore, depRatio, repoInfo.Status, "", err
@@ -242,36 +241,6 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 	return repo, nil
 }
 
-func GetLicenseMap() (map[string]int, error) {
-	// Get License Score map
-	licenseMap := make(map[string]int)
-
-	licenseFile, err := os.Open("./util/scores/licenseScores.txt")
-
-	if err != nil {
-		return licenseMap, fmt.Errorf("os.Open: %v", err)
-	}
-
-	defer licenseFile.Close()
-
-	scanner := bufio.NewScanner(licenseFile)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		values := strings.Split(line, ",")
-		score, err := strconv.Atoi(values[1])
-		if err != nil {
-			return licenseMap, fmt.Errorf("strconv.Atoi: %v", err)
-		}
-		licenseMap[values[0]] = score
-	}
-	if err := scanner.Err(); err != nil {
-		return licenseMap, fmt.Errorf("scanner.Scan(): %v", err)
-	}
-
-	return licenseMap, nil
-}
-
 func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string, catalog string, owner string, name string) error {
 	timeFrame := "12"
 
@@ -322,8 +291,9 @@ func QueryProject(ctx context.Context, collection *mongo.Collection, catalog str
 	return repo, err
 }
 
-func SetScoreState(ctx context.Context, collection *mongo.Collection, owner string, name string, status int) error {
-	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status}}} //catalog being left null here
+func SetScoreState(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, status int) error {
+	// setting catalog here to be safe in case of upsert
+	insertableData := bson.D{primitive.E{Key: "$set", Value: bson.M{"status": status, "catalog": catalog}}}
 	filter := getRepoFilter(owner, name)
 	upsert := true
 
@@ -414,4 +384,21 @@ func dependencyInSlice(dependency Dependency, dependencies []Dependency) bool {
 		}
 	}
 	return false
+}
+
+func readCsv(path string) (data [][]string, err error) {
+	file, err := os.Open(path)
+
+	if err != nil {
+		return data, fmt.Errorf("os.Open: %v", err)
+	}
+	defer file.Close()
+
+	csvReader := csv.NewReader(file)
+	data, err = csvReader.ReadAll()
+	if err != nil {
+		return data, fmt.Errorf("csv.ReadAll: %v", err)
+	}
+
+	return data, err
 }

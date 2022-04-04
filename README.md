@@ -63,7 +63,7 @@ Common Licenses:
 * apache-2.0: 95
 * bsd-3-clause: 85
 
-The full specification can be found in [`licenseScores.txt`](https://github.com/fonarevvichka/OSS-Score/blob/main/api/util/scores/licenseScores.txt)
+The full specification can be found in [`licenseScoring.csv`](https://github.com/fonarevvichka/OSS-Score/blob/main/api/util/scores/licenseScoring.csv)
 
 ## Components
 

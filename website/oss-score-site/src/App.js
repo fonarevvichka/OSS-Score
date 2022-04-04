@@ -10,8 +10,6 @@ import About from './components/About.js';
 import Navigation from './components/Navigation.js';
 import Extension from './components/Extension.js';
 import GenerateScores from './components/GenerateScores.js';
-import Categories from './components/Categories.js';
-import WorkForUs from './components/WorkForUs.js';
 import PrivacyPolicy from './components/PrivacyPolicy.js';
 import NotFound from './components/NotFound.js';
 
@@ -30,8 +28,6 @@ function App() {
           <Route exact path='/about' element= {<About/>}/>
           <Route exact path='/extension' element={<Extension/>}/>
           <Route exact path='/generate-scores' element={<GenerateScores/>}/>
-          <Route exact path='/categories' element={<Categories/>}/>
-          <Route exact path='/workforus' element={<WorkForUs/>}/>
           <Route exact path='/privacypolicy' element={<PrivacyPolicy/>}/>
 
           
