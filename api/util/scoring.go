@@ -135,7 +135,7 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64
 // NET: Last release age and release cadence
 func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.Time) (float64, float64, float64) {
 	if len(releases) == 0 {
-		return 0, 0, 100
+		return math.MaxFloat64, 0, 100
 	}
 
 	var releaseCounter float64
@@ -153,7 +153,7 @@ func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.
 }
 
 func minMaxScale(min float64, max float64, val float64) float64 {
-	return math.Min((val-min)/(max-min), 1)
+	return math.Max(math.Min((val-min)/(max-min), 1), 0)
 }
 
 // Metric Score, Metric Confidence
