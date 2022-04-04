@@ -272,12 +272,12 @@ func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]float64) Sc
 
 	license := repoInfo.License
 
-	licenseScore = licenseMap[license] / 10
-
 	// Zero confidence if we can't find the license
-	if licenseScore == 0 {
+	if license == "other" {
 		licenseScore = 10
 		confidence = 0
+	} else {
+		licenseScore = licenseMap[license]
 	}
 
 	repoScore := Score{
