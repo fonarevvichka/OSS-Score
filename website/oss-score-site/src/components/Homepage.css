@@ -1,7 +1,9 @@
 header {
+
     font-size: 30px;
     text-align: center;
     padding: 6px;
+    color: white;
     /* background: #5B4693; */
 }
 
@@ -11,10 +13,20 @@ header {
 
 /*** form css ***/
 
+.logo {
+    background-image: url('../logo.svg');
+}
+
 #search1, #search2 {
+    background-color: #e6e6e6;
+
     border-style: solid;
     border-width: 1.5px;
     border-color: #000000
+}
+
+::placeholder {
+    color: #666666;
 }
 
 .searchbar {
@@ -24,6 +36,7 @@ header {
 }
 
 .searchbar > div {
+    margin-top: 10px;
     padding: 30px;
 }
 
@@ -33,8 +46,14 @@ header {
 }
 
 .compare-button {
-    padding-top:3px;
-    padding-bottom:3px;
+    font-size: 18px;
+    background-color: #d0cbe7;
+
+    padding-top:4px;
+    padding-bottom:4px;
+    padding-left: 10px;
+    padding-right: 10px;
+
 }
 
 .error-message {
@@ -97,22 +116,25 @@ header {
 .basic-info-display, .metrics-display {
     margin-top: 10px;
     margin-bottom: 10px;
-    /* color: white; */
-}
-
-.basic-info-title {
-    font-weight: bold;
-    font-size: 24px;
-    color: white;
 }
 
 .basic-info {
     font-size: 24px;
 }
 
+#repoOwnerName {
+    text-decoration: underline;
+    padding-bottom: 5px;
+}
+
+#repoOwnerName, .metric-category {
+    color: #e6e6e6;
+}
+
 .metric-category {
     font-weight: bold;
     font-size: 22px;
+    padding-top:3px;
 }
 
 .metric-container {
@@ -129,11 +151,11 @@ header {
 }
 
 .submetric-container {
-    
 }
 
 .submetric-container-title {
     font-size: 18px;
+    color: white;
 }
 
 .metric {

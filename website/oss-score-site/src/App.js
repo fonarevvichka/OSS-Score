@@ -20,22 +20,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
   return (
-<<<<<<< HEAD
-    // style={{ backgroundImage: `url(${backgroundSVG}`}}
-    <div className="app" >
-      <div className="nap" style={{}}>
-        {/* Maybe put nav in separate file: https://medium.com/swlh/responsive-navbar-using-react-bootstrap-5e0e0bd33bd6 */}
-        < Navigation />
-        < Routes >
-          <Route exact path='/' element={<Home />} />
-          <Route exact path='/about' element={<About />} />
-          <Route exact path='/extension' element={<Extension />} />
-          <Route exact path='/generate-scores' element={<GenerateScores />} />
-          <Route exact path='/categories' element={<Categories />} />
-          <Route exact path='/workforus' element={<WorkForUs />} />
-          <Route exact path='/privacypolicy' element={<PrivacyPolicy />} />
-
-=======
     <div className="nap">
       {/* Maybe put nav in separate file: https://medium.com/swlh/responsive-navbar-using-react-bootstrap-5e0e0bd33bd6 */}
       < Navigation />
@@ -45,7 +29,6 @@ function App() {
           <Route exact path='/extension' element={<Extension/>}/>
           <Route exact path='/generate-scores' element={<GenerateScores/>}/>
           <Route exact path='/privacypolicy' element={<PrivacyPolicy/>}/>
->>>>>>> 64195d8ab0b4843997990ef1d35834df716f8346
 
           {/* Page Not Found Routes */}
           <Route path="" element={<NotFound />} />
@@ -73,7 +56,7 @@ function App() {
     <path fill="#5b4693" opacity="1" d="M0,297C267,403,534,368,801,577,C1068,786,1335,391,1602,451,C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900L1600,900C1333,900,1066,900,799,900,C532,900,265,900,-2,900,C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900L1401,900L0,900Z" />
     </svg > */}
       </div>
-    </div>
+    // </div>
   
   );
 }
