@@ -135,12 +135,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	collection := mongoClient.Database(os.Getenv("MONGO_DB")).Collection(catalog)
 
-	err = util.SyncRepoWithDB(ctx, collection, util.RepoInfo{
-		Catalog: catalog,
-		Owner:   owner,
-		Name:    name,
-		Status:  1,
-	})
+	err = util.SetScoreState(ctx, collection, catalog, owner, name, 1)
 
 	if err != nil {
 		message, _ := json.Marshal(response{Message: "Error updating state in MongoDB"})

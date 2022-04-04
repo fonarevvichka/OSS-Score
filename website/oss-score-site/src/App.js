@@ -10,8 +10,6 @@ import About from './components/About.js';
 import Navigation from './components/Navigation.js';
 import Extension from './components/Extension.js';
 import GenerateScores from './components/GenerateScores.js';
-import Categories from './components/Categories.js';
-import WorkForUs from './components/WorkForUs.js';
 import PrivacyPolicy from './components/PrivacyPolicy.js';
 import NotFound from './components/NotFound.js';
 import backgroundSVG from './images/subtle-prism.svg';
@@ -22,6 +20,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
   return (
+<<<<<<< HEAD
     // style={{ backgroundImage: `url(${backgroundSVG}`}}
     <div className="app" >
       <div className="nap" style={{}}>
@@ -36,6 +35,17 @@ function App() {
           <Route exact path='/workforus' element={<WorkForUs />} />
           <Route exact path='/privacypolicy' element={<PrivacyPolicy />} />
 
+=======
+    <div className="nap">
+      {/* Maybe put nav in separate file: https://medium.com/swlh/responsive-navbar-using-react-bootstrap-5e0e0bd33bd6 */}
+      < Navigation />
+      < Routes >
+          <Route exact path='/' element={<Home/>} />
+          <Route exact path='/about' element= {<About/>}/>
+          <Route exact path='/extension' element={<Extension/>}/>
+          <Route exact path='/generate-scores' element={<GenerateScores/>}/>
+          <Route exact path='/privacypolicy' element={<PrivacyPolicy/>}/>
+>>>>>>> 64195d8ab0b4843997990ef1d35834df716f8346
 
           {/* Page Not Found Routes */}
           <Route path="" element={<NotFound />} />
