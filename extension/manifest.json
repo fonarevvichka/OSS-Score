@@ -1,6 +1,6 @@
 {
     "name": "OSS Score",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Adds Repo Activity and License Scores",
     "content_scripts": [ {
       "js": [ "extension.js"],
