@@ -11,6 +11,71 @@ header {
 
 /*** form css ***/
 
+/* Tooltip container */
+.tool-tip {
+    position: relative;
+    float: right;
+    display: inline-block;
+    background: #606060;
+    border-radius:50%;
+    height: 20px;
+    width: 14px;
+    color: white;
+    font-size: 12px;
+    font-weight: 1000;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 20px; 
+  }
+  
+/* Tooltip text */
+.tool-tip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    padding: 5px 5px;
+    border-radius: 6px;
+  
+    /* Position the tooltip text */
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+  
+    /* Fade in tooltip */
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+/* Tooltip arrow */
+.tool-tip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+  }
+  
+/* Show the tooltip text when you mouse over the tooltip container */
+.tool-tip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+  }
+
+label {
+    text-align: left;
+}
+
+.tool-tip {
+    width: 25px;
+}
+
 #search1, #search2 {
     border-style: solid;
     border-width: 1.5px;
