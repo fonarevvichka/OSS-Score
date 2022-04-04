@@ -2,6 +2,14 @@
     "name": "OSS Score",
     "version": "0.0.1",
     "description": "Adds Repo Activity and License Scores",
+    "action": {
+      "default_icon": {                
+        "16": "images/icon16.png",    
+        "24": "images/icon24.png",   
+        "32": "images/icon32.png"  
+      },
+      "default_title": "OSS Score"  
+    },
     "content_scripts": [ {
       "js": [ "extension.js"],
       "matches": [ "https://github.com/*" ],
