@@ -3,13 +3,16 @@ import { Navbar, Container, Nav} from 'react-bootstrap'
 import './Navigation.css';
 
 import './Navigation.css';
+import smallLogo from '../images/favicon.ico'
 
 const Navigation = () => {
     return (
         <>
             <Navbar className='navigation-bar' expand="lg" variant="dark">
                 <Container>
-                <Navbar.Brand href="/">OSS-Score</Navbar.Brand>
+                <Navbar.Brand href="/">
+                    <img className='navLogo' src={smallLogo}></img>
+                    OSS-Score</Navbar.Brand>
                     <Nav className="me-auto ml-0">
                     <Nav className="m-auto">
                         <Nav.Link class="nav-home" href="/">Home</Nav.Link>
