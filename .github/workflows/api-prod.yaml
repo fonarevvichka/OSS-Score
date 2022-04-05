@@ -1,5 +1,8 @@
 name: Deploy Prod
-on: push
+on:
+  create:
+    tags:
+      - v*
 jobs:
   deploy:
     if: startsWith(github.ref, 'refs/tags/')
