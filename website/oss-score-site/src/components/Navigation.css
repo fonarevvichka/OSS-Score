@@ -11,3 +11,8 @@
     height: 30px;
     padding-right: 5px;
 }
+
+
+li {
+    text-decoration: none;
+}
