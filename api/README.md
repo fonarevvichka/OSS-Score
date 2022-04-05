@@ -1,1 +1,1 @@
-need to add `AWSLambdaRole` to iam policy for lambdas that trigger other lambdas
+
