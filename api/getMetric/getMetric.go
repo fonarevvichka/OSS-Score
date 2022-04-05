@@ -174,7 +174,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "issueClosureTime":
 					metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
 				case "repoActivityScore":
-					score, _ = util.CalculateRepoActivityScore(&repo, startPoint)
+					score, err = util.CalculateRepoActivityScore(&repo, startPoint)
+					if err != nil {
+						message = err.Error()
+						break
+					}
 					metricValue = score.Score
 					confidence = score.Confidence
 				case "dependencyActivityScore":
@@ -256,7 +260,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						Confidence: confidence,
 					}
 
-					score, _ = util.CalculateRepoActivityScore(&repo, startPoint)
+					score, err = util.CalculateRepoActivityScore(&repo, startPoint)
+					if err != nil {
+						message = err.Error()
+						break
+					}
 					metricValue = score.Score
 					confidence = score.Confidence
 					allMetrics.RepoActivityScore = singleMetricRepsone{
