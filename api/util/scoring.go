@@ -239,11 +239,15 @@ func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Col
 		go func(dep RepoInfo, startPoint time.Time) {
 			defer wg.Done()
 
-			individualScore, _ := CalculateRepoActivityScore(&dep, startPoint) //TODO HANDLE THIS ERROR
-			score += individualScore.Score
-			confidence += individualScore.Confidence
+			individualScore, err := CalculateRepoActivityScore(&dep, startPoint)
+			if err != nil {
+				log.Println(err)
+			} else {
+				score += individualScore.Score
+				confidence += individualScore.Confidence
 
-			depsWithScores++
+				depsWithScores++
+			}
 		}(dep, startPoint)
 	}
 	totalDeps := len(repoInfo.Dependencies)
