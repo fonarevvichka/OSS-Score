@@ -167,12 +167,12 @@ func calculateCategoryScore(metric float64, confidence float64, scoreCategory Sc
 	return scoreCategory.Weight * score, scoreCategory.Weight * confidence
 }
 
-func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
+func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) (Score, error) {
 	// Scoring Info
 	categoryMap, err := GetActivityScoringData("./util/scores/activityScoring.csv")
 	if err != nil {
-		// should make this return a tuple with an error
 		log.Println(err)
+		return Score{}, fmt.Errorf("CalculateRepoActivityScore: %v", err)
 	}
 
 	commitCadenceInfo := categoryMap["commitCadence"]
@@ -200,8 +200,8 @@ func CalculateActivityScore(repoInfo *RepoInfo, startPoint time.Time) Score {
 		Score:      10 * score,
 		Confidence: confidence,
 	}
-	// log.Println(repo)
-	return repoScore
+
+	return repoScore, nil
 }
 
 func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) (Score, float64, error) {
@@ -239,7 +239,7 @@ func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Col
 		go func(dep RepoInfo, startPoint time.Time) {
 			defer wg.Done()
 
-			individualScore := CalculateActivityScore(&dep, startPoint)
+			individualScore, _ := CalculateRepoActivityScore(&dep, startPoint) //TODO HANDLE THIS ERROR
 			score += individualScore.Score
 			confidence += individualScore.Confidence
 
@@ -266,7 +266,7 @@ func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Col
 	}, depRatio, nil
 }
 
-func CalculateLicenseScore(repoInfo *RepoInfo, licenseMap map[string]float64) Score {
+func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]float64) Score {
 	licenseScore := 0.0
 	confidence := 100.0
 
@@ -322,7 +322,7 @@ func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Coll
 		go func(dep RepoInfo) {
 			defer wg.Done()
 
-			individualScore := CalculateLicenseScore(&dep, licenseMap)
+			individualScore := CalculateRepoLicenseScore(&dep, licenseMap)
 			score += individualScore.Score
 			confidence += individualScore.Confidence
 
