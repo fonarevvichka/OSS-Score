@@ -11,13 +11,3 @@
     height: 30px;
     padding-right: 5px;
 }
-
-
-/* .navbar-collapse {
-    display: inline-block;
-} */
-
-
-.navbar-collapse li {
-    display: inline-block;
-}
