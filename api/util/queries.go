@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -185,6 +187,13 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 		return false, fmt.Errorf("failed to query github: issue page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
 	}
 
+	throttled, err := CheckForRateLimiting(resp.Body)
+	if err != nil {
+		return false, err
+	} else if throttled {
+		return false, fmt.Errorf("Rate limit exceeded while querying issues")
+	}
+
 	issues := []IssueResponseRest{}
 	decoder := json.NewDecoder(resp.Body)
 	if decoder.Decode(&issues) != nil {
@@ -293,6 +302,21 @@ func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDa
 	return len(commits) == 100, nil
 }
 
+func CheckForRateLimiting(body io.ReadCloser) (bool, error) {
+	decoder := json.NewDecoder(body)
+	var response GitGenericResponse
+	err := decoder.Decode(&response)
+	if err != nil {
+		return false, err
+	}
+
+	if strings.Contains(response.Message, "rate limit exceeded") {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func CheckRepoAccess(client *http.Client, owner string, name string) (int, error) {
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
 
@@ -316,8 +340,8 @@ func CheckRepoAccess(client *http.Client, owner string, name string) (int, error
 		return 1, nil
 	case 404:
 		decoder := json.NewDecoder(resp.Body)
-		var respBody GitRestBody
-		err :=  decoder.Decode(&respBody)
+		var respBody GitGenericResponse
+		err := decoder.Decode(&respBody)
 		if err != nil {
 			return 0, err
 		}

@@ -152,6 +152,11 @@ type ReleaseResponse struct {
 	}
 }
 
+type GitGenericResponse struct {
+	Message string `json:"message"`
+	DocUrl  string `json:"documentation_url"`
+}
+
 type OpenIssue struct {
 	CreateDate time.Time
 
@@ -222,11 +227,6 @@ type Score struct {
 type NameOwner struct {
 	Owner string
 	Name  string
-}
-
-type GitRestBody struct {
-	Message string `json:"message"`
-	DocUrl  string `json:"documentation_url"`
 }
 
 type ScoreRequestBody struct {
