@@ -115,14 +115,21 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 
     } else {
         // display raw score and confidence
+        result += '<div class="metric-num">' + metricScore.metric
         if (outOfTen) {
-            // display metric out of 10
-            result += '<div class="metric-num">' + metricScore.metric + '/10</div> \n' +
-                  '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
-        } else {
-            result += '<div class="metric-num">' + metricScore.metric + '</div> \n' +
-                '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
+            result += '/10'
         }
+
+        result += '</div><div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
+
+        // if (outOfTen) {
+        //     // display metric out of 10
+        //     result += '<div class="metric-num">' + metricScore.metric + '/10</div> \n' +
+        //           '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
+        // } else {
+        //     result += '<div class="metric-num">' + metricScore.metric + '</div> \n' +
+        //         '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
+        // }
     }
 
     result += '</div></div>'

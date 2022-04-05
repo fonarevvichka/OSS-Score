@@ -339,7 +339,7 @@ label {
 
 .lg-container {
     width: 175px;
-    height: 100px;
+    /* height: 100px; */
     /* display:inline-block */
     align-content: center;
 }
