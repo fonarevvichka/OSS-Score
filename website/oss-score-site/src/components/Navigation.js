@@ -31,7 +31,7 @@ const Navigation = () => {
                                 <a href="/generate-scores " className="nav-link">Score Generation</a>
                         </li>
                         <li class="nav-item active">
-                                <a href="/privacy-policy " className="nav-link">Privacy Policy</a>
+                                <a href="/privacypolicy " className="nav-link">Privacy Policy</a>
                         </li>
                     </ul>
                 </div>
