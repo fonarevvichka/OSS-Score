@@ -11,7 +11,13 @@ header {
     background: #422C70;
 } */
 
+
+
 /*** form css ***/
+
+label {
+    color: white;
+}
 
 /* Tooltip container */
 .tool-tip {
