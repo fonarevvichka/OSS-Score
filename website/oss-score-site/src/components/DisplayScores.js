@@ -47,23 +47,45 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 
 
     let result = ''
-    
+
+    if (barDisplay) {
+        result += '<div class="metric-container bar-container" '
+    } else {
+        result += '<div class="metric-container lg-container" '
+    }
+
+
+
     if (metricScore.highlight) {
-        result += '<div class="metric-container" style="background-color: #b0c4de;">\n' +
-        '<div class="tool-tip">i\n' + 
-        '<span class="tooltiptext">' + MetricStats[metricName+"-tooltip"] + '</span>\n' +
+        result += 'style="background-color: #b0c4de;">'
+    } else {
+        result += 'style="background-color: #d3d3d3;">'
+    }
+
+    result += '<div class="tool-tip">i\n' +
+        '<span class="tooltiptext">' + MetricStats[metricName + "-tooltip"] + '</span>\n' +
         '</div>\n' +
         '<div class="metric-container-title">' + metricName + '</div>\n' +
         '<div class="metrics">' 
 
-    } else {
-        result += '<div class="metric-container" style="background-color: #d3d3d3;">\n' +
-            '<div class="tool-tip">i\n' +
-            '<span class="tooltiptext">' + MetricStats[metricName+"-tooltip"] + '</span>\n' +
-            '</div>\n' +
-            '<div class="metric-container-title">' + metricName + '</div>\n' +
-            '<div class="metrics">'
-    }
+
+    
+    // if (metricScore.highlight) {
+    //     result += '<div class="metric-container" style="background-color: #b0c4de;">\n' +
+    //     '<div class="tool-tip">i\n' + 
+    //     '<span class="tooltiptext">' + MetricStats[metricName+"-tooltip"] + '</span>\n' +
+    //     '</div>\n' +
+    //     '<div class="metric-container-title">' + metricName + '</div>\n' +
+    //     '<div class="metrics">' 
+
+    // } else {
+    //     result += '<div class="metric-container" style="background-color: #d3d3d3;">\n' +
+    //         '<div class="tool-tip">i\n' +
+    //         '<span class="tooltiptext">' + MetricStats[metricName+"-tooltip"] + '</span>\n' +
+    //         '</div>\n' +
+    //         '<div class="metric-container-title">' + metricName + '</div>\n' +
+    //         '<div class="metrics">'
+    // }
 
     if (barDisplay) {
 
@@ -81,28 +103,25 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
         }
 
         result += '<div class="metric-num">' + metricScore.metric + ' ' + MetricStats[metricName + "-units"] +
-                  '</div><div class="bar-display"> \n' +
-                            '<div class="bar">\n' + 
-                            '<div class="low">Low</div>\n' + 
-                            '<div class="high">High</div>\n' + 
-                        '</div>\n' +
-                        '<div class="pointer" style="left: ' + metricPercentage + '%;"></div>\n' +
-                  '</div>\n' +
-                  '<div class="metric-confidence"> Confidence: ' + metricScore.confidence + '</div>'
+                  '</div><div class="bar-and-conf">\n' +  
+                            '<div class="bar-display"> \n' +
+                                '<div class="bar">\n' + 
+                                    '<div class="low">Low</div>\n' + 
+                                    '<div class="high">High</div>\n' +
+                                '</div>\n' +
+                                '<div class="pointer" style="left: ' + metricPercentage + '%;"></div>\n' +
+                            '</div>\n' +
+            '<div class="metric-confidence"> Confidence: ' + metricScore.confidence + '</div></div>'
 
     } else {
         // display raw score and confidence
         if (outOfTen) {
             // display metric out of 10
-            result += '<div class="metric"> \n' + 
-                   '<div class="metric-num">' + metricScore.metric + '/10</div> \n' +
-                  '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '</div> \n' +
-                  '</div>' 
+            result += '<div class="metric-num">' + metricScore.metric + '/10</div> \n' +
+                  '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '</div>'
         } else {
-            result += '<div class="metric"> \n' +
-                '<div class="metric-num">' + metricScore.metric + '</div> \n' +
-                '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '</div> \n' +
-                '</div>' 
+            result += '<div class="metric-num">' + metricScore.metric + '</div> \n' +
+                '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '</div>'
         }
     }
 

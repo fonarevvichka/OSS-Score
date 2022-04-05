@@ -186,7 +186,7 @@ label {
 
 .metric-container-title {
     font-size: 20px;
-    text-decoration: underline;
+    /* text-decoration: underline; */
 }
 
 .submetric-container {
@@ -331,6 +331,24 @@ label {
   }
 
 
+/* Metric Containers */
+
+/* .lg-container {} */
+
+.bar-container .metric-container-title {
+    font-size: 20px;
+    padding-bottom: 5px;
+}
+
+.bar-container .metrics .metric-num {
+    position: relative;
+    float: left;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 20px;
+    width: 40%;
+}
+
 
 
 /* Bar display */
@@ -340,10 +358,11 @@ label {
 .bar-display {
     display: grid;
     grid-template-columns: 1fr;
-    padding-top: 2%;
-    padding-bottom: 2%;
+    /* padding-top: 2%;
+    padding-bottom: 2%; */
+    padding-top: 5px;
     align-items: center;
-    width:50%;
+    /* width:50%; */
     /* position: relative; */
     /* float:s; */
 }
@@ -402,6 +421,15 @@ label {
     top: -20%;
 }
 
+.bar-and-conf {
+    display: inline-grid;
+    grid-template-columns: auto;
+    grid-auto-columns: fit-content;
+    width:50%;
+    /* float: right; */
+    /* justify-content: center; */
+    /* flex-basis: 25%; */
+}
+
 .metric-confidence {
-    grid-row: 2/3;
 }
