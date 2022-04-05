@@ -44,7 +44,7 @@ let MetricStats = {
 const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
     // round metric 
     metricScore.metric = Math.round(metricScore.metric * 100) / 100
-
+    metricScore.confidence = Math.round(metricScore.confidence)
 
     let result = ''
 
@@ -111,17 +111,17 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
                                 '</div>\n' +
                                 '<div class="pointer" style="left: ' + metricPercentage + '%;"></div>\n' +
                             '</div>\n' +
-            '<div class="metric-confidence"> Confidence: ' + metricScore.confidence + '</div></div>'
+            '<div class="metric-confidence"> Confidence: ' + metricScore.confidence + '%</div></div>'
 
     } else {
         // display raw score and confidence
         if (outOfTen) {
             // display metric out of 10
             result += '<div class="metric-num">' + metricScore.metric + '/10</div> \n' +
-                  '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '</div>'
+                  '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
         } else {
             result += '<div class="metric-num">' + metricScore.metric + '</div> \n' +
-                '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '</div>'
+                '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
         }
     }
 

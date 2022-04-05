@@ -16,11 +16,14 @@ header {
     position: relative;
     float: right;
     display: inline-block;
-    background: #606060;
+    background: transparent;
+    border-style: solid;
+    border-width: 2px;
+    border-color: #000000;
     border-radius:50%;
     height: 20px;
-    width: 14px;
-    color: white;
+    width: 10px;
+    color: black;
     font-size: 12px;
     font-weight: 1000;
     text-align: center;
@@ -177,9 +180,8 @@ label {
 }
 
 .metric-container {
-    border-style: solid;
-    border-radius: 7px;
-
+    /* border-style: solid; */
+    border-radius: 10px;
     margin-top: 5px;
     margin-bottom: 5px;
 }
@@ -335,9 +337,38 @@ label {
 
 /* .lg-container {} */
 
+.lg-container {
+    width: 175px;
+    height: 100px;
+    /* display:inline-block */
+    align-content: center;
+}
+
+.lg-container .metric-container-title {
+    position: relative;
+    justify-content: center;
+}
+
+.lg-container .metric-confidence {
+    font-size: 15px;
+}
+
+.lg-container .metric-num {
+
+}
+
+
+
+
+
+/* Bar display */
+
+
+
 .bar-container .metric-container-title {
     font-size: 20px;
     padding-bottom: 5px;
+
 }
 
 .bar-container .metrics .metric-num {
@@ -350,21 +381,11 @@ label {
 }
 
 
-
-/* Bar display */
-
-/* '<div class="bar-display"><div class="bar"></div><div class="pointer"></div></div>' */
-
 .bar-display {
     display: grid;
     grid-template-columns: 1fr;
-    /* padding-top: 2%;
-    padding-bottom: 2%; */
     padding-top: 5px;
     align-items: center;
-    /* width:50%; */
-    /* position: relative; */
-    /* float:s; */
 }
 
 .bar-display div {
@@ -425,11 +446,5 @@ label {
     display: inline-grid;
     grid-template-columns: auto;
     grid-auto-columns: fit-content;
-    width:50%;
-    /* float: right; */
-    /* justify-content: center; */
-    /* flex-basis: 25%; */
-}
-
-.metric-confidence {
+    width: 50%; 
 }
