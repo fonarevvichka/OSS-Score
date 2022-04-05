@@ -10,7 +10,6 @@ ReactDOM.render(
   <BrowserRouter>
   
     <App />
-    {/* background */}
   </BrowserRouter>,
   document.getElementById('root')
 );

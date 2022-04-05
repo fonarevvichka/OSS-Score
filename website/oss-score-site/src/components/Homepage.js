@@ -1,6 +1,4 @@
-
-// imports
-// import { data } from 'jquery';
+// Imports
 import React, {useState} from 'react'
 import './Homepage.css';
 import DisplayScores from './DisplayScores.js';
@@ -20,12 +18,7 @@ export default function Home(props) {
     /* function to validate github URL. Returns true if valid, false otherwise */
     const validateURL = (url, repoNum) => {
 
-        // Pattern match Github URL with regex: check that it starts with https://github.com
-        //const validgitHub = new RegExp('^https://github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
-        //const validgitHubTree = new RegExp('^https://github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
-        //const validgitHub = new RegExp('^ ((https:\/\/)?github.com\/)?[a-zA-Z0-9._-]+\/+[a-zA-Z0-9._-]+$')
-        //const validgitHubTree = new RegExp('^ ((https:\/\/)?github.com\/)?[a-zA-Z0-9._-]+\/tree\/+[a-zA-Z0-9._-]+$')
-
+        // Pattern match Github URL with regex: check that it starts with https://github.co
         // Note: If there is a user error in the input of the repository name, which would be a valid
         //      repository name (ex. github.comfacebook/react) our validation will pass
         //      but the API will return no repo found
@@ -187,7 +180,6 @@ export default function Home(props) {
 
 
     async function awaitResults(owner, repo) {
-        // let catalog_name = 'github'
         let metric_name = 'all'
         let response = await fetch(basePath + '/owner/' + owner + '/name/' + repo + '/metric/'
                 + metric_name)
@@ -255,7 +247,6 @@ export default function Home(props) {
     return (
         <div className="Home">
             <div className="logo"></div>
-            {/*<img src="../images/logo1.png" alt="OSS-SCORE"></img>*/}
             <header>OSS-SCORE</header>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
