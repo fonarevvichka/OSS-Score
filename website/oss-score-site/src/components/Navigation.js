@@ -16,8 +16,8 @@ const Navigation = () => {
                 <button type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" className="navbar-toggler" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul classsName="navbar-nav">
+            <div className="collapse navbar-collapse" style={{display: 'inline-block'}} id="navbarNav">
+                    <ul classsName="nav navbar-nav">
                         <li class="nav-item active">
                             <a href="/# " className="nav-link">Home</a>
                         </li>

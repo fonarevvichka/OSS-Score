@@ -13,6 +13,11 @@
 }
 
 
-li {
-    text-decoration: none;
+/* .navbar-collapse {
+    display: inline-block;
+} */
+
+
+.navbar-collapse li {
+    display: inline-block;
 }
