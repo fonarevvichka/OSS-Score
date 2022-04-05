@@ -138,6 +138,8 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 	var depScore Score
 	var depRatio float64
 	var message string
+	repoWeight := 0.75
+	dependencyWeight := 1 - repoWeight
 
 	repoInfo, found, err := GetRepoFromDB(ctx, collection, catalog, owner, name)
 	if err != nil {
@@ -155,10 +157,12 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 
 		if repoInfo.Status == 3 {
 			if repoInfo.UpdatedAt.After(expireDate) && repoInfo.DataStartPoint.Before(startPoint) {
-				repoWeight := 0.75
-				dependencyWeight := 1 - repoWeight
 				if scoreType == "activity" {
-					repoScore = CalculateActivityScore(&repoInfo, startPoint)
+					repoScore, err = CalculateRepoActivityScore(&repoInfo, startPoint)
+					if err != nil {
+						log.Println(err)
+						return combinedScore, depRatio, repoInfo.Status, "", err
+					}
 					depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repoInfo, startPoint)
 					if err != nil {
 						log.Println(err)
@@ -170,12 +174,19 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 						log.Println(err)
 						return combinedScore, depRatio, repoInfo.Status, "", err
 					}
-					repoScore = CalculateLicenseScore(&repoInfo, licenseMap)
+					repoScore = CalculateRepoLicenseScore(&repoInfo, licenseMap)
 					depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repoInfo, licenseMap)
 					if err != nil {
 						return combinedScore, depRatio, repoInfo.Status, "", err
 					}
 				}
+
+				// if there are no deps we want to not include them in the score
+				if len(repoInfo.Dependencies) == 0 {
+					repoWeight = 1
+					dependencyWeight = 0
+				}
+
 				combinedScore = Score{
 					Score:      (repoScore.Score * repoWeight) + (depScore.Score * dependencyWeight),
 					Confidence: (repoScore.Confidence * repoWeight) + (depScore.Confidence * dependencyWeight),

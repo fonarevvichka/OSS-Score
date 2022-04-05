@@ -174,7 +174,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "issueClosureTime":
 					metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
 				case "repoActivityScore":
-					score = util.CalculateActivityScore(&repo, startPoint)
+					score, err = util.CalculateRepoActivityScore(&repo, startPoint)
+					if err != nil {
+						message = err.Error()
+						break
+					}
 					metricValue = score.Score
 					confidence = score.Confidence
 				case "dependencyActivityScore":
@@ -192,7 +196,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						message = "Error accessing license scoring file 1st"
 						break
 					}
-					score = util.CalculateLicenseScore(&repo, licenseMap)
+					score = util.CalculateRepoLicenseScore(&repo, licenseMap)
 
 					metricValue = score.Score
 					confidence = score.Confidence
@@ -256,7 +260,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						Confidence: confidence,
 					}
 
-					score = util.CalculateActivityScore(&repo, startPoint)
+					score, err = util.CalculateRepoActivityScore(&repo, startPoint)
+					if err != nil {
+						message = err.Error()
+						break
+					}
 					metricValue = score.Score
 					confidence = score.Confidence
 					allMetrics.RepoActivityScore = singleMetricRepsone{
@@ -276,7 +284,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						Confidence: confidence,
 					}
 
-					score = util.CalculateLicenseScore(&repo, licenseMap)
+					score = util.CalculateRepoLicenseScore(&repo, licenseMap)
 					metricValue = score.Score
 					confidence = score.Confidence
 					allMetrics.RepoLicenseScore = singleMetricRepsone{
