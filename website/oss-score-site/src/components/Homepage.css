@@ -89,7 +89,7 @@ label {
 /* Tooltip text */
 .tool-tip .tooltiptext {
     visibility: hidden;
-    width: 120px;
+    width: 160px;
     background-color: #555;
     color: #fff;
     text-align: center;
@@ -100,7 +100,7 @@ label {
     position: absolute;
     bottom: 125%;
     left: 50%;
-    margin-left: -60px;
+    margin-left: -80px;
   
     /* Fade in tooltip */
     opacity: 0;
@@ -430,7 +430,9 @@ label {
 
 .bar-container .metric {
     margin-top: 10px;
-    padding-right: 10px;
+    /* padding-right: 100px; */
+    margin-right: 10px;
+
 }
 
 .bar-and-conf .metric-confidence {
