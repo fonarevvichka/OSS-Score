@@ -399,6 +399,7 @@ label {
 
 .lg-container .metric-container-title {
     font-size: 20px;
+    line-height: normal;
 
 }
 
@@ -451,7 +452,7 @@ label {
     grid-template-columns: 1fr;
     padding-top: 5px;
     align-items: center;
-    width: 100%;
+    width: 90%;
 }
 
 .bar-display div {
