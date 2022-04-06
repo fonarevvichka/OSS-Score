@@ -167,9 +167,6 @@ label {
     margin-bottom: 10px;
     margin-left: 20px;
     margin-right: 20px;
-
-    /* border-width: 2px;
-    border-style: solid; */
     border-radius: 7px;
 }
 
@@ -358,12 +355,8 @@ label {
 
 /* Metric Containers */
 
-/* .lg-container {} */
-
 .lg-container {
     width: 175px;
-    /* height: 100px; */
-    /* display:inline-block */
     align-content: center;
 }
 
@@ -382,50 +375,35 @@ label {
 }
 
 
-
-
-
 /* Bar display */
 
 .bar-container {
     padding-top: 10px;
-    padding-bottom: 10px;
+    padding-bottom: 15px;
     padding-left: 10px;
     padding-right: 10px;
 }
 
 .bar-container .metric-container-title {
-    font-size: 20px;
-    /* padding-bottom: 5px; */
-    /* position: relative; */
-    /* float: left; */
-    /* left: 5px; */
-
+    font-size: 22px;
 }
 
 .bar-container .metric-num {
-    /* position: relative; */
-    /* float: left; */
-    /* padding-left: 10px;
-    padding-right: 10px; */
-    font-size: 15px;
+    font-size: 18px;
 }
 
 .bar-container .metric {
-    /* position: relative;
-    float: right; */
+    margin-top: 10px;
+    padding-right: 10px;
 }
 
 .bar-and-conf .metric-confidence {
-    /* position: relative;
-    float: right; */
     font-size: 15px;
 }
 
 .bar-container .bar-title-metric {
     position: relative;
     float: left;
-    /* padding-left: 10px; */
 }
 
 
