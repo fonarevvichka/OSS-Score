@@ -429,9 +429,8 @@ label {
 }
 
 .bar-container .metric {
-    margin-top: 10px;
-    margin-right: 10px;
-
+    position: absolute;
+    float: right;
 }
 
 .bar-and-conf .metric-confidence {
