@@ -1,4 +1,3 @@
-import React from 'react'
 import './DisplayScores.css';
 import './Homepage.css';
 
@@ -39,8 +38,7 @@ let MetricStats = {
 }
 
 
-// TODO: Highlighting better metric, when lower is better
-
+// TODO: Highlighting better metric, when lower is bette
 const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
     // round metric 
     metricScore.metric = Math.round(metricScore.metric * 100) / 100
@@ -171,7 +169,6 @@ const AddHighlightJSON = (metricsAll) => {
     }
 
     for (var key in metricsAll[0]) {
-        //console.log(key)
         if (key !== 'message') {
             let maxOfMetric = 0;
             let metricArray = [];
@@ -237,13 +234,6 @@ const DisplayScores = (metrics) => {
         let releaseMetrics = [['Release Cadence', metricsAll[i].releaseCadence, true], ['Age of Last Release', metricsAll[i].ageLastRelease, true]]
         result += getMetricContainerWSubContainers('Release Score', releaseMetrics)
         result += '</div >'
-        
-
-        // result += '<div class="repo-dependency-score">'
-        // result += '<div class="metric-category">Dependency Scores</div>'
-        // result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true)
-        // result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true)
-        // result += '</div >'
 
         result += '</div >'
 

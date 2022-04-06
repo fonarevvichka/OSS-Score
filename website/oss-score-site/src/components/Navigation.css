@@ -2,3 +2,12 @@
     margin-left: 10px;
     margin-right:10px
 }
+
+.navigation-bar {
+    background-color: #5b4da2;
+}
+
+.navLogo {
+    height: 30px;
+    padding-right: 5px;
+}
