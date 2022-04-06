@@ -369,6 +369,8 @@ label {
 
 .lg-container .metric-container-title {
     position: relative;
+    font-size: 20px;
+
 }
 
 .lg-container .metric-confidence {
@@ -376,7 +378,7 @@ label {
 }
 
 .lg-container .metric-num {
-
+    font-size: 25px;
 }
 
 
@@ -385,22 +387,47 @@ label {
 
 /* Bar display */
 
-
+.bar-container {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
 
 .bar-container .metric-container-title {
     font-size: 20px;
-    padding-bottom: 5px;
+    /* padding-bottom: 5px; */
+    /* position: relative; */
+    /* float: left; */
+    /* left: 5px; */
 
 }
 
-.bar-container .metrics .metric-num {
+.bar-container .metric-num {
+    /* position: relative; */
+    /* float: left; */
+    /* padding-left: 10px;
+    padding-right: 10px; */
+    font-size: 15px;
+}
+
+.bar-container .metric {
+    /* position: relative;
+    float: right; */
+}
+
+.bar-and-conf .metric-confidence {
+    /* position: relative;
+    float: right; */
+    font-size: 15px;
+}
+
+.bar-container .bar-title-metric {
     position: relative;
     float: left;
-    padding-left: 10px;
-    padding-right: 10px;
-    font-size: 20px;
-    width: 40%;
+    /* padding-left: 10px; */
 }
+
 
 
 .bar-display {
@@ -408,7 +435,7 @@ label {
     grid-template-columns: 1fr;
     padding-top: 5px;
     align-items: center;
-    width:50%;
+    width: 100%;
 }
 
 .bar-display div {
@@ -424,7 +451,7 @@ label {
     margin-bottom: auto;
     height: 20px;
     border-radius: 5px;
-    width: 101%;
+    width: 105%;
     background-image:
         linear-gradient(
         to right, 

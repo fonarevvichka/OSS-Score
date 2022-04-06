@@ -71,9 +71,18 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 
     result += '<div class="tool-tip">i\n' +
         '<span class="tooltiptext">' + MetricStats[metricName + "-tooltip"] + '</span>\n' +
-        '</div>\n' +
-        '<div class="metric-container-title">' + metricName + '</div>\n' +
-        '<div class="metrics">' 
+        '</div>'
+
+    if (barDisplay) {
+        result += '<div class="bar-title-metric">\n' +
+                        '<div class="metric-container-title">' + metricName + '</div>\n' +
+                        '<div class="metric-num">' + metricScore.metric + ' ' + MetricStats[metricName + "-units"] + '</div>\n' +
+                    '</div>\n' +
+                    '<div class="metrics">' 
+    } else {
+        result += '<div class="metric-container-title">' + metricName + '</div>\n' +
+            '<div class="metrics">' 
+    } 
 
 
     
@@ -108,8 +117,7 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
             metricPercentage = 0
         }
 
-        result += '<div class="metric-num">' + metricScore.metric + ' ' + MetricStats[metricName + "-units"] +
-                  '</div><div class="bar-and-conf">\n' +  
+        result += '<div class="bar-and-conf">\n' +  
                             '<div class="bar-display"> \n' +
                                 '<div class="bar">\n' + 
                                     '<div class="low">Low</div>\n' + 
