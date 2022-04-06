@@ -23,7 +23,7 @@ jobs:
     - name: build project
       run: |
         cd api
-        make clean build 
+        make clean build -B
     - name: deploy
       env:
         GIT_PAT_1: ${{ secrets.PROD_GIT_PAT_01 }}

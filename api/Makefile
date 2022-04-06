@@ -1,11 +1,19 @@
-.PHONY: build clean deploy
+getScore:
+	env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/getScore ./getScore/getScore.go
+	
+getMetric:
+	env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/getMetric ./getMetric/getMetric.go
 
-build:
-	cd getScore && env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../bin/getScore getScore.go && cd ..
-	cd getMetric && env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../bin/getMetric getMetric.go && cd ..
-	cd queryRepository/handler && env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../../bin/queryRepoHandler queryRepoHandler.go && cd ../..
-	cd queryRepository/processing && env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../../bin/queryRepoProcessing queryRepoProcessing.go && cd ../..
-	cd queryRepository/dependency && env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../../bin/queryDependency queryDependency.go && cd ../..
+handler:
+	env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/queryRepoHandler queryRepository/handler/queryRepoHandler.go
+
+processing:
+	env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/queryRepoProcessing queryRepository/processing/queryRepoProcessing.go
+
+dependency:
+	env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/queryDependency queryRepository/dependency/queryDependency.go
+
+build: getScore getMetric handler processing dependency
 
 clean:
 	rm -rf ./bin
