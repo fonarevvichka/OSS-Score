@@ -79,22 +79,11 @@ label {
 
 /* Tooltip container */
 .tool-tip {
-    position: relative;
-    float: right;
+    position: absolute;
+    /* position: relative; */
+    top: 0px;
+    right: 0px;
     display: inline-block;
-    background: transparent;
-    border-style: solid;
-    border-width: 2px;
-    border-color: #000000;
-    border-radius:50%;
-    height: 20px;
-    width: 10px;
-    color: black;
-    font-size: 12px;
-    font-weight: 1000;
-    text-align: center;
-    vertical-align: middle;
-    line-height: 20px; 
   }
   
 /* Tooltip text */
@@ -109,7 +98,6 @@ label {
   
     /* Position the tooltip text */
     position: absolute;
-    z-index: 1;
     bottom: 125%;
     left: 50%;
     margin-left: -60px;
@@ -140,6 +128,54 @@ label {
 .tool-tip {
     width: 25px;
 }
+
+
+/* Tooltip container */
+.tool-tip-repo {
+    position: relative;
+    float: right;
+    display: inline-block;
+    width: 25px;
+  }
+  
+/* Tooltip text */
+.tool-tip-repo .tooltiptext-repo {
+    visibility: hidden;
+    width: 120px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    padding: 5px 5px;
+    border-radius: 6px;
+  
+    /* Position the tooltip text */
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+  
+    /* Fade in tooltip */
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+/* Tooltip arrow */
+.tool-tip-repo .tooltiptext-repo::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+  }
+  
+/* Show the tooltip text when you mouse over the tooltip container */
+.tool-tip-repo:hover .tooltiptext-repo {
+    visibility: visible;
+    opacity: 1;
+  }
 
 /*** head2head ***/
 
@@ -207,6 +243,7 @@ label {
     border-radius: 10px;
     margin-top: 5px;
     margin-bottom: 5px;
+    position: relative;
 }
 
 .metric-container-title {
@@ -361,7 +398,6 @@ label {
 }
 
 .lg-container .metric-container-title {
-    position: relative;
     font-size: 20px;
 
 }
@@ -420,6 +456,7 @@ label {
     grid-row-start: 1;
     grid-column-start: 1;
 }
+
 
 
 .bar {

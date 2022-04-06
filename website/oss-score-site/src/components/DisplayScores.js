@@ -1,5 +1,9 @@
 import './DisplayScores.css';
 import './Homepage.css';
+import React from "react";
+import { AiOutlineInfoCircle } from "react-icons/ai";
+import ReactDOMServer from "react-dom/server";
+
 
 // note: For stats where lower numbers are better, min and max are switched
 let MetricStats = {
@@ -40,6 +44,9 @@ let MetricStats = {
 
 // TODO: Highlighting better metric, when lower is bette
 const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
+    const infoLogo = ReactDOMServer.renderToStaticMarkup(<AiOutlineInfoCircle />);
+    const infoLogoString = infoLogo.toString()
+    
     // round metric 
     metricScore.metric = Math.round(metricScore.metric * 100) / 100
     metricScore.confidence = Math.round(metricScore.confidence)
@@ -69,7 +76,7 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
         result += 'style="background-color: #d3d3d3;">'
     }
 
-    result += '<div class="tool-tip">i\n' +
+    result += '<div class="tool-tip">' + infoLogoString +
         '<span class="tooltiptext">' + MetricStats[metricName + "-tooltip"] + '</span>\n' +
         '</div>'
 
