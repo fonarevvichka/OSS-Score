@@ -68,8 +68,6 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
         result += '<div class="metric-container lg-container" '
     }
 
-
-
     if (metricScore.highlight) {
         result += 'style="background-color: #b0c4de;">'
     } else {
@@ -89,26 +87,7 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
     } else {
         result += '<div class="metric-container-title">' + metricName + '</div>\n' +
             '<div class="metrics">' 
-    } 
-
-
-    
-    // if (metricScore.highlight) {
-    //     result += '<div class="metric-container" style="background-color: #b0c4de;">\n' +
-    //     '<div class="tool-tip">i\n' + 
-    //     '<span class="tooltiptext">' + MetricStats[metricName+"-tooltip"] + '</span>\n' +
-    //     '</div>\n' +
-    //     '<div class="metric-container-title">' + metricName + '</div>\n' +
-    //     '<div class="metrics">' 
-
-    // } else {
-    //     result += '<div class="metric-container" style="background-color: #d3d3d3;">\n' +
-    //         '<div class="tool-tip">i\n' +
-    //         '<span class="tooltiptext">' + MetricStats[metricName+"-tooltip"] + '</span>\n' +
-    //         '</div>\n' +
-    //         '<div class="metric-container-title">' + metricName + '</div>\n' +
-    //         '<div class="metrics">'
-    // }
+    }
 
     if (barDisplay) {
 
@@ -144,15 +123,6 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
         }
 
         result += '</div><div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
-
-        // if (outOfTen) {
-        //     // display metric out of 10
-        //     result += '<div class="metric-num">' + metricScore.metric + '/10</div> \n' +
-        //           '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
-        // } else {
-        //     result += '<div class="metric-num">' + metricScore.metric + '</div> \n' +
-        //         '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
-        // }
     }
 
     result += '</div></div>'
@@ -174,7 +144,6 @@ const getMetricContainerWSubContainers = (metricName, subMetrics) => {
 // activityScore, licenseScore, stars, contributors are tuples (metricScore, confidence, highlight)
 const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, contributors) => {
     let result = '<div class="basic-info-display"> \n' +
-    // '<div class="basic-info" id="repoOwnerName">' + owner + '/' + name + '</div>'
         '<a class="basic-info" id="repoOwnerName" target="_blank" href = "https://github.com/' + owner + '/' + name + '">' + owner + '/' + name + '</a>'
     result += '<div class="info-flexbox">'
    

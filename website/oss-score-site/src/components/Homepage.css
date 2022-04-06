@@ -249,7 +249,6 @@ label {
 
 .metric-container-title {
     font-size: 20px;
-    /* text-decoration: underline; */
 }
 
 .submetric-container {
@@ -261,7 +260,6 @@ label {
 }
 
 .metric {
-    /* color: green; */
     font-size: 18px;
 }
 
