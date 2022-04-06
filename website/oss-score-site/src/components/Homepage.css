@@ -204,6 +204,7 @@ label {
     margin-left: 20px;
     margin-right: 20px;
     border-radius: 7px;
+    min-width: 436.7px;
 }
 
 .basic-info-display .metrics-display {
@@ -431,7 +432,6 @@ label {
 
 .bar-container .metric {
     margin-top: 10px;
-    /* padding-right: 100px; */
     margin-right: 10px;
 
 }

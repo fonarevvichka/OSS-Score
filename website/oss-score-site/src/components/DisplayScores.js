@@ -174,7 +174,8 @@ const getMetricContainerWSubContainers = (metricName, subMetrics) => {
 // activityScore, licenseScore, stars, contributors are tuples (metricScore, confidence, highlight)
 const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, contributors) => {
     let result = '<div class="basic-info-display"> \n' +
-    '<div class="basic-info" id="repoOwnerName">' + owner + '/' + name + '</div>'
+    // '<div class="basic-info" id="repoOwnerName">' + owner + '/' + name + '</div>'
+        '<a class="basic-info" id="repoOwnerName" target="_blank" href = "https://github.com/' + owner + '/' + name + '">' + owner + '/' + name + '</a>'
     result += '<div class="info-flexbox">'
    
     result += getMetricDisplay(activityScore, "Activity Score", false, true)
