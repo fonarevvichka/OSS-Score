@@ -160,7 +160,7 @@ const getMetricContainerWSubContainers = (metricName, subMetrics) => {
 const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, contributors) => {
     let result = '<div class="basic-info-display"> \n' +
     '<div class="basic-info" id="repoOwnerName">' + owner + '/' + name + '</div>'
-    result += '<div class="basic-info-flexbox">'
+    result += '<div class="info-flexbox">'
    
     result += getMetricDisplay(activityScore, "Activity Score", false, true)
     result += getMetricDisplay(licenseScore, "License Score", false, true)
@@ -240,8 +240,10 @@ const DisplayScores = (metrics) => {
 
         result += '<div class="repo-dependency-score">'
         result += '<div class="metric-category">Dependency Scores</div>'
+        result += '<div class="info-flexbox">'
         result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true)
         result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true)
+        result += '</div >'
         result += '</div >'
 
 
