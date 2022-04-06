@@ -247,7 +247,6 @@ export default function Home(props) {
     return (
         <div className="Home">
             <div className="logo"></div>
-            <header>OSS-SCORE</header>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
                     <div>
