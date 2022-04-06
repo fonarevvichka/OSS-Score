@@ -89,7 +89,6 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 
         let metricMin = MetricStats[metricName + "-min"];
         let metricMax = MetricStats[metricName + "-max"];
-        let metricUnits = MetricStats[metricName + "-units"];
 
         let metricPercentage = ((metricScore.metric - metricMin) / (metricMax - metricMin)) * 100
         
@@ -150,14 +149,15 @@ const getMetricContainerWSubContainers = (metricName, subMetrics) => {
 const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, contributors) => {
     let result = '<div class="basic-info-display"> \n' +
     '<div class="basic-info" id="repoOwnerName">' + owner + '/' + name + '</div>'
-
-    result += '<div class="basic-info" id="activityScore">' + getMetricDisplay(activityScore, "Activity Score", false, true) + '</div>'
-    result += '<div class="basic-info" id="licenseScore">' + getMetricDisplay(licenseScore, "License Score", false, true) + '</div>'
-    result += '<div class="basic-info" id="stars">' + getMetricDisplay(stars, "Stars", false, false) + '</div>'
-    result += '<div class="basic-info" id="contributors">' + getMetricDisplay(contributors, "Contributors", false, false) + '</div>'
+    result += '<div class="basic-info-flexbox">'
+   
+    result += getMetricDisplay(activityScore, "Activity Score", false, true)
+    result += getMetricDisplay(licenseScore, "License Score", false, true)
+    result += getMetricDisplay(stars, "Stars", false, false)
+    result += getMetricDisplay(contributors, "Contributors", false, false)
 
     // close div
-    result += '</div >'
+    result += '</div></div>'
     return result
 }
 
@@ -219,23 +219,20 @@ const DisplayScores = (metrics) => {
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
             metricsAll[i].repoLicenseScore, metricsAll[i].stars, metricsAll[i].contributors)
 
+        result += '<div class="metrics-display">'
+        result += '<div class="metric-category">Activity Score Breakdown</div>'
+        result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false)
+        result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false)
+        result += getMetricDisplay(metricsAll[i].releaseCadence, 'Release Cadence', true, false)
+        result += getMetricDisplay(metricsAll[i].ageLastRelease, 'Age of Last Release', true, false)
+        result += '</div >'
+
         result += '<div class="repo-dependency-score">'
         result += '<div class="metric-category">Dependency Scores</div>'
         result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true)
         result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true)
         result += '</div >'
 
-        
-        result += '<div class="metrics-display">'
-
-        result += '<div class="metric-category">Activity Scores</div>'
-        result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false)
-        result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false)
-        let releaseMetrics = [['Release Cadence', metricsAll[i].releaseCadence, true], ['Age of Last Release', metricsAll[i].ageLastRelease, true]]
-        result += getMetricContainerWSubContainers('Release Score', releaseMetrics)
-        result += '</div >'
-
-        result += '</div >'
 
         result += '</div >'
     }

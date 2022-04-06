@@ -173,13 +173,21 @@ label {
     border-radius: 7px;
 }
 
-.basic-info-display, .metrics-display {
+.basic-info-display .metrics-display {
     margin-top: 10px;
     margin-bottom: 10px;
 }
 
 .basic-info {
     font-size: 24px;
+}
+
+.basic-info-flexbox {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 10px;
+    column-gap: 10px;
 }
 
 #repoOwnerName {
@@ -376,7 +384,6 @@ label {
 
 
 /* Bar display */
-<<<<<<< HEAD
 
 
 
@@ -396,17 +403,12 @@ label {
 }
 
 
-=======
->>>>>>> 2889a6ece47aff592df26df369b63b416a34c567
 .bar-display {
     display: grid;
     grid-template-columns: 1fr;
     padding-top: 5px;
     align-items: center;
-<<<<<<< HEAD
-=======
     width:50%;
->>>>>>> 2889a6ece47aff592df26df369b63b416a34c567
 }
 
 .bar-display div {
