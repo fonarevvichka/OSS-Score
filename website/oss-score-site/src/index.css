@@ -1,3 +1,9 @@
+
+/* Idea: wave background that starts moving when loading */
+
+html {
+  height: 100%;
+}
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,14 +11,13 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  background-image: url('./images/repeating-triangles.svg');
+  background-attachment: fixed;
 
-  /* background-color: #5B4693; */
-
-;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
-

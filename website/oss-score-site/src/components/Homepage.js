@@ -1,6 +1,4 @@
-
-// imports
-// import { data } from 'jquery';
+// Imports
 import React, {useState} from 'react'
 import './Homepage.css';
 import DisplayScores from './DisplayScores.js';
@@ -20,12 +18,7 @@ export default function Home(props) {
     /* function to validate github URL. Returns true if valid, false otherwise */
     const validateURL = (url, repoNum) => {
 
-        // Pattern match Github URL with regex: check that it starts with https://github.com
-        //const validgitHub = new RegExp('^https://github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+$')
-        //const validgitHubTree = new RegExp('^https://github.com/+[a-zA-Z0-9._-]+/+[a-zA-Z0-9._-]+/tree/+[a-zA-Z0-9._-]+$')
-        //const validgitHub = new RegExp('^ ((https:\/\/)?github.com\/)?[a-zA-Z0-9._-]+\/+[a-zA-Z0-9._-]+$')
-        //const validgitHubTree = new RegExp('^ ((https:\/\/)?github.com\/)?[a-zA-Z0-9._-]+\/tree\/+[a-zA-Z0-9._-]+$')
-
+        // Pattern match Github URL with regex: check that it starts with https://github.co
         // Note: If there is a user error in the input of the repository name, which would be a valid
         //      repository name (ex. github.comfacebook/react) our validation will pass
         //      but the API will return no repo found
@@ -187,7 +180,6 @@ export default function Home(props) {
 
 
     async function awaitResults(owner, repo) {
-        // let catalog_name = 'github'
         let metric_name = 'all'
         let response = await fetch(basePath + '/owner/' + owner + '/name/' + repo + '/metric/'
                 + metric_name)
@@ -254,8 +246,7 @@ export default function Home(props) {
 
     return (
         <div className="Home">
-            {/*<img src="../images/logo1.png" alt="OSS-SCORE"></img>*/}
-            <header>OSS-SCORE</header>
+            <div className="logo"></div>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
                     <div>
@@ -287,6 +278,10 @@ export default function Home(props) {
             </form>
             <div id="loading"></div>
             <div class="head2head" id="head2head"></div>
+
+            < svg view-box="0 0 1600 900" >
+                <path fill="#5b4693" opacity="1" d="M0,297C267,403,534,368,801,577,C1068,786,1335,391,1602,451,C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900L1600,900C1333,900,1066,900,799,900,C532,900,265,900,-2,900,C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900L1401,900L0,900Z" />
+            </svg >
         </div>
     );
 }
