@@ -44,6 +44,15 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
     metricScore.metric = Math.round(metricScore.metric * 100) / 100
     metricScore.confidence = Math.round(metricScore.confidence)
 
+    // shorten stars metric
+    let starsOver1k = false
+    if (metricName === "Stars") {
+        if (metricScore.metric >= 1000) {
+            metricScore.metric = Math.round(metricScore.metric / 1000)
+            starsOver1k = true
+        }
+    }
+
     let result = ''
 
     if (barDisplay) {
@@ -115,6 +124,8 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
         result += '<div class="metric-num">' + metricScore.metric
         if (outOfTen) {
             result += '/10'
+        } else if (starsOver1k) {
+            result += 'k'
         }
 
         result += '</div><div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
