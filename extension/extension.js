@@ -14,11 +14,15 @@ async function requestScores(owner, repo) {
     let message = null;
     let success = false
     let requestURL = basePath + '/owner/' + owner + '/name/' + repo;
-
+    let requestBody = null;
+    if (TimeFrame != null){
+        requestBody = JSON.stringify({"timeFrame": parseInt(TimeFrame)});
+    }
     let promise = 
         fetch(requestURL, {
             method: 'POST',
-            mode: 'cors'
+            mode: 'cors',
+            body: requestBody
         }).then(async (response) => {
             if (response.status == 201) {
                 let messagePromise = response.json();
@@ -206,7 +210,11 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
 
 async function getScores(owner, repo) {
     let scores = {license: null, activity: null, message: null, depRatio: 0};
-    let promises = [];    
+    let promises = [];
+    let queryParams = '';    
+    if (TimeFrame != null) {
+        queryParams = "?timeFrame=" + TimeFrame;
+    }
     let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
     promises.push(
         fetch(licenseRequestUrl).then(async (response) => {
@@ -282,14 +290,16 @@ if (splitUrl.length == 2) { // Repo homepage
     }
 }
 
+var TimeFrame = null;
+
 if (owner != '' && repo != '') {
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
     chrome.runtime.onMessage.addListener(
         function(request, sender, sendResponse) {
-          insertHTML(scoreDiv, null, "loading")
-          scoreDiv.innerHTML += "score " + request.timeFrame;
+          TimeFrame = request.timeFrame;
           sendResponse({message: "recieved new time frame"});
+          insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
         }
       );
     insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
