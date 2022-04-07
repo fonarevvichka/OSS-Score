@@ -150,7 +150,7 @@ const AddHighlightJSON = (metricsAll) => {
             // Find max of metrics and store values for highlighting
             for (let i = 0; i < metricsAll.length; i++) {
                 metricArray.push(metricsAll[i][key].metric)
-                if (key === "issueClosureTime" || key === "ageLastRelease") {
+                if (key === "issueClosureTime" || key === "ageLastRelease" || key === "ageLastCommit") {
                     if (metricsAll[i][key].metric < minOfMetric) {
                         minOfMetric = metricsAll[i][key].metric;
                     }
@@ -163,7 +163,7 @@ const AddHighlightJSON = (metricsAll) => {
 
             // Add highligt property metrics
             for (let i = 0; i < metricArray.length; i++) {
-                if (key === "issueClosureTime" || key === "ageLastRelease") {
+                if (key === "issueClosureTime" || key === "ageLastRelease" || key === "ageLastCommit") {
                     if (metricArray[i] === minOfMetric) {
                         // Highlight metric
                         metricsAll[i][key].highlight = true;
