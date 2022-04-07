@@ -167,7 +167,7 @@ export default function Home(props) {
                     return [owner, repo, metrics];
                 }
             } else if (response.status === 406) {
-                alert("At least one of the repositories entered is private or does not exist")
+                alert(owner + '/' + repo + " is private or does not exist")
                 console.error("Repository entered does not exist")
             } else {
                 alert("Error connecting to OSS-Score API")
@@ -175,6 +175,7 @@ export default function Home(props) {
             }
         } catch (error) {
             console.error(error)
+            return Promise.reject(error);
         }
     }
 
@@ -229,10 +230,10 @@ export default function Home(props) {
             displayError("2");
         }
 
-        // do promises (array of json objects) (owner, name, metrics)
-        let scores = await Promise.all(scorePromises)
+        await Promise.all(scorePromises).then((values) => {
+            scoreDisplay += DisplayScores(values)
+        }).catch(e => console.log('Error caught', e));
 
-        scoreDisplay += DisplayScores(scores)
  
         // Hide loading gear/clear all html in head2head
         document.getElementById("loading").innerHTML = ''
