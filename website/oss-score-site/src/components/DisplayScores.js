@@ -48,8 +48,10 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
     const infoLogoString = infoLogo.toString()
     
     // round metric 
-    metricScore.metric = Math.round(metricScore.metric * 100) / 100
-    metricScore.confidence = Math.round(metricScore.confidence)
+    if (metricName !== "License") {
+        metricScore.metric = Math.round(metricScore.metric * 100) / 100
+        metricScore.confidence = Math.round(metricScore.confidence)
+    }
 
     // shorten stars metric
     let starsOver1k = false
@@ -115,8 +117,12 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 
     } else {
         // display raw score and confidence
-        if (metricName === 'License') { 
-            result += '<div class="metric-num"> MIT'
+        if (metricName === 'License') {
+            if (metricScore === '') {
+                result += '<div class="metric-num"> N/a'
+            } else {
+                result += '<div class="metric-num">' + metricScore
+            }
         } else {
             result += '<div class="metric-num">' + metricScore.metric
         }
@@ -127,33 +133,25 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
             result += 'k'
         }
 
-        result += '</div><div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
+        result += '</div>'
+        
+        if (metricName !== 'License') {
+            result += '<div class="metric-confidence">Confidence: ' + metricScore.confidence + '%</div>'
+        }
     }
 
     result += '</div></div>'
     return result
 }
 
-// subMetrics is list of tuples (nameOfMetric, MetricScore, MetricConf, barDisplay, highlight)
-const getMetricContainerWSubContainers = (metricName, subMetrics) => {
-    let subcontainers = ""
-
-    for (let i = 0; i < subMetrics.length; i++) {
-        subcontainers += '<div class="submetric-container">\n' + getMetricDisplay(subMetrics[i][1], subMetrics[i][0], subMetrics[i][2], false)  + '</div>'
-    }
-
-    return '<div class="metric-container">\n' +
-        '<div class="metric-container-title">' + metricName + '</div>' + subcontainers + '</div>'
-}
-
 // activityScore, licenseScore, stars, contributors are tuples (metricScore, confidence, highlight)
-const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, contributors) => {
+const getBasicInfoDisplay = (owner, name, activityScore, license, stars, contributors) => {
     let result = '<div class="basic-info-display"> \n' +
         '<a class="basic-info" id="repoOwnerName" target="_blank" href = "https://github.com/' + owner + '/' + name + '">' + owner + '/' + name + '</a>'
     result += '<div class="info-flexbox">'
    
     result += getMetricDisplay(activityScore, "Activity Score", false, true)
-    result += getMetricDisplay(licenseScore, "License", false, false)
+    result += getMetricDisplay(license, "License", false, false)
     result += getMetricDisplay(stars, "Stars", false, false)
     result += getMetricDisplay(contributors, "Contributors", false, false)
 
@@ -170,7 +168,7 @@ const AddHighlightJSON = (metricsAll) => {
     }
 
     for (var key in metricsAll[0]) {
-        if (key !== 'message') {
+        if (key !== 'message' && key !== 'license') {
             let maxOfMetric = 0;
             let metricArray = [];
             // Find max of metrics and store values for highlighting
@@ -218,10 +216,11 @@ const DisplayScores = (metrics) => {
         
         // owner, name, activityScore, licenseScore, stars, contributors
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
-            metricsAll[i].repoLicenseScore, metricsAll[i].stars, metricsAll[i].contributors)
+            metricsAll[i].license, metricsAll[i].stars, metricsAll[i].contributors)
 
         result += '<div class="metrics-display">'
         result += '<div class="metric-category">Activity Score Breakdown</div>'
+        
         result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false)
         result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false)
         result += getMetricDisplay(metricsAll[i].releaseCadence, 'Release Cadence', true, false)
