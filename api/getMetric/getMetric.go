@@ -27,6 +27,7 @@ type allMetricsResponse struct {
 	Stars                   singleMetricRepsone `json:"stars"`
 	ReleaseCadence          singleMetricRepsone `json:"releaseCadence"`
 	AgeLastRelease          singleMetricRepsone `json:"ageLastRelease"`
+	AgeLastCommit           singleMetricRepsone `json:"ageLastCommit"`
 	CommitCadence           singleMetricRepsone `json:"commitCadence"`
 	Contributors            singleMetricRepsone `json:"contributors"`
 	IssueClosureTime        singleMetricRepsone `json:"issueClosureTime"`
@@ -167,9 +168,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				case "ageLastRelease":
 					metricValue, _, confidence = util.ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
 				case "commitCadence":
-					metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
+					_, metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
+				case "latestCommit":
+					metricValue, _, _, confidence = util.ParseCommits(repo.Commits, startPoint)
 				case "contributors":
-					_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
+					_, _, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
 					metricValue = float64(contributors)
 					confidence = 100
 				case "issueClosureTime":
@@ -243,16 +246,24 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						Confidence: confidence,
 					}
 
-					metricValue, _, confidence = util.ParseCommits(repo.Commits, startPoint)
+					ageLastCommit, commitCadence, contributors, confidence := util.ParseCommits(repo.Commits, startPoint)
 					allMetrics.CommitCadence = singleMetricRepsone{
 						Metric:     metricValue,
 						Confidence: confidence,
 					}
 
-					_, contributors, _ := util.ParseCommits(repo.Commits, startPoint)
-					metricValue = float64(contributors)
+					allMetrics.AgeLastCommit = singleMetricRepsone{
+						Metric:     ageLastCommit,
+						Confidence: 100,
+					}
+
+					allMetrics.CommitCadence = singleMetricRepsone{
+						Metric:     commitCadence,
+						Confidence: 100,
+					}
+
 					allMetrics.Contributors = singleMetricRepsone{
-						Metric:     metricValue,
+						Metric:     float64(contributors),
 						Confidence: 100,
 					}
 
