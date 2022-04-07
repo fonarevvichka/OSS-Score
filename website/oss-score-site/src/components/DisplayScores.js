@@ -121,7 +121,7 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
         // display raw score and confidence
         if (metricName === 'License') {
             if (metricScore === '') {
-                result += '<div class="metric-num"> N/a'
+                result += '<div class="metric-num"> N/A'
             } else {
                 result += '<div class="metric-num">' + metricScore
             }
