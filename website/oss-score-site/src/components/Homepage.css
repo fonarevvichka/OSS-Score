@@ -217,11 +217,11 @@ label {
 }
 
 .info-flexbox {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 170px 170px;
+    column-gap: 15px;
     justify-content: center;
-    row-gap: 10px;
-    column-gap: 10px;
+
 }
 
 #repoOwnerName {
