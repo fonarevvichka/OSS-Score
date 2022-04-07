@@ -183,10 +183,26 @@ label {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    margin-left: 15%;
-    margin-right: 15%;
+    margin-left: 20px;
+    margin-right: 20px;
     margin-bottom: 20px;
     margin-top: 20px;
+}
+
+/* margin gets smaller as screen gets smaller */
+
+@media only screen and (max-width: 993px) {
+    .head2head {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+}
+
+@media only screen and (max-width: 964px) {
+    .head2head {
+        margin-left: 1px;
+        margin-right: 1px;
+    }
 }
 
 .head2head > div {
