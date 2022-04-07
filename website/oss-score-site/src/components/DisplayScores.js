@@ -241,8 +241,8 @@ const DisplayScores = (metrics) => {
         result += '<div class="repo-dependency-score">'
         result += '<div class="metric-category">Dependency Scores</div>'
         result += '<div class="info-grid-2-cols">'
-        result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true, false)
-        result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true, false)
+        result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true, true)
+        result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true, true)
         result += '</div >'
         result += '</div >'
 
