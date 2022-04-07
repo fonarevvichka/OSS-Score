@@ -145,23 +145,40 @@ const AddHighlightJSON = (metricsAll) => {
     for (var key in metricsAll[0]) {
         if (key !== 'message') {
             let maxOfMetric = 0;
+            let minOfMetric = Infinity
             let metricArray = [];
             // Find max of metrics and store values for highlighting
             for (let i = 0; i < metricsAll.length; i++) {
                 metricArray.push(metricsAll[i][key].metric)
-                if (metricsAll[i][key].metric > maxOfMetric) {
-                    maxOfMetric = metricsAll[i][key].metric;
+                if (key === "issueClosureTime" || key === "ageLastRelease") {
+                    if (metricsAll[i][key].metric < minOfMetric) {
+                        minOfMetric = metricsAll[i][key].metric;
+                    }
+                } else {
+                    if (metricsAll[i][key].metric > maxOfMetric) {
+                        maxOfMetric = metricsAll[i][key].metric;
+                    }
                 }
             }
 
             // Add highligt property metrics
             for (let i = 0; i < metricArray.length; i++) {
-                if (metricArray[i] === maxOfMetric) {
-                    // Highlight metric
-                    metricsAll[i][key].highlight = true;
+                if (key === "issueClosureTime" || key === "ageLastRelease") {
+                    if (metricArray[i] === minOfMetric) {
+                        // Highlight metric
+                        metricsAll[i][key].highlight = true;
+                    } else {
+                        // Don't highlight
+                        metricsAll[i][key].highlight = false;
+                    }
                 } else {
-                    // Don't highlight
-                    metricsAll[i][key].highlight = false;
+                    if (metricArray[i] === maxOfMetric) {
+                        // Highlight metric
+                        metricsAll[i][key].highlight = true;
+                    } else {
+                        // Don't highlight
+                        metricsAll[i][key].highlight = false;
+                    }
                 }
             }
         }
