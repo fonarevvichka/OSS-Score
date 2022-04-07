@@ -285,5 +285,12 @@ if (splitUrl.length == 2) { // Repo homepage
 if (owner != '' && repo != '') {
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
+    chrome.runtime.onMessage.addListener(
+        function(request, sender, sendResponse) {
+          insertHTML(scoreDiv, null, "loading")
+          scoreDiv.innerHTML += "score " + request.timeFrame;
+          sendResponse({message: "recieved new time frame"});
+        }
+      );
     insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
 }
