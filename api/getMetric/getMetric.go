@@ -23,6 +23,7 @@ type singleMetricRepsone struct {
 
 type allMetricsResponse struct {
 	Message                 string              `json:"message"`
+	License                 string              `json:"license"`
 	Stars                   singleMetricRepsone `json:"stars"`
 	ReleaseCadence          singleMetricRepsone `json:"releaseCadence"`
 	AgeLastRelease          singleMetricRepsone `json:"ageLastRelease"`
@@ -216,6 +217,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					metricValue = score.Score
 					confidence = score.Confidence
 				case "all":
+					allMetrics.License = repo.License
 					licenseMap, err = util.GetLicenseMap("./util/scores/licenseScoring.csv")
 					if err != nil {
 						message = "Error accessing license scoring file"
