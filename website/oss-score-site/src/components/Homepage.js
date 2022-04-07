@@ -232,6 +232,7 @@ export default function Home(props) {
         }
 
         await Promise.all(scorePromises).then((values) => {
+            console.log(values)
             scoreDisplay += DisplayScores(values)
         }).catch(e => console.log('Error caught', e));
 

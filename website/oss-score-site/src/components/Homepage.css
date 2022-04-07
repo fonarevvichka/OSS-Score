@@ -51,6 +51,9 @@ label {
     padding-left: 10px;
     padding-right: 10px;
 
+    border-color: black;
+    border-radius: 20px
+
 }
 
 .error-message {

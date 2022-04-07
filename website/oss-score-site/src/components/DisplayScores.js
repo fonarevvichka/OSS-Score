@@ -148,7 +148,7 @@ const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, co
     result += '<div class="info-flexbox">'
    
     result += getMetricDisplay(activityScore, "Activity Score", false, true)
-    result += getMetricDisplay(licenseScore, "License Score", false, true)
+    result += getMetricDisplay(licenseScore, "License", false, true)
     result += getMetricDisplay(stars, "Stars", false, false)
     result += getMetricDisplay(contributors, "Contributors", false, false)
 
