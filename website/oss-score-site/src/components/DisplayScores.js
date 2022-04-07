@@ -115,7 +115,12 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 
     } else {
         // display raw score and confidence
-        result += '<div class="metric-num">' + metricScore.metric
+        if (metricName === 'License') { 
+            result += '<div class="metric-num"> MIT'
+        } else {
+            result += '<div class="metric-num">' + metricScore.metric
+        }
+
         if (outOfTen) {
             result += '/10'
         } else if (starsOver1k) {
@@ -148,7 +153,7 @@ const getBasicInfoDisplay = (owner, name, activityScore, licenseScore, stars, co
     result += '<div class="info-flexbox">'
    
     result += getMetricDisplay(activityScore, "Activity Score", false, true)
-    result += getMetricDisplay(licenseScore, "License", false, true)
+    result += getMetricDisplay(licenseScore, "License", false, false)
     result += getMetricDisplay(stars, "Stars", false, false)
     result += getMetricDisplay(contributors, "Contributors", false, false)
 
