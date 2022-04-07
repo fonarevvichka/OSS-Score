@@ -61,6 +61,27 @@ label {
     font-size: 10px;
 }
 
+.intro {
+    background-color: #5b4da2;
+    width: 80%;
+    justify-content: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.slogan {
+    color: white;
+    font-weight: 600;
+    font-size: 30px;
+}
+
+.instructions {
+    color: white;
+    font-size: 20px;
+}
+
 /*** loading ***/
 
 .loading {
