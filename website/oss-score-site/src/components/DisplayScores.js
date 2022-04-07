@@ -120,10 +120,11 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
     } else {
         // display raw score and confidence
         if (metricName === 'License') {
-            if (metricScore === '') {
+            if (metricScore.license === '') {
                 result += '<div class="metric-num"> N/A'
             } else {
-                result += '<div class="metric-num">' + metricScore
+                result += '<div class="metric-num">' + metricScore.license
+                result += '<div class="metric-confidence">Score: ' + metricScore.score.metric + '/10</div>'
             }
         } else if (metricName === 'Last Commit') {
             result += '<div class="metric-num">' + Math.round(metricScore.metric) + ' days'
@@ -149,13 +150,13 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 }
 
 // activityScore, licenseScore, stars, contributors are tuples (metricScore, confidence, highlight)
-const getBasicInfoDisplay = (owner, name, activityScore, license, stars, contributors, ageLastCommit) => {
+const getBasicInfoDisplay = (owner, name, activityScore, licenseInfo, stars, contributors, ageLastCommit) => {
     let result = '<div class="basic-info-display"> \n' +
         '<a class="basic-info" id="repoOwnerName" target="_blank" href = "https://github.com/' + owner + '/' + name + '">' + owner + '/' + name + '</a>'
     result += '<div class="info-flexbox">'
    
     result += getMetricDisplay(activityScore, "Activity Score", false, true)
-    result += getMetricDisplay(license, "License", false, false)
+    result += getMetricDisplay(licenseInfo, "License", false, false)
     result += getMetricDisplay(stars, "Stars", false, false)
     result += getMetricDisplay(contributors, "Contributors", false, false)
     result += getMetricDisplay(ageLastCommit, "Last Commit", false, false)
@@ -217,10 +218,13 @@ const DisplayScores = (metrics) => {
     // Create head to head display for each owner/name/metrics
     for (let i = 0; i < metrics.length; i++) {
         result += '<div class="repo-stats">'
-        
+        let licenseInfo = {
+            'license': metricsAll[i].license,
+            'score': metricsAll[i].repoLicenseScore
+        } 
         // owner, name, activityScore, licenseScore, stars, contributors
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
-            metricsAll[i].license, metricsAll[i].stars, metricsAll[i].contributors, metricsAll[i].ageLastCommit)
+            licenseInfo, metricsAll[i].stars, metricsAll[i].contributors, metricsAll[i].ageLastCommit)
 
         result += '<div class="metrics-display">'
         result += '<div class="metric-category">Activity Score Breakdown</div>'
