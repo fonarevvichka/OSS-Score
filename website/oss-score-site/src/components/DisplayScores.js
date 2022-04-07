@@ -45,15 +45,13 @@ let MetricStats = {
 
 
 // TODO: Highlighting better metric, when lower is bette
-const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
+const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => {
     const infoLogo = ReactDOMServer.renderToStaticMarkup(<AiOutlineInfoCircle />);
     const infoLogoString = infoLogo.toString()
     
     // round metric 
-    if (metricName !== "License") {
-        metricScore.metric = Math.round(metricScore.metric * 100) / 100
-        metricScore.confidence = Math.round(metricScore.confidence)
-    }
+    metricScore.metric = Math.round(metricScore.metric * 100) / 100
+    metricScore.confidence = Math.round(metricScore.confidence)
 
     // shorten stars metric
     let starsOver1k = false
@@ -68,8 +66,10 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 
     if (barDisplay) {
         result += '<div class="metric-container bar-container" '
-    } else {
+    } else if (lg) {
         result += '<div class="metric-container lg-container" '
+    } else {
+        result += '<div class="metric-container sm-container" '
     }
 
     if (metricScore.highlight) {
@@ -124,7 +124,7 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
                 result += '<div class="metric-num"> N/A'
             } else {
                 result += '<div class="metric-num">' + metricScore.license
-                result += '<div class="metric-confidence">Score: ' + metricScore.score.metric + '/10</div>'
+                result += '<div class="metric-confidence">Score: ' + metricScore.metric + '/10</div>'
             }
         } else if (metricName === 'Last Commit') {
             result += '<div class="metric-num">' + Math.round(metricScore.metric) + ' days'
@@ -153,13 +153,15 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 const getBasicInfoDisplay = (owner, name, activityScore, licenseInfo, stars, contributors, ageLastCommit) => {
     let result = '<div class="basic-info-display"> \n' +
         '<a class="basic-info" id="repoOwnerName" target="_blank" href = "https://github.com/' + owner + '/' + name + '">' + owner + '/' + name + '</a>'
-    result += '<div class="info-flexbox">'
+    result += '<div class="info-grid-2-cols">'
    
-    result += getMetricDisplay(activityScore, "Activity Score", false, true)
-    result += getMetricDisplay(licenseInfo, "License", false, false)
-    result += getMetricDisplay(stars, "Stars", false, false)
-    result += getMetricDisplay(contributors, "Contributors", false, false)
-    result += getMetricDisplay(ageLastCommit, "Last Commit", false, false)
+    result += getMetricDisplay(activityScore, "Activity Score", false, true, true)
+    result += getMetricDisplay(ageLastCommit, "Last Commit", false, false, true)
+    result += '</div>'
+    result += '<div class="info-grid-3-cols">'
+    result += getMetricDisplay(contributors, "Contributors", false, false, false)
+    result += getMetricDisplay(stars, "Stars", false, false, false)
+    result += getMetricDisplay(licenseInfo, "License", false, false, false)
     // close div
     result += '</div></div>'
     return result
@@ -220,7 +222,9 @@ const DisplayScores = (metrics) => {
         result += '<div class="repo-stats">'
         let licenseInfo = {
             'license': metricsAll[i].license,
-            'score': metricsAll[i].repoLicenseScore
+            'metric': metricsAll[i].repoLicenseScore.metric,
+            'confidence': metricsAll[i].repoLicenseScore.confidence,
+            'highlight': metricsAll[i].repoLicenseScore.highlight
         } 
         // owner, name, activityScore, licenseScore, stars, contributors
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
@@ -228,17 +232,17 @@ const DisplayScores = (metrics) => {
 
         result += '<div class="metrics-display">'
         result += '<div class="metric-category">Activity Score Breakdown</div>'
-        result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false)
-        result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false)
-        result += getMetricDisplay(metricsAll[i].releaseCadence, 'Release Cadence', true, false)
-        result += getMetricDisplay(metricsAll[i].ageLastRelease, 'Age of Last Release', true, false)
+        result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false, false)
+        result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false, false)
+        result += getMetricDisplay(metricsAll[i].releaseCadence, 'Release Cadence', true, false, false)
+        result += getMetricDisplay(metricsAll[i].ageLastRelease, 'Age of Last Release', true, false, false)
         result += '</div >'
 
         result += '<div class="repo-dependency-score">'
         result += '<div class="metric-category">Dependency Scores</div>'
-        result += '<div class="info-flexbox">'
-        result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true)
-        result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true)
+        result += '<div class="info-grid-2-cols">'
+        result += getMetricDisplay(metricsAll[i].dependencyActivityScore, 'Dependency Activity Score', false, true, false)
+        result += getMetricDisplay(metricsAll[i].dependencyLicenseScore, 'Dependency License Score', false, true, false)
         result += '</div >'
         result += '</div >'
 

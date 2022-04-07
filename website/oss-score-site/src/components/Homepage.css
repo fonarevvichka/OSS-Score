@@ -223,7 +223,7 @@ label {
     margin-left: 20px;
     margin-right: 20px;
     border-radius: 7px;
-    min-width: 436.7px;
+    min-width: 440px;
 }
 
 .basic-info-display .metrics-display {
@@ -235,12 +235,19 @@ label {
     font-size: 24px;
 }
 
-.info-flexbox {
+.info-grid-2-cols {
     display: grid;
     grid-template-columns: 170px 170px;
-    column-gap: 15px;
+    column-gap: 10px;
     justify-content: center;
 
+}
+
+.info-grid-3-cols {
+    display: grid;
+    grid-template-columns: 130px 130px 130px;
+    column-gap: 10px;
+    justify-content: center;
 }
 
 #repoOwnerName {
@@ -411,7 +418,7 @@ label {
 /* Metric Containers */
 
 .lg-container {
-    width: 175px;
+    width: 170px;
     align-content: center;
 }
 
@@ -426,6 +433,27 @@ label {
 }
 
 .lg-container .metric-num {
+    font-size: 25px;
+}
+
+/* Small metric containers */
+
+.sm-container {
+    width: 130px;
+    align-content: center;
+}
+
+.sm-container .metric-container-title {
+    font-size: 15px;
+    line-height: normal;
+
+}
+
+.sm-container .metric-confidence {
+    font-size: 13px;
+}
+
+.sm-container .metric-num {
     font-size: 25px;
 }
 
