@@ -20,6 +20,8 @@ let MetricStats = {
 
     "Dependency License Score-tooltip": "Direct mapping based on the licenses of the dependencies",
 
+    "Last Commit-tooltip": "Time since last commit",
+
     "Issue Closure Time-min": 176,
     "Issue Closure Time-max": 0,
     "Issue Closure Time-units": "days",
@@ -123,6 +125,8 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
             } else {
                 result += '<div class="metric-num">' + metricScore
             }
+        } else if (metricName === 'Last Commit') {
+            result += '<div class="metric-num">' + Math.round(metricScore.metric) + ' days'
         } else {
             result += '<div class="metric-num">' + metricScore.metric
         }
@@ -145,7 +149,7 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen) => {
 }
 
 // activityScore, licenseScore, stars, contributors are tuples (metricScore, confidence, highlight)
-const getBasicInfoDisplay = (owner, name, activityScore, license, stars, contributors) => {
+const getBasicInfoDisplay = (owner, name, activityScore, license, stars, contributors, ageLastCommit) => {
     let result = '<div class="basic-info-display"> \n' +
         '<a class="basic-info" id="repoOwnerName" target="_blank" href = "https://github.com/' + owner + '/' + name + '">' + owner + '/' + name + '</a>'
     result += '<div class="info-flexbox">'
@@ -154,7 +158,7 @@ const getBasicInfoDisplay = (owner, name, activityScore, license, stars, contrib
     result += getMetricDisplay(license, "License", false, false)
     result += getMetricDisplay(stars, "Stars", false, false)
     result += getMetricDisplay(contributors, "Contributors", false, false)
-
+    result += getMetricDisplay(ageLastCommit, "Last Commit", false, false)
     // close div
     result += '</div></div>'
     return result
@@ -216,11 +220,10 @@ const DisplayScores = (metrics) => {
         
         // owner, name, activityScore, licenseScore, stars, contributors
         result += getBasicInfoDisplay(metrics[i][0], metrics[i][1], metricsAll[i].repoActivityScore,
-            metricsAll[i].license, metricsAll[i].stars, metricsAll[i].contributors)
+            metricsAll[i].license, metricsAll[i].stars, metricsAll[i].contributors, metricsAll[i].ageLastCommit)
 
         result += '<div class="metrics-display">'
         result += '<div class="metric-category">Activity Score Breakdown</div>'
-        
         result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false)
         result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false)
         result += getMetricDisplay(metricsAll[i].releaseCadence, 'Release Cadence', true, false)
