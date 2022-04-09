@@ -2,6 +2,7 @@
 import React, {useState} from 'react'
 import './Homepage.css';
 import DisplayScores from './DisplayScores.js';
+import { AiOutlineInfoCircle } from "react-icons/ai";
 
 /* functional component for homepage */
 export default function Home(props) {
@@ -167,7 +168,7 @@ export default function Home(props) {
                     return [owner, repo, metrics];
                 }
             } else if (response.status === 406) {
-                alert("At least one of the repositories entered is private or does not exist")
+                alert(owner + '/' + repo + " is private or does not exist")
                 console.error("Repository entered does not exist")
             } else {
                 alert("Error connecting to OSS-Score API")
@@ -175,6 +176,7 @@ export default function Home(props) {
             }
         } catch (error) {
             console.error(error)
+            return Promise.reject(error);
         }
     }
 
@@ -229,10 +231,11 @@ export default function Home(props) {
             displayError("2");
         }
 
-        // do promises (array of json objects) (owner, name, metrics)
-        let scores = await Promise.all(scorePromises)
+        await Promise.all(scorePromises).then((values) => {
+            console.log(values)
+            scoreDisplay += DisplayScores(values)
+        }).catch(e => console.log('Error caught', e));
 
-        scoreDisplay += DisplayScores(scores)
  
         // Hide loading gear/clear all html in head2head
         document.getElementById("loading").innerHTML = ''
@@ -252,8 +255,8 @@ export default function Home(props) {
                     <div>
                         <input key="search1" id="search1" name="search1" type="text" placeholder="Repo Owner/Name" onClick={() => document.getElementById('search1').style.borderColor = '#000000'}
                             onChange={handleChange("1")} value={inputs.search1}/>
-                        <div class="tool-tip">i
-                            <span class="tooltiptext" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
+                        <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
+                            <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
                                 <div>owner/name</div><div>github.com/owner/name</div><div>https://github.com/owner/name</div>
                             </span>
                         </div>
@@ -262,8 +265,8 @@ export default function Home(props) {
                     <div>
                         <input key="search2" id="search2" name="search2" type="text" placeholder="Repo owner/name" onClick={() => document.getElementById('search2').style.borderColor = '#000000'}
                             onChange = {handleChange("2")} value={inputs.search2} />
-                        <div class="tool-tip">i
-                             <span class="tooltiptext" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
+                        <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
+                             <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
                                 <div>owner/name</div><div>github.com/owner/name</div><div>https://github.com/owner/name</div>
                             </span>
                         </div>
