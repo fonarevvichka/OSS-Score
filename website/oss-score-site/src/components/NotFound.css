@@ -1,16 +1,22 @@
 
 
 .bubbles {
-    float: right;
+    position: relative;
+    /* float: top; */
+    top: -80px;
+    left: 250px;
     color: white;
 }
 
-.fish {
+
+.fish{
     color: white;
+    position: relative;
+    top: -35px;
 }
 
 
-p.privacy {
+p.not-found-text {
     text-align: center;
     color: white;
     font-weight: 700;
@@ -18,7 +24,7 @@ p.privacy {
 }
 
 
-div.privacy-body {
+div.not-found-body {
     background-color: #5b4da2;
     margin-top: 50px;
     width: 60%;
