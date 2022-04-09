@@ -96,9 +96,9 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 //NET: individual contributors and commit cadence, last commit
 
 // Return: commit cadence, contributors, confidence
-func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64) {
+func ParseCommits(commits []Commit, startPoint time.Time) (float64, float64, int, float64) {
 	if len(commits) == 0 {
-		return 0, 0, 100
+		return math.MaxFloat64, 0, 0, 100
 	}
 
 	var totalCommits float64
@@ -106,6 +106,7 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64
 	contributorMap := make(map[string]string)
 
 	for _, commit := range commits {
+
 		if commit.PushedDate.After(startPoint) {
 			totalCommits += 1
 			if commit.PushedDate.After(latestCommit) {
@@ -119,13 +120,13 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, int, float64
 	}
 
 	if totalCommits == 0 {
-		return 0, 0, 100
+		return math.MaxFloat64, 0, 0, 100
 	}
 
 	// time since start point converted to weeks
 	timeFrame := time.Since(startPoint).Hours() / 24.0 / 7.0
 
-	return totalCommits / timeFrame, len(contributorMap), 100
+	return time.Since(latestCommit).Hours() / 24.0, totalCommits / timeFrame, len(contributorMap), 100
 }
 
 // releases
@@ -183,7 +184,7 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) (Score
 
 	// Parse data
 	avgIssueClosureTime, issueConfidence := ParseIssues(repoInfo.Issues, startPoint)
-	commitCadence, contributors, commitConfidence := ParseCommits(repoInfo.Commits, startPoint)
+	_, commitCadence, contributors, commitConfidence := ParseCommits(repoInfo.Commits, startPoint)
 	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repoInfo.Releases, repoInfo.LatestRelease, startPoint)
 
 	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
