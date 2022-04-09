@@ -276,7 +276,7 @@ export default function Home(props) {
             </form>
             <div id="loading">
                 <div class="intro">
-                    <p class="slogan">Decide what Github repositories to use with in depth metrics and analysis</p>
+                    <p class="slogan">Decide what Github repositories to use with in-depth metrics and analysis</p>
                     <p class="instructions">To get started, search repositories by inserting the github link or entering "owner/name"</p>
                 </div>
             </div>
