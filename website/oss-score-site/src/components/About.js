@@ -6,7 +6,7 @@ import './About.css';
 const About = () => {
   return (
     <div className='about-container'>
-      <header>About US</header>
+      <header className='main-header'>About</header>
       <p className='opener'>&emsp; Have you ever had trouble finding the right open source software package for your project? Have you ever started using a package only to realize hours later that it has long been deprecated or does not have active developer groups to fix any outstanding issues?</p>
       <header>Mission</header>
       <p className='mission-statement'>&emsp; Our mission at OSS-Score is to help developers make quick and informed decisions about OSS tools. We want to minimize the time it takes from deciding you need to use an open source package to integrating it into your project. In addition to creating a more streamlined workflow experience, we also want to make sure developers are fully aware of all the details about a package before they decide to use it.</p>
