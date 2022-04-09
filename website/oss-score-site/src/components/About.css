@@ -1,3 +1,97 @@
 p {
     text-align: center;
 }
+.about-container {
+    justify-content: center;
+    /* padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px; */
+}
+
+.opener {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: left;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+}
+
+.mission-statement {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: left;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+}
+
+.solution {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: left;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+    justify-content: center;
+}
+
+.solution p {
+    text-align: left;
+}
+
+.image-container {
+    width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.meet-the-team {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: left;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+}
+
+.team-image-container {
+    width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.team-members {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 30px;
+
+}
+
+.blurb {
+    font-size: 15px;
+}
+
+.photo {
+    width: 150px;
+    margin-left: auto;
+    margin-right: auto;
+}
