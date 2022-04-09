@@ -174,7 +174,8 @@ label {
   
     /* Position the tooltip text */
     position: absolute;
-    bottom: 125%;
+    /* bottom: 135%; */
+    top: 100%;
     left: 50%;
     margin-left: -60px;
   
@@ -185,9 +186,9 @@ label {
   
 /* Tooltip arrow */
 .tool-tip-repo .tooltiptext-repo::after {
-    content: "";
+    content: " ";
     position: absolute;
-    top: 100%;
+    bottom: 100%;
     left: 50%;
     margin-left: -5px;
     border-width: 5px;
