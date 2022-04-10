@@ -206,6 +206,9 @@ export default function Home(props) {
         // erorr prevent default
         evt.preventDefault();
 
+        // Clear homepage text
+        document.getElementById("loading").innerHTML = ''
+
         // Clear all html in head2head and hide it
         document.getElementById("head2head").innerHTML = ''
         scoreDisplay = ''
