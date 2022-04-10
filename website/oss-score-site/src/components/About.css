@@ -3,6 +3,16 @@
 }
 
 
+.internal-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 800;
+}
+
+.internal-link:hover {
+    color: rgb(184, 184, 184);
+}
+
 p {
     text-align: center;
 }
