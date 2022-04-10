@@ -206,6 +206,9 @@ export default function Home(props) {
         // erorr prevent default
         evt.preventDefault();
 
+        // Clear homepage text
+        document.getElementById("loading").innerHTML = ''
+
         // Clear all html in head2head and hide it
         document.getElementById("head2head").innerHTML = ''
         scoreDisplay = ''
@@ -253,8 +256,7 @@ export default function Home(props) {
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
                     <div>
-                        <label htmlFor="search1" >Link to Github repo #1</label><br></br>
-                        <input key="search1" id="search1" name="search1" type="text" placeholder="Search Repo 1" onClick={() => document.getElementById('search1').style.borderColor = '#000000'}
+                        <input key="search1" id="search1" name="search1" type="text" placeholder="Repo Owner/Name" onClick={() => document.getElementById('search1').style.borderColor = '#000000'}
                             onChange={handleChange("1")} value={inputs.search1}/>
                         <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
                             <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
@@ -264,8 +266,7 @@ export default function Home(props) {
                         <div class="error-message" id="error-message1" name="error-message1">Please enter a valid Github URL</div>
                     </div>
                     <div>
-                        <label htmlFor="search2" >Link to Github repo #2</label><br></br>
-                        <input key="search2" id="search2" name="search2" type="text" placeholder="Search Repo 2" onClick={() => document.getElementById('search2').style.borderColor = '#000000'}
+                        <input key="search2" id="search2" name="search2" type="text" placeholder="Repo owner/name" onClick={() => document.getElementById('search2').style.borderColor = '#000000'}
                             onChange = {handleChange("2")} value={inputs.search2} />
                         <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
                              <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
@@ -279,7 +280,12 @@ export default function Home(props) {
                     <button id="compare-button" class="compare-button" type="submit" value="Submit">Get Metrics</button>
                 </div>
             </form>
-            <div id="loading"></div>
+            <div id="loading">
+                <div class="intro">
+                    <p class="slogan">Decide what Github repositories to use with in-depth metrics and analysis</p>
+                    <p class="instructions">To get started, search repositories by inserting the github link or entering "owner/name"</p>
+                </div>
+            </div>
             <div class="head2head" id="head2head"></div>
 
             < svg view-box="0 0 1600 900" >
