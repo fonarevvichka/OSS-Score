@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
@@ -43,6 +44,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no scoreType variable in path")
 	}
+
+	// Convert to lowercase
+	catalog = strings.ToLower(catalog)
+	owner = strings.ToLower(owner)
+	name = strings.ToLower(name)
 
 	timeFrame := 12
 	timeFrameString, found := request.QueryStringParameters["timeFrame"]
