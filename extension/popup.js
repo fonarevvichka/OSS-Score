@@ -1,19 +1,17 @@
-// $(function(){
-//     $('#submitTimeFrame').click(function(){
-//         var timeFrame = $('#newTimeFrame').val();
-//         $('#newTimeFrame').val('');
-//     })
-// })
-
 function changeTimeFrame() {
     var inputResult = document.getElementById("newTimeFrame").value;
     document.getElementById("newTimeFrame").value = '';
     chrome.tabs.query({currentWindow: true, active: true}, function(tabs) {
         var activeTab = tabs[0];
         chrome.tabs.sendMessage(activeTab.id, {"timeFrame": inputResult}, function(response) {
-            console.log(response.message);
+            try {
+                console.log(response.message);
+            } catch (error) {
+                console.log(error);
+                alert("Error: time frame could not be submitted. Make sure you are on the github tab.");
+            }
         });
-       });
+    });
 }
    
 document.addEventListener('DOMContentLoaded', function() {

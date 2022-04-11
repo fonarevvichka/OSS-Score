@@ -295,6 +295,7 @@ var TimeFrame = null;
 if (owner != '' && repo != '') {
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
+
     chrome.runtime.onMessage.addListener(
         function(request, sender, sendResponse) {
           TimeFrame = request.timeFrame;
