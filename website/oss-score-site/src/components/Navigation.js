@@ -5,6 +5,7 @@ import './Navigation.css';
 import './Navigation.css';
 import smallLogo from '../images/favicon.ico'
 import gitLogo from '../images/Git-Icon-White.png'
+import { ImGit } from "react-icons/im";
 
 const Navigation = () => {
 
@@ -33,13 +34,13 @@ const Navigation = () => {
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>How We Score</Nav.Link>
                         <Nav.Link class="nav-link" href="/privacypolicy" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Privacy Policy</Nav.Link>
-                        <Navbar.Brand href="https://github.com/fonarevvichka/OSS-Score"
+                        
+                        <Nav.Link href="https://github.com/fonarevvichka/OSS-Score"
                             target="_blank" class="OSSScoreLink"
-                            style={{ paddingLeft: "10px", fontSize: "15px", color:"#FFFFFF8C" }}
+                            style={{color: "#FFFFFF8C" }}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>
-                            <img className='gitLogo' src={gitLogo}></img>
-                            fonarevvichka/OSS-Score
-                        </Navbar.Brand>
+                            <ImGit size={21}/> fonarevvichka/OSS-Score
+                        </Nav.Link>
                     </Nav>
             </Navbar>
     );
