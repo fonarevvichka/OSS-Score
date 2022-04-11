@@ -1,10 +1,9 @@
 import React from 'react'
-import { Navbar, Container, Nav} from 'react-bootstrap'
+import { Navbar, Nav} from 'react-bootstrap'
 import './Navigation.css';
 
 import './Navigation.css';
 import smallLogo from '../images/favicon.ico'
-import gitLogo from '../images/Git-Icon-White.png'
 import { ImGit } from "react-icons/im";
 
 const Navigation = () => {
@@ -19,10 +18,12 @@ const Navigation = () => {
 
     return (
             <Navbar className='navigation-bar' expand="lg" variant="dark">
-                <Navbar.Brand href="/" style={{paddingLeft:"10px"}}>
-                    <img className='navLogo' src={smallLogo}></img>
-                    <div className='navLogoText'>OSS-Score</div>
-                </Navbar.Brand>
+            <Nav.Link className='oss-logo' href="/" style={{ fontSize: "20px", color: "#FFFFFF8C" }}
+                onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>
+                <img className='navLogo' src={smallLogo}></img> OSS-Score
+            </Nav.Link>
+
+
                     <Nav className="navbar-nav ms-auto">
                         <Nav.Link class="nav-home" href="/" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Home</Nav.Link>
