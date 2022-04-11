@@ -13,12 +13,6 @@ const Navigation = () => {
                     <img className='navLogo' src={smallLogo}></img>
                     OSS-Score
                 </Navbar.Brand>
-                <Navbar.Brand href="https://github.com/fonarevvichka/OSS-Score" 
-                    target="_blank" class="OSSScoreLink" 
-                    style={{paddingLeft:"10px", fontSize:"15px"}}>
-                    <img className='gitLogo' src={gitLogo}></img>
-                    fonarevvichka/OSS-Score
-                </Navbar.Brand>
 
                     <Nav className="navbar-nav ms-auto">
                         <Nav.Link class="nav-home" href="/">Home</Nav.Link>
@@ -26,6 +20,12 @@ const Navigation = () => {
                         <Nav.Link class="nav-link" href="/extension">Extension</Nav.Link>
                         <Nav.Link class="nav-link" href="/generate-scores">How We Generate Scores</Nav.Link>
                         <Nav.Link class="nav-link" href="/privacypolicy">Privacy Policy</Nav.Link>
+                        <Navbar.Brand href="https://github.com/fonarevvichka/OSS-Score"
+                            target="_blank" class="OSSScoreLink"
+                            style={{ paddingLeft: "10px", fontSize: "15px" }}>
+                            <img className='gitLogo' src={gitLogo}></img>
+                            fonarevvichka/OSS-Score
+                        </Navbar.Brand>
                     </Nav>
             </Navbar>
     );
