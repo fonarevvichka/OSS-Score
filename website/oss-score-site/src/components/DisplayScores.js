@@ -123,7 +123,14 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
             if (metricScore.license === '') {
                 result += '<div class="metric-num"> N/A'
             } else {
-                result += '<div class="metric-num">' + metricScore.license
+                // make sure license name fits in the box
+                if (metricScore.license.length > 12) {
+                    result += '<div class="metric-num" style="font-size: 15px">' + metricScore.license
+                } else if (metricScore.license.length > 10) {
+                    result += '<div class="metric-num" style="font-size: 21px">' + metricScore.license
+                }else {
+                    result += '<div class="metric-num">' + metricScore.license
+                }
                 result += '<div class="metric-confidence">Score: ' + metricScore.metric + '/10</div>'
             }
         } else if (metricName === 'Last Commit') {
