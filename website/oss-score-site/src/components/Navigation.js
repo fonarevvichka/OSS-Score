@@ -22,7 +22,6 @@ const Navigation = () => {
                     <img className='navLogo' src={smallLogo}></img>
                     <div className='navLogoText'>OSS-Score</div>
                 </Navbar.Brand>
-
                     <Nav className="navbar-nav ms-auto">
                         <Nav.Link class="nav-home" href="/" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Home</Nav.Link>
