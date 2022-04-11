@@ -73,19 +73,34 @@ func GetLicenseMap(path string) (map[string]float64, error) {
 // pull out all issues that are < X years old
 // of those closed issues calc avg issue closure time
 func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
-	var totalClosureTime float64
-	var issueCounter float64 = 0
-	for _, closedIssue := range issues.ClosedIssues {
-		if closedIssue.CreateDate.After(startPoint) {
-			totalClosureTime += closedIssue.CloseDate.Sub(closedIssue.CreateDate).Hours()
-			issueCounter += 1
+	totalClosureTime := 0.0
+	closedIssueCounter := 0.0
+
+	for _, issue := range issues.ClosedIssues {
+		if issue.CreateDate.After(startPoint) {
+			totalClosureTime += issue.CloseDate.Sub(issue.CreateDate).Hours()
+			closedIssueCounter += 1
 		}
 	}
-	if issueCounter == 0 {
-		return math.MaxFloat64, 100
+
+	if closedIssueCounter == 0 {
+		openIssueCounter := 0.0
+		for _, issue := range issues.ClosedIssues {
+			if issue.CreateDate.After(startPoint) {
+				openIssueCounter += 1
+				break
+			}
+		}
+
+		// no open issues over the time frame either
+		if openIssueCounter == 0 {
+			return 0, 0
+		} else {
+			return math.MaxFloat64, 100
+		}
 	}
 
-	return (totalClosureTime / 24.0) / issueCounter, 100
+	return (totalClosureTime / 24.0) /closedIssueCounter, 100
 }
 
 // commits
