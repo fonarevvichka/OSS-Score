@@ -1,6 +1,6 @@
 {
     "name": "OSS Score",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Adds Repo Activity and License Scores",
     "icons": {                   
       "128": "images/icon128.png"  
@@ -18,10 +18,6 @@
       "js": [ "extension.js"],
       "matches": [ "https://github.com/*" ],
       "css": ["extension.css"]
-    }],
-    "web_accessible_resources": [{
-      "resources": ["contentscript.css", "images/neverGiveUp.png"],
-      "matches": ["<all_urls>"]
     }],
     "manifest_version": 3
   }
