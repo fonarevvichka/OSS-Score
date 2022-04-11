@@ -51,6 +51,9 @@ label {
     padding-left: 10px;
     padding-right: 10px;
 
+    border-color: black;
+    border-radius: 20px
+
 }
 
 .error-message {
@@ -59,6 +62,27 @@ label {
     color: #cc0000;
     text-align: left;
     font-size: 10px;
+}
+
+.intro {
+    background-color: #5b4da2;
+    width: 850px;
+    justify-content: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.slogan {
+    color: white;
+    font-weight: 600;
+    font-size: 30px;
+}
+
+.instructions {
+    color: white;
+    font-size: 20px;
 }
 
 /*** loading ***/
@@ -79,25 +103,17 @@ label {
 
 /* Tooltip container */
 .tool-tip {
-    position: relative;
-    float: right;
+    position: absolute;
+    /* position: relative; */
+    top: 0px;
+    right: 0px;
     display: inline-block;
-    background: #606060;
-    border-radius:50%;
-    height: 20px;
-    width: 14px;
-    color: white;
-    font-size: 12px;
-    font-weight: 1000;
-    text-align: center;
-    vertical-align: middle;
-    line-height: 20px; 
   }
   
 /* Tooltip text */
 .tool-tip .tooltiptext {
     visibility: hidden;
-    width: 120px;
+    width: 160px;
     background-color: #555;
     color: #fff;
     text-align: center;
@@ -106,10 +122,9 @@ label {
   
     /* Position the tooltip text */
     position: absolute;
-    z-index: 1;
     bottom: 125%;
     left: 50%;
-    margin-left: -60px;
+    margin-left: -80px;
   
     /* Fade in tooltip */
     opacity: 0;
@@ -138,16 +153,81 @@ label {
     width: 25px;
 }
 
+
+/* Tooltip container */
+.tool-tip-repo {
+    position: relative;
+    float: right;
+    display: inline-block;
+    width: 25px;
+  }
+  
+/* Tooltip text */
+.tool-tip-repo .tooltiptext-repo {
+    visibility: hidden;
+    width: 120px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    padding: 5px 5px;
+    border-radius: 6px;
+  
+    /* Position the tooltip text */
+    position: absolute;
+    /* bottom: 135%; */
+    top: 100%;
+    left: 50%;
+    margin-left: -60px;
+  
+    /* Fade in tooltip */
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+/* Tooltip arrow */
+.tool-tip-repo .tooltiptext-repo::after {
+    content: " ";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+  }
+  
+/* Show the tooltip text when you mouse over the tooltip container */
+.tool-tip-repo:hover .tooltiptext-repo {
+    visibility: visible;
+    opacity: 1;
+  }
+
 /*** head2head ***/
 
 .head2head {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    margin-left: 15%;
-    margin-right: 15%;
+    margin-left: 20px;
+    margin-right: 20px;
     margin-bottom: 20px;
     margin-top: 20px;
+}
+
+/* margin gets smaller as screen gets smaller */
+
+@media only screen and (max-width: 993px) {
+    .head2head {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+}
+
+@media only screen and (max-width: 964px) {
+    .head2head {
+        margin-left: 1px;
+        margin-right: 1px;
+    }
 }
 
 .head2head > div {
@@ -164,19 +244,33 @@ label {
     margin-bottom: 10px;
     margin-left: 20px;
     margin-right: 20px;
-
-    /* border-width: 2px;
-    border-style: solid; */
     border-radius: 7px;
+    min-width: 440px;
+    max-width: 500px;
 }
 
-.basic-info-display, .metrics-display {
+.basic-info-display .metrics-display {
     margin-top: 10px;
     margin-bottom: 10px;
 }
 
 .basic-info {
     font-size: 24px;
+}
+
+.info-grid-2-cols {
+    display: grid;
+    grid-template-columns: 170px 170px;
+    column-gap: 10px;
+    justify-content: center;
+
+}
+
+.info-grid-3-cols {
+    display: grid;
+    grid-template-columns: 130px 130px 130px;
+    column-gap: 10px;
+    justify-content: center;
 }
 
 #repoOwnerName {
@@ -195,16 +289,15 @@ label {
 }
 
 .metric-container {
-    border-style: solid;
-    border-radius: 7px;
-
+    /* border-style: solid; */
+    border-radius: 10px;
     margin-top: 5px;
     margin-bottom: 5px;
+    position: relative;
 }
 
 .metric-container-title {
     font-size: 20px;
-    text-decoration: underline;
 }
 
 .submetric-container {
@@ -216,7 +309,6 @@ label {
 }
 
 .metric {
-    /* color: green; */
     font-size: 18px;
 }
 
@@ -346,22 +438,95 @@ label {
   }
 
 
+/* Metric Containers */
+
+.lg-container {
+    width: 170px;
+    align-content: center;
+}
+
+.lg-container .metric-container-title {
+    font-size: 20px;
+    line-height: normal;
+
+}
+
+.lg-container .metric-confidence {
+    font-size: 15px;
+}
+
+.lg-container .metric-num {
+    font-size: 25px;
+}
+
+/* Small metric containers */
+
+.sm-container {
+    width: 130px;
+    align-content: center;
+}
+
+.sm-container .metric-container-title {
+    font-size: 15px;
+    line-height: normal;
+
+}
+
+.sm-container .metric-confidence {
+    font-size: 13px;
+}
+
+.sm-container .metric-num {
+    font-size: 25px;
+}
 
 
 /* Bar display */
+
+.bar-container {
+    padding-top: 10px;
+    padding-bottom: 15px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.bar-container .metric-container-title {
+    font-size: 22px;
+}
+
+.bar-container .metric-num {
+    font-size: 18px;
+}
+
+.bar-container .metric {
+    position: absolute;
+    float: right;
+}
+
+.bar-and-conf .metric-confidence {
+    font-size: 15px;
+}
+
+.bar-container .bar-title-metric {
+    position: relative;
+    float: left;
+}
+
+
+
 .bar-display {
     display: grid;
     grid-template-columns: 1fr;
-    padding-top: 2%;
-    padding-bottom: 2%;
+    padding-top: 5px;
     align-items: center;
-    width:50%;
+    width: 90%;
 }
 
 .bar-display div {
     grid-row-start: 1;
     grid-column-start: 1;
 }
+
 
 
 .bar {
@@ -371,7 +536,7 @@ label {
     margin-bottom: auto;
     height: 20px;
     border-radius: 5px;
-    width: 101%;
+    width: 105%;
     background-image:
         linear-gradient(
         to right, 
@@ -407,6 +572,9 @@ label {
     top: -20%;
 }
 
-.metric-confidence {
-    grid-row: 2/3;
+.bar-and-conf {
+    display: inline-grid;
+    grid-template-columns: auto;
+    grid-auto-columns: fit-content;
+    width: 50%; 
 }

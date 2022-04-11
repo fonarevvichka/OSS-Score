@@ -15,7 +15,7 @@ const Navigation = () => {
                         <Nav.Link class="nav-home" href="/">Home</Nav.Link>
                         <Nav.Link class="nav-link" href="/about">About</Nav.Link>
                         <Nav.Link class="nav-link" href="/extension">Extension</Nav.Link>
-                        <Nav.Link class="nav-link" href="/generate-scores">How We Generate Score</Nav.Link>
+                        <Nav.Link class="nav-link" href="/generate-scores">How We Generate Scores</Nav.Link>
                         <Nav.Link class="nav-link" href="/privacypolicy">Privacy Policy</Nav.Link>
                     </Nav>
             </Navbar>
