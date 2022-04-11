@@ -64,6 +64,27 @@ label {
     font-size: 10px;
 }
 
+.intro {
+    background-color: #5b4da2;
+    width: 850px;
+    justify-content: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.slogan {
+    color: white;
+    font-weight: 600;
+    font-size: 30px;
+}
+
+.instructions {
+    color: white;
+    font-size: 20px;
+}
+
 /*** loading ***/
 
 .loading {
@@ -153,7 +174,8 @@ label {
   
     /* Position the tooltip text */
     position: absolute;
-    bottom: 125%;
+    /* bottom: 135%; */
+    top: 100%;
     left: 50%;
     margin-left: -60px;
   
@@ -164,9 +186,9 @@ label {
   
 /* Tooltip arrow */
 .tool-tip-repo .tooltiptext-repo::after {
-    content: "";
+    content: " ";
     position: absolute;
-    top: 100%;
+    bottom: 100%;
     left: 50%;
     margin-left: -5px;
     border-width: 5px;
@@ -224,6 +246,7 @@ label {
     margin-right: 20px;
     border-radius: 7px;
     min-width: 440px;
+    max-width: 500px;
 }
 
 .basic-info-display .metrics-display {
