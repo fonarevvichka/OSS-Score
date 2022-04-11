@@ -1,6 +1,6 @@
 {
     "name": "OSS Score",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Adds Repo Activity and License Scores",
     "icons": {                   
       "128": "images/icon128.png"  
