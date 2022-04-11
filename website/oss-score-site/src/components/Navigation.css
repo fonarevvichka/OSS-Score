@@ -1,6 +1,6 @@
 .nav-link {
     margin-left: 10px;
-    margin-right:10px
+    margin-right:10px;
 }
 
 .navigation-bar {
@@ -12,6 +12,10 @@
     padding-right: 5px;
 }
 
+.navLogoText {
+    display: inline;
+}
+
 .gitLogo {
     height: 30px;
     padding-right: 5px;
@@ -21,10 +25,24 @@
     color: white;
 }
 
-@media only screen and (max-width: 600px) {
-    .OSSScoreLink {
-      display: none;
+@media only screen and (max-width: 991.7px) {
+    .navLogo {
+        height: 40px;
     }
-  }
+
+    .navLogoText {
+        font-size: 30px;
+
+    }
+    .navbar-nav {
+        padding-right: 10px;
+    }
+}
+
+@media only screen and (max-width: 485px) {
+    .navbar-nav {
+       margin-right: 90%
+    }
+}
 
 
