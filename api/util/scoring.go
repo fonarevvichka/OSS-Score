@@ -82,7 +82,7 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 		}
 	}
 	if issueCounter == 0 {
-		return 0, 100
+		return math.MaxFloat64, 100
 	}
 
 	return (totalClosureTime / 24.0) / issueCounter, 100
