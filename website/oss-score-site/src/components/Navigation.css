@@ -11,3 +11,20 @@
     height: 30px;
     padding-right: 5px;
 }
+
+.gitLogo {
+    height: 30px;
+    padding-right: 5px;
+}
+.OSSScoreLink {
+    text-decoration: none;
+    color: white;
+}
+
+@media only screen and (max-width: 600px) {
+    .OSSScoreLink {
+      display: none;
+    }
+  }
+
+
