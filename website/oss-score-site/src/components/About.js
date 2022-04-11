@@ -19,35 +19,36 @@ const About = () => {
         <div className='image-container'><img alt='website-img' src={require('../images/website_pic.png')}></img></div>
       </div>
       <header>Meet the Team</header>
-      <div className='team-image-container'><img alt='OSS-Score Team Image'></img></div>
+      {/* <div className='team-image-container'><img alt='OSS-Score Team Image'></img></div> */}
       <div className='meet-the-team'>
-        <div className='team-blurb'>&emsp; OSS-Score was created by Vichka Fonarev, Eli Dow, Daniel Alderman, and Emil Polakiewicz as a senior computer science capstone project at Tufts University under the mentorship of Ole Lensmar.</div>  
+        <div className='team-blurb'>&emsp; OSS-Score was created by Vichka Fonarev, Eli Dow, Daniel Alderman, and Emil Polakiewicz as a senior computer science capstone project at Tufts University. Open source enthusiast and current CTO of Kubeshop Ole Lensmar also provided invaluable mentorship throughout the creation of OSS-Score.</div>  
+        <br />
         <div className='team-members'>
             <div className='team-member'>
               <div className='name'>Vichka Fonarev</div>
-              <div className='photo'><img alt='vichka-pic'></img></div>
-              <div className='blurb'>Okay I guess</div>
-              <div className='linkedin'><a target="_blank" href='#'><FaLinkedin /></a></div>
+            <div className='photo'><img alt='vichka-pic' src={require('../images/vichka.png')}></img></div>
+              {/* <div className='blurb'>Okay I guess</div> */}
+            <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/vichka-fonarev-b1b980110/'><FaLinkedin /></a></div>
             </div>
 
             <div className='team-member'>
               <div className='name'>Eli Dow</div>
               <div className='photo'><img alt='eli-pic'></img></div>
-              <div className='blurb'>He's fine</div>
-              <div className='linkedin'><a target="_blank" href='#'><FaLinkedin /></a></div>
+              {/* <div className='blurb'>He's fine</div> */}
+            <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/eli-dow-93105b168/'><FaLinkedin /></a></div>
             </div>
 
             <div className='team-member'>
               <div className='name'>Daniel Alderman</div>
-              <div className='photo'><img alt='doniel-pic'></img></div>
-              <div className='blurb'>Ew</div>
-              <div className='linkedin'><a target="_blank" href='#'><FaLinkedin /></a></div>
+            <div className='photo'><img alt='doniel-pic' src={require('../images/daniel.png')}></img></div>
+              {/* <div className='blurb'>Ew</div> */}
+            <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/daniel-alderman-ab88321a1/'><FaLinkedin /></a></div>
             </div>
 
             <div className='team-member'>
               <div className='name'>Emil Polakiewicz</div>
-              <div className='photo'><img alt='emil-pic'></img></div>
-              <div className='blurb'>Pretty cool guy actually</div>
+            <div className='photo'><img alt='emil-pic' src={require('../images/emil.png')}></img></div>
+              {/* <div className='blurb'>Pretty cool guy actually</div> */}
               <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/emil-polakiewicz-12887b17b/'><FaLinkedin /></a></div>
             </div>
         </div>
