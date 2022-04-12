@@ -10,9 +10,9 @@ let MetricStats = {
 
     "Activity Score-tooltip": "Overall activity score based on github metadata",
 
-    "License Score-tooltip": "Direct mapping based on the license of the repo",
+    "License-tooltip": "Direct mapping based on the license of the repo",
 
-    "Stars-tooltip": "The number of stars gazers for the repository",
+    "Stars-tooltip": "The number of stargazers for the repository",
 
     "Contributors-tooltip": "The number of unique users who have contributed to the project over the given query time frame",
 
@@ -77,7 +77,7 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
     } else {
         result += 'style="background-color: #d3d3d3;">'
     }
-
+    
     result += '<div class="tool-tip">' + infoLogoString +
         '<span class="tooltiptext">' + MetricStats[metricName + "-tooltip"] + '</span>\n' +
         '</div>'
@@ -123,7 +123,14 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
             if (metricScore.license === '') {
                 result += '<div class="metric-num"> N/A'
             } else {
-                result += '<div class="metric-num">' + metricScore.license
+                // make sure license name fits in the box
+                if (metricScore.license.length > 12) {
+                    result += '<div class="metric-num" style="font-size: 15px">' + metricScore.license
+                } else if (metricScore.license.length > 10) {
+                    result += '<div class="metric-num" style="font-size: 21px">' + metricScore.license
+                }else {
+                    result += '<div class="metric-num">' + metricScore.license
+                }
                 result += '<div class="metric-confidence">Score: ' + metricScore.metric + '/10</div>'
             }
         } else if (metricName === 'Last Commit') {
