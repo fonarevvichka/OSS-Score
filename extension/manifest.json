@@ -19,9 +19,8 @@
       "matches": [ "https://github.com/*" ],
       "css": ["extension.css"]
     }],
-    "web_accessible_resources": [{
-      "resources": ["contentscript.css", "images/neverGiveUp.png"],
-      "matches": ["<all_urls>"]
-    }],
+    "permissions": [
+      "storage"
+    ],
     "manifest_version": 3
   }

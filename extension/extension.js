@@ -215,7 +215,7 @@ async function getScores(owner, repo) {
     if (TimeFrame != null) {
         queryParams = "?timeFrame=" + TimeFrame;
     }
-    let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
+    let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license' + queryParams;
     promises.push(
         fetch(licenseRequestUrl).then(async (response) => {
             if (response.status == 200) {
@@ -242,7 +242,7 @@ async function getScores(owner, repo) {
         })
     );
 
-    let activityRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/activity';
+    let activityRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/activity' + queryParams;
     promises.push(
         fetch(activityRequestUrl).then(async (response) => {
             if (response.status == 200) {
@@ -291,11 +291,14 @@ if (splitUrl.length == 2) { // Repo homepage
 }
 
 var TimeFrame = null;
-
+chrome.storage.sync.get(['key'], function(result) {
+    console.log('Value currently is ' + result.key);
+    TimeFrame = result.key
+  });
 if (owner != '' && repo != '') {
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
-
+    
     chrome.runtime.onMessage.addListener(
         function(request, sender, sendResponse) {
           TimeFrame = request.timeFrame;
