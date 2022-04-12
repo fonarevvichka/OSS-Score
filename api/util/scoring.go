@@ -85,7 +85,7 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 
 	if closedIssueCounter == 0 {
 		openIssueCounter := 0.0
-		for _, issue := range issues.ClosedIssues {
+		for _, issue := range issues.OpenIssues{
 			if issue.CreateDate.After(startPoint) {
 				openIssueCounter += 1
 				break
