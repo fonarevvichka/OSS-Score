@@ -2,7 +2,6 @@
 
 .bubbles {
     position: relative;
-    /* float: top; */
     top: -80px;
     left: 250px;
     color: white;
@@ -16,7 +15,7 @@
 }
 
 
-p.not-found-text {
+.not-found-text {
     text-align: center;
     color: white;
     font-weight: 700;
@@ -24,10 +23,10 @@ p.not-found-text {
 }
 
 
-div.not-found-body {
+.not-found-body {
     background-color: #5b4da2;
     margin-top: 50px;
-    width: 60%;
+    width: 750px;
     justify-content: center;
     padding-top: 20px;
     padding-bottom: 20px;
@@ -35,8 +34,24 @@ div.not-found-body {
     padding-right: 20px;
 }
 
-div.wrapper {
+.wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+@media only screen and (max-width: 767.6px) {
+    .not-found-body {
+        width: 600px;
+    }
+
+    .bubbles {
+        left: 230px;
+    }    
+}
+
+@media only screen and (max-width: 698px) {
+    .not-found-body {
+        width: 500px;
+    }
 }
