@@ -22,7 +22,7 @@ const About = () => {
       <header>Meet the Team</header>
       {/* <div className='team-image-container'><img alt='OSS-Score Team Image'></img></div> */}
       <div className='meet-the-team'>
-        <div className='team-blurb'>&emsp; OSS-Score was created by Vichka Fonarev, Eli Dow, Daniel Alderman, and Emil Polakiewicz as a senior computer science capstone project at Tufts University. Open source enthusiast and current CTO of Kubeshop Ole Lensmar also provided invaluable mentorship throughout the creation of OSS-Score.</div>  
+        <div className='team-blurb'>&emsp; OSS-Score was created by Vichka Fonarev, Eli Dow, Daniel Alderman, and Emil Polakiewicz as a senior computer science capstone project at Tufts University. Open source enthusiast and current CTO of Kubeshop Ole Lensmar provided invaluable mentorship throughout the creation of OSS-Score.</div>  
         <br />
         <div className='team-members'>
             <div className='team-member'>
