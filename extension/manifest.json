@@ -1,7 +1,7 @@
 {
     "name": "OSS Score",
-    "version": "0.0.3",
-    "description": "Adds Repo Activity and License Scores",
+    "version": "0.0.4",
+    "description": "Adds Repo Activity and License Scores to GitHub Repository Page",
     "icons": {                   
       "128": "images/icon128.png"  
     }, 
@@ -11,16 +11,12 @@
         "24": "images/icon24.png",   
         "32": "images/icon32.png"  
       },
-      "default_title": "OSS Score"  
+      "default_title": "OSS Score" 
     },
     "content_scripts": [ {
       "js": [ "extension.js"],
       "matches": [ "https://github.com/*" ],
       "css": ["extension.css"]
-    }],
-    "web_accessible_resources": [{
-      "resources": ["contentscript.css", "images/neverGiveUp.png"],
-      "matches": ["<all_urls>"]
     }],
     "manifest_version": 3
   }

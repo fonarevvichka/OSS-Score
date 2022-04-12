@@ -34,7 +34,7 @@ const About = () => {
 
             <div className='team-member'>
               <div className='name'>Eli Dow</div>
-              <div className='photo'><img alt='eli-pic'></img></div>
+            <div className='photo'><img alt='eliIsABum' src={require('../images/eli.png')}></img></div>
               {/* <div className='blurb'>He's fine</div> */}
             <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/eli-dow-93105b168/'><FaLinkedin /></a></div>
             </div>
