@@ -294,7 +294,8 @@ var TimeFrame = null;
 chrome.storage.sync.get(['key'], function(result) {
     console.log('Value currently is ' + result.key);
     TimeFrame = result.key
-  });
+});
+
 if (owner != '' && repo != '') {
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
