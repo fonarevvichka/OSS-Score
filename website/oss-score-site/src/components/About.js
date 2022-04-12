@@ -15,6 +15,7 @@ const About = () => {
         <div>&emsp; We provide developers with a comprehensive activity and license score, that is calculated from a wide variety of GitHub metadata for that repository and its dependencies. This ensures developers can quickly and easily pick repositories that are well maintained and won’t cause any headaches in the future.</div>
         <div>&emsp; For quick “at-a-glance” information the <a className='internal-link' href='/extension'>OSS-Score chrome extension </a> embeds scores directly into the GitHub repository homepage.</div>
         <div className='image-container'><img alt='extension-img' src={require('../images/extension_pic.png')}></img></div>
+        <div className='image-container'><img alt='extension-closeup-img' src={require('../images/extension_closeup_pic.png')}></img></div>
         <div>&emsp; For a deeper dive the <a className='internal-link' href='/'>OSS-Score website </a> allows users to compare the scores and individual metrics of different open source projects and tools.</div>
         <div className='image-container'><img alt='website-img' src={require('../images/website_pic.png')}></img></div>
       </div>
