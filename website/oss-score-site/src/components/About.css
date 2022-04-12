@@ -134,3 +134,38 @@ div {
     border-radius: 10%;
     object-fit: cover;
 }
+
+.parent {
+    position: relative;
+    top: 0;
+    left: 0;
+    padding-top: 20px;
+    padding-bottom: 80px;
+}
+
+.image1 {
+    position: relative;
+    /* height: 300px; */
+    width: 700px;
+    top: 0;
+    left: 0;
+    border: 1px red solid;
+}
+
+.image2 {
+    position: absolute;
+    width: 250px;
+    top: 100px;
+    left: 270px;
+    /* top: 100px;
+    left: 500px; */
+    border: 1px green solid;
+    border-radius: 20%;
+}
+
+.magnify {
+    position: absolute;
+    color: white;
+    top: 275px;
+    left: 515px;
+}
