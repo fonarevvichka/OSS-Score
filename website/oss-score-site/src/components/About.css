@@ -2,7 +2,6 @@
     font-size: 45px;
 }
 
-
 .internal-link {
     color: white;
     text-decoration: none;
@@ -20,10 +19,6 @@ div {
 
 .about-container {
     justify-content: center;
-    /* padding-top: 20px;
-    padding-bottom: 20px;
-    padding-left: 20px;
-    padding-right: 20px; */
 }
 
 .opener {
@@ -76,12 +71,23 @@ div {
     margin-right: auto;
     color: white;
     padding-top: 20px;
-    padding-bottom: 20px;
-
 }
 
 .image-container img {
     width: 400px;
+}
+
+.image-container-closeup {
+    width: 200px;
+    margin-left: auto;
+    margin-right: auto;
+    color: white;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.image-container-closeup img {
+    width: 200px;
 }
 
 .meet-the-team {
@@ -145,7 +151,6 @@ div {
 
 .image1 {
     position: relative;
-    /* height: 300px; */
     width: 700px;
     top: 0;
     left: 0;
@@ -157,8 +162,6 @@ div {
     width: 250px;
     top: 100px;
     left: 270px;
-    /* top: 100px;
-    left: 500px; */
     border: 1px green solid;
     border-radius: 20%;
 }
@@ -168,4 +171,41 @@ div {
     color: white;
     top: 275px;
     left: 515px;
+}
+
+
+@media only screen and (max-width: 767.6px) {
+    .meet-the-team {
+        width: 600px;
+    }
+
+    .solution {
+        width: 600px;
+    }
+
+    .mission-statement {
+        width: 600px;
+    }
+
+    .opener {
+        width: 600px;
+    }
+}
+
+@media only screen and (max-width: 698px) {
+    .meet-the-team {
+        width: 500px;
+    }
+    
+    .solution {
+        width: 500px;
+    }
+    
+    .mission-statement {
+        width: 500px;
+    }
+    
+    .opener {
+        width: 500px;
+    }
 }
