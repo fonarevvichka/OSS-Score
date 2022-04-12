@@ -44,7 +44,6 @@ let MetricStats = {
 }
 
 
-// TODO: Highlighting better metric, when lower is bette
 const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => {
     const infoLogo = ReactDOMServer.renderToStaticMarkup(<AiOutlineInfoCircle />);
     const infoLogoString = infoLogo.toString()
@@ -71,9 +70,10 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
     } else {
         result += '<div class="metric-container sm-container" '
     }
-
+    
     if (metricScore.highlight) {
-        result += 'style="background-color: #b0c4de;">'
+        // result += 'style="background-color: #b4aadf;">' // light
+        result += 'style="background-color: #ab9fd5;">' // med
     } else {
         result += 'style="background-color: #d3d3d3;">'
     }
