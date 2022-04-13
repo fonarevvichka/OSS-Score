@@ -141,52 +141,52 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 	repoWeight := 0.75
 	dependencyWeight := 1 - repoWeight
 
-	repoInfo, found, err := GetRepoFromDB(ctx, collection, catalog, owner, name)
+	repo, found, err := GetRepoFromDB(ctx, collection, catalog, owner, name)
 	if err != nil {
-		return combinedScore, depRatio, repoInfo.Status, "", err
+		return combinedScore, depRatio, repo.Status, "", err
 	}
 
 	shelfLife, err := strconv.Atoi(os.Getenv("SHELF_LIFE"))
 	if err != nil {
-		return combinedScore, depRatio, repoInfo.Status, "", err
+		return combinedScore, depRatio, repo.Status, "", err
 	}
 
 	if found { // Match in DB
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-		if startPoint.Before(repoInfo.CreateDate) {
-			startPoint = repoInfo.CreateDate
+		if startPoint.Before(repo.CreateDate) {
+			startPoint = repo.CreateDate
 		}
 
-		if repoInfo.Status == 3 {
-			if repoInfo.UpdatedAt.After(expireDate) && (repoInfo.DataStartPoint.Before(startPoint) || repoInfo.DataStartPoint.Equal(startPoint)) {
+		if repo.Status == 3 {
+			if repo.UpdatedAt.After(expireDate) && (repo.DataStartPoint.Before(startPoint) || repo.DataStartPoint.Equal(startPoint)) {
 				if scoreType == "activity" {
-					repoScore, err = CalculateRepoActivityScore(&repoInfo, startPoint)
+					repoScore, err = CalculateRepoActivityScore(&repo, startPoint)
 					if err != nil {
 						log.Println(err)
-						return combinedScore, depRatio, repoInfo.Status, "", err
+						return combinedScore, depRatio, repo.Status, "", err
 					}
-					depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repoInfo, startPoint)
+					depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
 					if err != nil {
 						log.Println(err)
-						return combinedScore, depRatio, repoInfo.Status, "", err
+						return combinedScore, depRatio, repo.Status, "", err
 					}
 				} else if scoreType == "license" {
 					licenseMap, err := GetLicenseMap("./util/scores/licenseScoring.csv")
 					if err != nil {
 						log.Println(err)
-						return combinedScore, depRatio, repoInfo.Status, "", err
+						return combinedScore, depRatio, repo.Status, "", err
 					}
-					repoScore = CalculateRepoLicenseScore(&repoInfo, licenseMap)
-					depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repoInfo, licenseMap)
+					repoScore = CalculateRepoLicenseScore(&repo, licenseMap)
+					depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
 					if err != nil {
-						return combinedScore, depRatio, repoInfo.Status, "", err
+						return combinedScore, depRatio, repo.Status, "", err
 					}
 				}
 
 				// if there are no deps we want to not include them in the score
-				if len(repoInfo.Dependencies) == 0 {
+				if len(repo.Dependencies) == 0 {
 					repoWeight = 1
 					dependencyWeight = 0
 				}
@@ -201,7 +201,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 		}
 	}
 
-	return combinedScore, depRatio, repoInfo.Status, message, nil
+	return combinedScore, depRatio, repo.Status, message, nil
 }
 
 func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
@@ -346,7 +346,7 @@ func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 	return nil
 }
 
-func QueryGithub(repoInfo *RepoInfo, startPoint time.Time) error {
+func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 	errs, ctx := errgroup.WithContext(context.Background())
 
 	src1 := oauth2.StaticTokenSource(
@@ -372,23 +372,23 @@ func QueryGithub(repoInfo *RepoInfo, startPoint time.Time) error {
 	httpClient5 := oauth2.NewClient(ctx, src5)
 
 	errs.Go(func() error {
-		return GetGithubIssuesRest(httpClient1, repoInfo, startPoint.Format(time.RFC3339))
+		return GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetGithubDependencies(httpClient2, repoInfo)
+		return GetGithubDependencies(httpClient2, repo)
 	})
 
 	errs.Go(func() error {
-		return GetGithubReleases(httpClient3, repoInfo, startPoint.Format(time.RFC3339))
+		return GetGithubReleases(httpClient3, repo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetCoreRepoInfo(httpClient4, repoInfo)
+		return GetCoreRepoInfo(httpClient4, repo)
 	})
 
 	errs.Go(func() error {
-		return GetGithubCommitsRest(httpClient5, repoInfo, startPoint.Format(time.RFC3339))
+		return GetGithubCommitsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
 	})
 
 	return errs.Wait()
