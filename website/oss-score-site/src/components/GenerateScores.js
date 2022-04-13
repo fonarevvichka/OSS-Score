@@ -66,7 +66,7 @@ export default function GenerateScores() {
                 <div className="metric-desciption-container odd-metrics">
                     <div className='metric-title'>Release Cadence</div>
                     <div className='metric-description'>
-                        &emsp; Release Cadence is the average pace of releases in the project.
+                        Release Cadence is the average pace of releases in the project.
                             More specifically, it is the total number of releases divided by the query time frame.
                         <ul>
                             <li className='metric-weight'>Weight: 12.5%</li>
@@ -100,6 +100,10 @@ export default function GenerateScores() {
                             <li className='license-example'>apache-2.0: 95</li>
                             <li className='license-example'>bsd-3-clause: 85</li>
                         </ul>
+                        <div className="license-file">The full specification can be found in 
+                            <a href="https://github.com/fonarevvichka/OSS-Score/blob/main/api/util/scores/licenseScoring.csv" 
+                            target="_blank" rel="noreferrer">licenseScoring.csv</a>
+                        </div>
                     </div>
                 </div>
             </div>

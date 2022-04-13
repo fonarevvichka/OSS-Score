@@ -2,18 +2,8 @@
     font-size: 45px;
 }
 
-
-div {
-    text-align: center;
-}
-
-
 .scores-container {
     justify-content: center;
-    /* padding-top: 20px;
-    padding-bottom: 20px;
-    padding-left: 20px;
-    padding-right: 20px; */
 }
 
 .sub-container {
@@ -21,12 +11,13 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: center;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
     padding-right: 20px;
     margin: auto;
+    text-align: justify;
 }
 
 .metric-desciption-container {
@@ -51,6 +42,7 @@ div {
 }
 
 .metric-title {
+    text-align: center;
     font-size: 25px;
 }
 
@@ -79,6 +71,7 @@ ul {
 }
 
 .license-title {
+    text-align: center;
     font-size: 25px;
 }
 
@@ -86,6 +79,10 @@ ul {
     margin-left: 25px;
     margin-right: 25px;
     margin-bottom: 25px;
+}
+
+.license-file {
+    text-align: justify;
 }
 
 @media only screen and (max-width: 767.6px) {
