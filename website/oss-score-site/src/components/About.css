@@ -77,19 +77,6 @@ div {
     width: 400px;
 }
 
-.image-container-closeup {
-    width: 200px;
-    margin-left: auto;
-    margin-right: auto;
-    color: white;
-    padding-top: 20px;
-    padding-bottom: 20px;
-}
-
-.image-container-closeup img {
-    width: 200px;
-}
-
 .meet-the-team {
     background-color: #5b4da2;
     color: white;
@@ -143,34 +130,25 @@ div {
 
 .parent {
     position: relative;
-    top: 0;
-    left: 0;
+    margin-left: auto;
+    margin-right: auto;
     padding-top: 20px;
-    padding-bottom: 80px;
+    padding-bottom: 150px;
+    width: 500px;
 }
 
 .image1 {
     position: relative;
-    width: 700px;
-    top: 0;
-    left: 0;
-    border: 1px red solid;
+    width: 500px;
 }
 
 .image2 {
     position: absolute;
-    width: 250px;
-    top: 100px;
-    left: 270px;
-    border: 1px green solid;
+    width: 240px;
+    top: 70px;
+    left: 140px;
+    border: 4px green solid;
     border-radius: 20%;
-}
-
-.magnify {
-    position: absolute;
-    color: white;
-    top: 275px;
-    left: 515px;
 }
 
 
@@ -190,6 +168,8 @@ div {
     .opener {
         width: 600px;
     }
+
+
 }
 
 @media only screen and (max-width: 698px) {
