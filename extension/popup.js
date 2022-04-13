@@ -36,7 +36,7 @@ function sendMessage(timeFrame) {
 
 function updateTimeFrame(timeFrame) {
     if (timeFrame == null) {
-        document.getElementById('current').innerHTML = "Current Time Frame: Infinite";
+        document.getElementById('current').innerHTML = "Current Time Frame: 12 months";
     }
     else if (timeFrame == "1") {
         document.getElementById('current').innerHTML = "Current Time Frame: " + timeFrame + " month";
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTimeFrame(result.key);
             console.log('time frame currently is ' + result.key);
         } else { // no value stored
-            console.log("time frame currently is infinite")
+            console.log("time frame currently is 12 months")
         }
 
     });
