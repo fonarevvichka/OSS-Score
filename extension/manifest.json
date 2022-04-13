@@ -11,12 +11,16 @@
         "24": "images/icon24.png",   
         "32": "images/icon32.png"  
       },
-      "default_title": "OSS Score" 
+      "default_title": "OSS Score",
+      "default_popup": "popup.html"  
     },
     "content_scripts": [ {
       "js": [ "extension.js"],
       "matches": [ "https://github.com/*" ],
       "css": ["extension.css"]
     }],
+    "permissions": [
+      "storage"
+    ],
     "manifest_version": 3
   }

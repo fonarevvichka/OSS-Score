@@ -1,0 +1,51 @@
+/**
+ * Custom CSS may be added here.
+ */
+
+ body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+  Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  color: #21262d;
+ }
+
+  h1 {
+    font-weight: normal;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 20px;
+  }
+  
+  .line {
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .small-text {
+    font-size: 12px;
+    font-weight: 450;
+    line-height: 20px;
+  }
+  
+  .button {
+    background-color: #21262d;
+    color: #c9d1d9;
+    border-color: rbg(240, 246, 252, 0.1);
+    padding: 5px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    border-radius: 7px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    border-width: 1px;
+    border-style: solid;
+  }
+
+  .box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  
