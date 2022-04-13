@@ -37,6 +37,21 @@ label {
     padding: 30px;
 }
 
+.time-frame-container {
+    padding-bottom: 10px;
+}
+
+.time-frame-input {
+    width: 240px;
+    margin: auto;
+}
+
+.time-frame-label {
+    color: white;
+    padding-bottom: 5px;
+    
+}
+
 .compare {
     text-align: center;
     font-size: 20px;

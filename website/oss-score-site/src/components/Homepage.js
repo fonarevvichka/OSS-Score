@@ -2,6 +2,7 @@
 import React, {useState} from 'react'
 import './Homepage.css';
 import DisplayScores from './DisplayScores.js';
+import NumericInput from 'react-numeric-input';
 import { AiOutlineInfoCircle } from "react-icons/ai";
 
 /* functional component for homepage */
@@ -276,6 +277,17 @@ export default function Home(props) {
                         <div class="error-message" id="error-message2" name="error-message2">Please enter a valid Github URL</div>
                     </div>
                 </div>
+
+                <div className='time-frame-container'>
+                    <div className='time-frame-label'>Enter Timeframe (months): </div>
+                    <div className='time-frame-input'>
+                        <NumericInput min={0} max={36} value={12} />
+                        <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
+                            <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="compare">
                     <button id="compare-button" class="compare-button" type="submit" value="Submit">Get Metrics</button>
                 </div>
