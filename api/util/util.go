@@ -251,6 +251,10 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		}
 	}
 
+	if repo.DataStartPoint.Before(repo.CreateDate) {
+		repo.DataStartPoint = repo.CreateDate
+	}
+
 	repo.UpdatedAt = time.Now()
 	return repo, nil
 }
