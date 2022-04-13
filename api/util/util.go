@@ -154,6 +154,9 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 	if found { // Match in DB
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+		if startPoint.Before(repoInfo.CreateDate) {
+			startPoint = repoInfo.CreateDate
+		}
 
 		if repoInfo.Status == 3 {
 			if repoInfo.UpdatedAt.After(expireDate) && repoInfo.DataStartPoint.Before(startPoint) {
