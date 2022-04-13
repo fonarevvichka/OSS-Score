@@ -1,3 +1,99 @@
-div {
+.main-header {
+    font-size: 45px;
+}
+
+.scores-container {
+    justify-content: center;
+}
+
+.sub-container {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
     text-align: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+    text-align: justify;
+}
+
+.metric-desciption-container {
+    position: relative;
+    color: black;
+    border-radius: 10px;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom: 20px;
+    padding-top: 15px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+}
+
+.odd-metrics {
+    background-color: #d3d3d3;
+}
+
+.even-metrics {
+    background-color: #b0c4de
+}
+
+.metric-title {
+    text-align: center;
+    font-size: 25px;
+}
+
+.metric-description {
+    margin-left: 25px;
+    margin-right: 25px;
+    margin-bottom: 25px;
+}
+
+ul {
+    text-align: left;
+    list-style-position: inside;
+}
+
+.license-container {
+    position: relative;
+    color: black;
+    border-radius: 10px;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom: 20px;
+    padding-top: 15px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+}
+
+.license-title {
+    text-align: center;
+    font-size: 25px;
+}
+
+.license-description {
+    margin-left: 25px;
+    margin-right: 25px;
+    margin-bottom: 25px;
+}
+
+.license-file {
+    text-align: justify;
+}
+
+@media only screen and (max-width: 767.6px) {
+    .sub-container {
+        width: 600px;
+    }
+
+}
+
+@media only screen and (max-width: 698px) {
+    .sub-container {
+        width: 500px;
+    }
 }
