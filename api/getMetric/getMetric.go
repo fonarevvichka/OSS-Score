@@ -161,8 +161,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		} else {
 			expireDate := time.Now().AddDate(0, 0, -shelfLife)
 			startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+			if startPoint.Before(repo.CreateDate) {
+				startPoint = repo.CreateDate
+			}
 
-			if repo.UpdatedAt.After(expireDate) && repo.DataStartPoint.Before(startPoint) {
+			if repo.UpdatedAt.After(expireDate) && (repo.DataStartPoint.Before(startPoint) || repo.DataStartPoint.Equal(startPoint)) {
 				message = "Metric ready"
 
 				switch metric {
