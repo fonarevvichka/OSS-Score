@@ -1,6 +1,6 @@
 {
     "name": "OSS Score",
-    "version": "0.0.4",
+    "version": "0.1.0",
     "description": "Adds Repo Activity and License Scores to GitHub Repository Page",
     "icons": {                   
       "128": "images/icon128.png"  

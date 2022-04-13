@@ -3,6 +3,8 @@ const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/ca
 const ossScoreSite = 'https://oss-score.herokuapp.com'
 const calculationMessages = ['Score not yet calculated', 'Error querying score', 'Data out of date']
 const errorMessages = ['Could not access repo, check that it was inputted correctly and is public', 'Cannot provide score for private repo']
+var UpdateTime = 15000;
+var AwaitTime = 1000;
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -53,7 +55,7 @@ async function requestScores(owner, repo) {
 }
 
 async function updateScores(scoreDiv, owner, repo) {
-    promiseTimeout(15000).then(() => {
+    promiseTimeout(UpdateTime).then(() => {
         console.log('Updating Score');
         getScores(owner, repo).then(scores => {
             if ((scores.activity != null) && (scores.license != null)) {
@@ -69,7 +71,7 @@ async function updateScores(scoreDiv, owner, repo) {
 }
 
 async function awaitResults(scoreDiv, owner, repo) {
-    promiseTimeout(1000).then(() => {
+    promiseTimeout(AwaitTime).then(() => {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
             if (scores.activity != null && scores.license != null) {
