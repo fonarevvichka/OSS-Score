@@ -8,14 +8,14 @@ export default function GenerateScores() {
             <header className='main-header'>How We Generate Scores</header>
             <header>Scores</header>
             <div className='sub-container'>
-                &emsp; OSS-Score is driven to calculate scores and metrics that are useful to developers.
+                    OSS-Score is driven to calculate scores and metrics that are useful to developers.
                  We provide developers with a comprehensive activity and license score, that is calculated from a wide variety of GitHub metadata for that repository and its dependencies. 
                  The project itself accounts for 75% of the score and the dependencies account for the other 25%. 
                  If we do not have the score for a dependency its score will be reported as max, with zero confidence. 
             </div>
             <header>Confidence Ratings</header>
             <div className='sub-container'>
-                &emsp; Sometimes we are unable to get certain metrics for a repository, or the dependency is yet to be calculated.
+                    Sometimes we are unable to get certain metrics for a repository, or the dependency is yet to be calculated.
                  If this is the case our confidence rating for the provided score will decrease.
                  Otherwise, we will always be 100% confident in our calculations.
             </div>
@@ -24,7 +24,7 @@ export default function GenerateScores() {
                 <div className="metric-desciption-container odd-metrics">
                     <div className='metric-title'>Issue Closure Rate</div>
                     <div className='metric-description'>
-                        &emsp; Issue Closure Rate is the average time for an issue in the project to be closed. 
+                            Issue Closure Rate is the average time for an issue in the project to be closed. 
                             It is important to note that this metric is only calculated based on the closed issues 
                         <ul>
                             <li className='metric-weight'>Weight: 25%</li>
@@ -35,7 +35,7 @@ export default function GenerateScores() {
                 <div className="metric-desciption-container even-metrics">
                     <div className='metric-title'>Commit Cadence</div>
                     <div className='metric-description'>
-                        &emsp; Commit Cadence is the average pace of commits in the project. 
+                            Commit Cadence is the average pace of commits in the project. 
                             More specifically, it is the total number of commits divided by the query time frame.
                         <ul>
                             <li className='metric-weight'>Weight: 25%</li>
@@ -46,7 +46,7 @@ export default function GenerateScores() {
                 <div className="metric-desciption-container odd-metrics">
                     <div className='metric-title'>Contributors</div>
                     <div className='metric-description'>
-                        &emsp; The number of unique users who have contributed to the project over the given query time frame.
+                            The number of unique users who have contributed to the project over the given query time frame.
                         <ul>
                             <li className='metric-weight'>Weight: 25%</li>
                             <li className='metric-linear-scale'>Linear Scale: 0 -- 10 individual contributors</li>
@@ -56,7 +56,7 @@ export default function GenerateScores() {
                 <div className="metric-desciption-container even-metrics">
                     <div className='metric-title'>Age of Last Release</div>
                     <div className='metric-description'>
-                        &emsp; Age of Last Release is simply the time since the last release.
+                            Age of Last Release is simply the time since the last release.
                         <ul>
                             <li className='metric-weight'>Weight: 12.5%</li>
                             <li className='metric-linear-scale'>Linear Scale: 26 -- 0 weeks since last release</li>
@@ -66,7 +66,7 @@ export default function GenerateScores() {
                 <div className="metric-desciption-container odd-metrics">
                     <div className='metric-title'>Release Cadence</div>
                     <div className='metric-description'>
-                        Release Cadence is the average pace of releases in the project.
+                            Release Cadence is the average pace of releases in the project.
                             More specifically, it is the total number of releases divided by the query time frame.
                         <ul>
                             <li className='metric-weight'>Weight: 12.5%</li>
@@ -77,7 +77,7 @@ export default function GenerateScores() {
                 <div className="metric-desciption-container even-metrics" style={{display:"none"}}>
                     <div className='metric-title'>Pull Request Closure Rate</div>
                     <div className='metric-description'>
-                        &emsp; Pull Request Closure Rate is the average time for a pull request in the project to be closed.
+                            Pull Request Closure Rate is the average time for a pull request in the project to be closed.
                             It is important to note that this is only calculated based on the closed pull requests.
                         <ul>
                             <li className='metric-weight'>Weight: TBD</li>
