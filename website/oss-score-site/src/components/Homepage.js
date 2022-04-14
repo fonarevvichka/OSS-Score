@@ -231,6 +231,11 @@ export default function Home(props) {
         
         // Get timeframe value
         TimeFrame = document.getElementById("time-frame-num").value
+        alert(TimeFrame)
+        if (TimeFrame === '') {
+            alert("No timeframe")
+            TimeFrame = 12
+        }
 
 
         if (validateURL(inputs.search1, "1")) {
@@ -297,7 +302,7 @@ export default function Home(props) {
                     <div className='time-frame-input'>
                         <NumericInput id='time-frame-num' min={0} max={36} value={12} />
                         <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
-                            <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected</span>
+                            <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected (default 12)</span>
                         </div>
                     </div>
                 </div>
