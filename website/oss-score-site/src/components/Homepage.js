@@ -41,6 +41,7 @@ export default function Home(props) {
         return true;
     }
 
+
     /* function to display error for invalid github URL */
     const displayError = (repoNum) => {
         // changing css
@@ -72,6 +73,15 @@ export default function Home(props) {
             hideError(repoNum)
         }
     }
+
+    /* hiding months for timeframe input */
+    // const hideMonths = (value) => {
+    //     if (value.toString().length >= 4) {
+    //         document.getElementById("time-frame-months-label").style.visibility = "hidden"
+    //     } else {
+    //         document.getElementById("time-frame-months-label").style.visibility = "visible"
+    //     }
+    // }
 
 
     /* function for parsing name and author */
@@ -231,9 +241,9 @@ export default function Home(props) {
         
         // Get timeframe value
         TimeFrame = document.getElementById("time-frame-num").value
-        alert(TimeFrame)
+        
+        // default to 12 months
         if (TimeFrame === '') {
-            alert("No timeframe")
             TimeFrame = 12
         }
 
@@ -298,9 +308,10 @@ export default function Home(props) {
                 </div>
 
                 <div className='time-frame-container'>
-                    <div className='time-frame-label'>Enter Timeframe (months): </div>
+                    <div className='time-frame-label'>Enter Timeframe: </div>
                     <div className='time-frame-input'>
-                        <NumericInput id='time-frame-num' min={0} max={36} value={12} />
+                        <div className='time-frame-months-label' id='time-frame-months-label'>months</div>
+                        <NumericInput id='time-frame-num' min={0} max={12} value={"12"}/>
                         <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
                             <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected (default 12)</span>
                         </div>

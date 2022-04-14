@@ -19,7 +19,9 @@ label {
 
     border-style: solid;
     border-width: 1.5px;
-    border-color: #000000
+    border-color: #000000;
+
+    margin-left: 25px;
 }
 
 ::placeholder {
@@ -38,24 +40,37 @@ label {
 }
 
 .time-frame-container {
-    margin-left: 12px;
+    margin-left: 28px;
     padding-bottom: 10px;
 }
 
 .time-frame-label {
-    margin-right: 5px;
+    font-size: 15px;
+    margin-right: 23px;
 }
 
 .time-frame-input {
-    width: 240px;
+    width: 145px;
     margin: auto;
 
+}
+
+#time-frame-num {
+    width: 120px;
 }
 
 .time-frame-label {
     color: white;
     padding-bottom: 5px;
     
+}
+
+.time-frame-months-label {
+    position: absolute;
+    color: #666666;
+    margin-left: 38px;
+    z-index: 1;
+    pointer-events: none;
 }
 
 .compare {
