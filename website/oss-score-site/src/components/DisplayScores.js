@@ -22,13 +22,13 @@ let MetricStats = {
 
     "Last Commit-tooltip": "Time since last commit",
 
-    "Issue Closure Time-min": 176,
+    "Issue Closure Time-min": 60,
     "Issue Closure Time-max": 0,
     "Issue Closure Time-units": "days",
     "Issue Closure Time-tooltip": "Average time for an issue in the project to be closed. NOTE: This is only calculated based on the closed issues",
 
     "Commit Cadence-min": 0,
-    "Commit Cadence-max": 2,
+    "Commit Cadence-max": 7,
     "Commit Cadence-units": "commits/week",
     "Commit Cadence-tooltip": "Average pace of commits in the project. Total number of commits divided by the query time frame",
 
@@ -37,7 +37,7 @@ let MetricStats = {
     "Release Cadence-units": "releases/month",
     "Release Cadence-tooltip": "Average pace of releases in the project. Total number of releases divided by the query time frame",
 
-    "Age of Last Release-min": 26,
+    "Age of Last Release-min": 52,
     "Age of Last Release-max": 0,
     "Age of Last Release-units": "weeks",
     "Age of Last Release-tooltip": "Time since the last release release",
