@@ -1,6 +1,6 @@
 {
     "name": "OSS Score",
-    "version": "0.0.4",
+    "version": "0.1.0",
     "description": "Adds Repo Activity and License Scores to GitHub Repository Page",
     "icons": {                   
       "128": "images/icon128.png"  
@@ -11,12 +11,16 @@
         "24": "images/icon24.png",   
         "32": "images/icon32.png"  
       },
-      "default_title": "OSS Score" 
+      "default_title": "OSS Score",
+      "default_popup": "popup.html"  
     },
     "content_scripts": [ {
       "js": [ "extension.js"],
       "matches": [ "https://github.com/*" ],
       "css": ["extension.css"]
     }],
+    "permissions": [
+      "storage"
+    ],
     "manifest_version": 3
   }
