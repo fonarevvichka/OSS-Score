@@ -6,6 +6,16 @@ header {
     color: white;
 }
 
+.intro-instructions {
+    color: white;
+    padding-top: 10px;
+    font-size: 30px;
+    font-weight: 600;
+    width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /*** form css ***/
 
 label {
@@ -74,15 +84,17 @@ label {
     padding-right: 20px;
 }
 
-.slogan {
+.sectionHeader {
     color: white;
     font-weight: 600;
-    font-size: 30px;
+    font-size: 26px;
 }
 
-.instructions {
+.about, .gettingStarted, .disclaimers {
     color: white;
-    font-size: 20px;
+    font-size: 18px;
+    text-align: justify;
+    justify-content: center;
 }
 
 /*** loading ***/
@@ -298,9 +310,6 @@ label {
 
 .metric-container-title {
     font-size: 20px;
-}
-
-.submetric-container {
 }
 
 .submetric-container-title {

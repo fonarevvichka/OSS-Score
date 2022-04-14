@@ -4,8 +4,6 @@
 
 .internal-link {
     color: white;
-    text-decoration: none;
-    font-weight: 800;
 }
 
 .internal-link:hover {
@@ -14,6 +12,15 @@
 
 div {
     text-align: center;
+}
+
+.about,
+.gettingStarted,
+.disclaimers {
+    color: white;
+    font-size: 20px;
+    text-align: justify;
+    justify-content: center;
 }
 
 
@@ -26,7 +33,7 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: justify;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
@@ -39,7 +46,7 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: justify;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
@@ -52,7 +59,7 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: justify;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
@@ -62,7 +69,12 @@ div {
 }
 
 .solution div {
-    text-align: left;
+    text-align: justify;
+}
+
+.sectionHeader {
+    text-align: center;
+    padding-top: 16px;
 }
 
 .image-container {
@@ -82,12 +94,16 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: justify;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
     padding-right: 20px;
     margin: auto;
+}
+
+.meet-the-team .team-blurb {
+    text-align: justify;
 }
 
 .team-image-container {
