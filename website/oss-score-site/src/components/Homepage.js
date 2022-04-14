@@ -283,7 +283,8 @@ export default function Home(props) {
             <div id="loading">
                 <div class="intro">
                     <p class="slogan">Decide what Github repositories to use with in-depth metrics and analysis</p>
-                    <p class="instructions">To get started, search repositories by inserting the github link or entering "owner/name"</p>
+                    <p class="instructions">To get started, search repositories by inserting the github link or entering "owner/name".
+                    Entering a single repo will give you in depth metrics and entering two will do a head-to-head comparison</p>
                 </div>
             </div>
             <div class="head2head" id="head2head"></div>
