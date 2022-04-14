@@ -60,7 +60,7 @@ paths:
           description: calculation queued
         '202':
           description: calculation already pending
-  /catalog/{catalog}/owner/{owner}/name/{name}/type/{type}:
+  /catalog/{catalog}/owner/{owner}/name/{name}/score/{type}:
     parameters:
       - in: path
         name: catalog
@@ -84,7 +84,7 @@ paths:
         schema:
           type: string
       - in: path
-        name: type
+        name: score
         description: The category of score requested
         required: true
         schema:

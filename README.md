@@ -149,7 +149,7 @@ See full Swagger definition in `OSS-Score/api/oss-score.yaml`
 
 ### getScore
 * `OSS-Score/api/getScore/getScore.go`
-* /catalog/{catalog}/owner/{owner}/name/{name}/type/{type}
+* /catalog/{catalog}/owner/{owner}/name/{name}/score/{type}
 * {catalog} is an enum
   * github
   * gitlab (Not yet supported)

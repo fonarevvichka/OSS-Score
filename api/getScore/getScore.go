@@ -40,7 +40,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no name variable in path")
 	}
-	scoreType, found := request.PathParameters["type"]
+	scoreType, found := request.PathParameters["score"]
 	if !found {
 		log.Fatalln("no scoreType variable in path")
 	}

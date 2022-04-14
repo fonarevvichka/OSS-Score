@@ -217,7 +217,7 @@ async function getScores(owner, repo) {
     if (TimeFrame != null) {
         queryParams = "?timeFrame=" + TimeFrame;
     }
-    let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license' + queryParams;
+    let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/score/license' + queryParams;
     promises.push(
         fetch(licenseRequestUrl).then(async (response) => {
             if (response.status == 200) {
@@ -244,7 +244,7 @@ async function getScores(owner, repo) {
         })
     );
 
-    let activityRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/activity' + queryParams;
+    let activityRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/score/activity' + queryParams;
     promises.push(
         fetch(activityRequestUrl).then(async (response) => {
             if (response.status == 200) {

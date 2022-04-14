@@ -54,7 +54,7 @@ functions:
         - util/scores/**
     events:
       - http:
-          path: catalog/{catalog}/owner/{owner}/name/{name}/type/{type}
+          path: catalog/{catalog}/owner/{owner}/name/{name}/score/{type}
           method: get
           cors: true
           request:
