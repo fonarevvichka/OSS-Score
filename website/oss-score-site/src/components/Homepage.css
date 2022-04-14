@@ -44,6 +44,7 @@ label {
 .time-frame-input {
     width: 240px;
     margin: auto;
+
 }
 
 .time-frame-label {
@@ -119,7 +120,6 @@ label {
 /* Tooltip container */
 .tool-tip {
     position: absolute;
-    /* position: relative; */
     top: 0px;
     right: 0px;
     display: inline-block;
@@ -184,8 +184,9 @@ label {
     background-color: #555;
     color: #fff;
     text-align: center;
-    padding: 5px 5px;
+    padding: 3px 3px;
     border-radius: 6px;
+    z-index: 1;
   
     /* Position the tooltip text */
     position: absolute;
