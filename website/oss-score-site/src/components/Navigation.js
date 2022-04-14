@@ -20,7 +20,7 @@ const Navigation = () => {
             <Navbar className='navigation-bar' expand="lg" variant="dark">
             <Nav.Link className='oss-logo' href="/" style={{ fontSize: "20px", color: "#FFFFFF8C" }}
                 onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>
-                <img className='navLogo' src={smallLogo}></img> OSS-Score
+                <img className='navLogo' alt="OSS-Score Logo" src={smallLogo}></img> OSS-Score
             </Nav.Link>
 
 
@@ -37,7 +37,7 @@ const Navigation = () => {
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Privacy Policy</Nav.Link>
                         
                         <Nav.Link href="https://github.com/fonarevvichka/OSS-Score"
-                            target="_blank" class="OSSScoreLink"
+                            target="_blank" rel="noreferrer" class="OSSScoreLink"
                             style={{color: "#FFFFFF8C" }}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>
                             <ImGit size={21}/> fonarevvichka/OSS-Score

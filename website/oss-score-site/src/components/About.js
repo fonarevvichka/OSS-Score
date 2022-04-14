@@ -29,25 +29,25 @@ const About = () => {
             <div className='team-member'>
               <div className='name'>Vichka Fonarev</div>
             <div className='photo'><img alt='vichka-pic' src={require('../images/vichka.png')}></img></div>
-            <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/vichka-fonarev-b1b980110/'><FaLinkedin /></a></div>
+            <div className='linkedin'><a target="_blank" rel="noreferrer" href='https://www.linkedin.com/in/vichka-fonarev-b1b980110/'><FaLinkedin /></a></div>
             </div>
 
             <div className='team-member'>
               <div className='name'>Eli Dow</div>
             <div className='photo'><img alt='eliIsABum' src={require('../images/eli.png')}></img></div>
-            <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/eli-dow-93105b168/'><FaLinkedin /></a></div>
+            <div className='linkedin'><a target="_blank" rel="noreferrer" href='https://www.linkedin.com/in/eli-dow-93105b168/'><FaLinkedin /></a></div>
             </div>
 
             <div className='team-member'>
               <div className='name'>Daniel Alderman</div>
             <div className='photo'><img alt='doniel-pic' src={require('../images/daniel.png')}></img></div>
-            <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/daniel-alderman-ab88321a1/'><FaLinkedin /></a></div>
+            <div className='linkedin'><a target="_blank" rel="noreferrer" href='https://www.linkedin.com/in/daniel-alderman-ab88321a1/'><FaLinkedin /></a></div>
             </div>
 
             <div className='team-member'>
               <div className='name'>Emil Polakiewicz</div>
             <div className='photo'><img alt='emil-pic' src={require('../images/emil.png')}></img></div>
-              <div className='linkedin'><a target="_blank" href='https://www.linkedin.com/in/emil-polakiewicz-12887b17b/'><FaLinkedin /></a></div>
+            <div className='linkedin'><a target="_blank" rel="noreferrer" href='https://www.linkedin.com/in/emil-polakiewicz-12887b17b/'><FaLinkedin /></a></div>
             </div>
         </div>
       </div>
