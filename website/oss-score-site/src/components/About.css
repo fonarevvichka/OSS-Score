@@ -26,7 +26,7 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: justify;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
@@ -39,7 +39,7 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: justify;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
@@ -52,7 +52,7 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: justify;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
@@ -62,7 +62,7 @@ div {
 }
 
 .solution div {
-    text-align: left;
+    text-align: justify;
 }
 
 .image-container {
@@ -82,7 +82,7 @@ div {
     color: white;
     font-size: 20px;
     width: 750px;
-    text-align: left;
+    text-align: justify;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 20px;
