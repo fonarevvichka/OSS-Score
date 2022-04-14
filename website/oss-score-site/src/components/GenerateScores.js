@@ -28,7 +28,7 @@ export default function GenerateScores() {
                             It is important to note that this metric is only calculated based on the closed issues 
                         <ul>
                             <li className='metric-weight'>Weight: 25%</li>
-                            <li className='metric-linear-scale'>Linear Scale: 176 -- 0 closure in days</li>
+                            <li className='metric-linear-scale'>Linear Scale: 60 -- 0 closure in days</li>
                         </ul>
                     </div>
                 </div>
@@ -39,7 +39,7 @@ export default function GenerateScores() {
                             More specifically, it is the total number of commits divided by the query time frame.
                         <ul>
                             <li className='metric-weight'>Weight: 25%</li>
-                            <li className='metric-linear-scale'>Linear Scale: 0 -- 2 commits / week</li>
+                            <li className='metric-linear-scale'>Linear Scale: 0 -- 7 commits / week</li>
                         </ul>
                     </div>
                 </div>
@@ -59,7 +59,7 @@ export default function GenerateScores() {
                             Age of Last Release is simply the time since the last release.
                         <ul>
                             <li className='metric-weight'>Weight: 12.5%</li>
-                            <li className='metric-linear-scale'>Linear Scale: 26 -- 0 weeks since last release</li>
+                            <li className='metric-linear-scale'>Linear Scale: 52 -- 0 weeks since last release</li>
                         </ul>
                     </div>
                 </div>
