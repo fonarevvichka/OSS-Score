@@ -102,6 +102,10 @@ div {
     margin: auto;
 }
 
+.meet-the-team .team-blurb {
+    text-align: justify;
+}
+
 .team-image-container {
     width: 700px;
     margin-left: auto;

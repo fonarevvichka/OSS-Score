@@ -43,13 +43,12 @@ const About = () => {
         </p>
 
         <p className="sectionHeader">
-          Coming Soon
+          Next Steps (or maybe just pondering)
         </p>
-        <p className="comingSoon">
-          Some next steps we have in the works (or are just thinking about): <br/>
-          - Adding authentication to our lambda endpoints. We are thinking of using something like OAUTH tokens combined with API Gateways internal services to autheticate the requests coming in.
+        <p className="nextSteps">
+          - Adding authentication to our lambda endpoints. We are thinking of using something like OAUTH tokens combined with API Gateways internal services to autheticate the requests coming in. <br/>
           - We want to add pull requests closure rate as an input to our scoring calculation<br/>
-          - <br/>
+          - Incorporate the recency of certain data so that they have a greater impact on the score <br/>
           - Exploring some GitHub security metrics as an input <br/>
         </p>
       </div>
