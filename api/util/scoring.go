@@ -150,12 +150,18 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, float64, int
 // releases / 12 = releases per month
 // NET: Last release age and release cadence
 func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.Time) (float64, float64, float64) {
-	if len(releases) == 0 {
-		return math.MaxFloat64, 0, 100
+	// no latest release implies no releases in repo --> max scores with zero confidence
+	if LatestRelease.IsZero() {
+		return 0.0, math.MaxFloat64, 0.0
 	}
 
-	var releaseCounter float64
+	// safegaurd for dividing by 0
+	if len(releases) == 0 {
+		return math.MaxFloat64, 0.0, 100
+	}
 
+
+	releaseCounter := 0.0
 	for _, release := range releases {
 		if release.CreateDate.After(startPoint) {
 			releaseCounter += 1
