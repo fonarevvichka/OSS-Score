@@ -253,7 +253,7 @@ export default function Home(props) {
     return (
         <div className="Home">
             <div className="logo"></div>
-            <div className='intro-instructions'>Enter one or two Github respositories to see metric breakdown</div>
+            <div className='intro-instructions'>Enter one or two Github respositories to see the metric breakdown</div>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
                     <div>

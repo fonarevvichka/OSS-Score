@@ -4,8 +4,6 @@
 
 .internal-link {
     color: white;
-    text-decoration: none;
-    font-weight: 800;
 }
 
 .internal-link:hover {
@@ -14,6 +12,15 @@
 
 div {
     text-align: center;
+}
+
+.about,
+.gettingStarted,
+.disclaimers {
+    color: white;
+    font-size: 20px;
+    text-align: justify;
+    justify-content: center;
 }
 
 
@@ -63,6 +70,11 @@ div {
 
 .solution div {
     text-align: justify;
+}
+
+.sectionHeader {
+    text-align: center;
+    padding-top: 16px;
 }
 
 .image-container {
