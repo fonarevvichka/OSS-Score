@@ -253,6 +253,7 @@ export default function Home(props) {
     return (
         <div className="Home">
             <div className="logo"></div>
+            <div className='intro-instructions'>Enter one or two Github respositories to see metric breakdown</div>
             <form onSubmit={handleSubmit}>
                 <div class="searchbar">
                     <div>
@@ -281,10 +282,37 @@ export default function Home(props) {
                 </div>
             </form>
             <div id="loading">
-                <div class="intro">
-                    <p class="slogan">Decide what Github repositories to use with in-depth metrics and analysis</p>
-                    <p class="instructions">To get started, search repositories by inserting the github link or entering "owner/name".
-                    Entering a single repo will give you in depth metrics and entering two will do a head-to-head comparison</p>
+                <div className="intro">
+                    <p className="sectionHeader">
+                        Decide what OSS project to use with in-depth metrics and analysis
+                    </p>
+                    <p className="about">
+                        Our mission at OSS-Score is to help developers make quick and informed decisions about OSS tools, by giving them easy access to an overview of information about the activity of the project
+                        We provide a comprehensive activity and license score, that is calculated from a wide variety of GitHub metadata for that repository and its dependencies.
+                        There is also a breakdown by metric category so you can see how the individual metrics stack up.
+                    </p>
+                    <br/>
+                    <br/>
+                    <p className="sectionHeader">
+                        Getting Started
+                    </p>
+                    <p className="gettingStarted">
+                        To get started, search repositories using a github link or entering "owner/name".
+                        Entering a single repo will give you in depth metrics and entering two will do a head-to-head comparison.
+                    </p>
+                    <br/>
+                    <br/>
+                    <p className="sectionHeader">
+                        Disclaimers
+                    </p>
+                    <p className="disclaimers">
+                        - All metrics need to be pulled from GitHub, we try to cache as much as possible but sometimes queries can take a long time if we have no data cached.
+                        New repos can take anywhere from 30 seconds to a few minutes. Please be patient.
+                        <br/>
+                        <br/>
+                        - We have an aritificial shelf life for our data. Data is considiered 'in-date' if is is less than three days old.
+                        As such some metrics may not quite line up with what you see on the repo homepage.
+                    </p>
                 </div>
             </div>
             <div class="head2head" id="head2head"></div>
