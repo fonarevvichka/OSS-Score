@@ -19,13 +19,13 @@ Categories
 
   Average time for an issue in the project to be closed. NOTE: This is only calculated based on the closed issues.
   * Weight: 25%
-  * Linear Scale: 176 -- 0 closure in days
+  * Linear Scale: 60 -- 0 closure in days
 
 * Commit Cadence
 
   Average pace of commits in the project. Total number of commits divided by the query time frame.
   * Weight: 25%
-  * Linear Scale: 0 -- 2 commits / week
+  * Linear Scale: 0 -- 7 commits / week
 
 * Contributors
 
@@ -37,7 +37,7 @@ Categories
 
   Time since the last release release.
   * Weight: 12.5%
-  * Linear Scale: 26 -- 0 weeks since last release
+  * Linear Scale: 52 -- 0 weeks since last release
 
 * Release Cadence
 
