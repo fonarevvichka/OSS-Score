@@ -218,6 +218,11 @@ export default function Home(props) {
         document.getElementById("loading").innerHTML += loading_gears;
 
         let scorePromises = []
+        
+        // Get timeframe value
+        let timeframe = document.getElementById("time-frame-num").value()
+        alert(timeframe)
+
 
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
@@ -281,7 +286,7 @@ export default function Home(props) {
                 <div className='time-frame-container'>
                     <div className='time-frame-label'>Enter Timeframe (months): </div>
                     <div className='time-frame-input'>
-                        <NumericInput min={0} max={36} value={12} />
+                        <NumericInput className='time-frame-num' min={0} max={36} value={12} />
                         <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
                             <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected</span>
                         </div>
