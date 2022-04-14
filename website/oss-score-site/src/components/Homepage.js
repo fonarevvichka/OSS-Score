@@ -74,16 +74,7 @@ export default function Home(props) {
         }
     }
 
-    /* hiding months for timeframe input */
-    // const hideMonths = (value) => {
-    //     if (value.toString().length >= 4) {
-    //         document.getElementById("time-frame-months-label").style.visibility = "hidden"
-    //     } else {
-    //         document.getElementById("time-frame-months-label").style.visibility = "visible"
-    //     }
-    // }
-
-
+    
     /* function for parsing name and author */
     const getNameAuthor = (url) => {
         // or replace github.com/
