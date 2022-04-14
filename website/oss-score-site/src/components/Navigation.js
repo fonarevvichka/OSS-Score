@@ -25,19 +25,19 @@ const Navigation = () => {
 
 
                     <Nav className="navbar-nav ms-auto">
-                        <Nav.Link class="nav-home" href="/" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-home" href="/" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Home</Nav.Link>
-                        <Nav.Link class="nav-link" href="/about" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-link" href="/about" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>About</Nav.Link>
-                        <Nav.Link class="nav-link" href="/extension" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-link" href="/extension" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Extension</Nav.Link>
-                        <Nav.Link class="nav-link" href="/generate-scores" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-link" href="/generate-scores" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>How We Score</Nav.Link>
-                        <Nav.Link class="nav-link" href="/privacypolicy" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-link" href="/privacypolicy" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Privacy Policy</Nav.Link>
                         
                         <Nav.Link href="https://github.com/fonarevvichka/OSS-Score"
-                            target="_blank" rel="noreferrer" class="OSSScoreLink"
+                            target="_blank" rel="noreferrer" className="OSSScoreLink"
                             style={{color: "#FFFFFF8C" }}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>
                             <ImGit size={21}/> fonarevvichka/OSS-Score

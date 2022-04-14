@@ -100,7 +100,7 @@ export default function GenerateScores() {
                             <li className='license-example'>apache-2.0: 95</li>
                             <li className='license-example'>bsd-3-clause: 85</li>
                         </ul>
-                        <div className="license-file">The full specification can be found in 
+                        <div className="license-file">The full specification can be found in &nbsp;
                             <a href="https://github.com/fonarevvichka/OSS-Score/blob/main/api/util/scores/licenseScoring.csv" 
                             target="_blank" rel="noreferrer">licenseScoring.csv</a>
                         </div>

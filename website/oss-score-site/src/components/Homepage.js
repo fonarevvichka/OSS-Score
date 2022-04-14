@@ -74,7 +74,7 @@ export default function Home(props) {
         }
     }
 
-    
+
     /* function for parsing name and author */
     const getNameAuthor = (url) => {
         // or replace github.com/
@@ -256,7 +256,6 @@ export default function Home(props) {
         }
 
         await Promise.all(scorePromises).then((values) => {
-            console.log(values)
             scoreDisplay += DisplayScores(values)
         }).catch(e => console.log('Error caught', e));
 
@@ -275,26 +274,26 @@ export default function Home(props) {
         <div className="Home">
             <div className="logo"></div>
             <form onSubmit={handleSubmit}>
-                <div class="searchbar">
+                <div className="searchbar">
                     <div>
                         <input key="search1" id="search1" name="search1" type="text" placeholder="Repo Owner/Name" onClick={() => document.getElementById('search1').style.borderColor = '#000000'}
                             onChange={handleChange("1")} value={inputs.search1}/>
-                        <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
-                            <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
+                        <div className="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
+                            <span className="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
                                 <div>owner/name <b>OR</b></div><div>github.com/owner/name <b>OR</b></div><div>https://github.com/owner/name</div>
                             </span>
                         </div>
-                        <div class="error-message" id="error-message1" name="error-message1">Please enter a valid Github URL</div>
+                        <div className="error-message" id="error-message1" name="error-message1">Please enter a valid Github URL</div>
                     </div>
                     <div>
                         <input key="search2" id="search2" name="search2" type="text" placeholder="Repo owner/name" onClick={() => document.getElementById('search2').style.borderColor = '#000000'}
                             onChange = {handleChange("2")} value={inputs.search2} />
-                        <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
-                             <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
+                        <div className="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
+                            <span className="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
                                 <div>owner/name</div><div>github.com/owner/name</div><div>https://github.com/owner/name</div>
                             </span>
                         </div>
-                        <div class="error-message" id="error-message2" name="error-message2">Please enter a valid Github URL</div>
+                        <div className="error-message" id="error-message2" name="error-message2">Please enter a valid Github URL</div>
                     </div>
                 </div>
 
@@ -303,23 +302,23 @@ export default function Home(props) {
                     <div className='time-frame-input'>
                         <div className='time-frame-months-label' id='time-frame-months-label'>months</div>
                         <NumericInput id='time-frame-num' min={0} max={12} value={"12"}/>
-                        <div class="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
-                            <span class="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected (default 12)</span>
+                        <div className="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
+                            <span className="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected (default 12)</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="compare">
-                    <button id="compare-button" class="compare-button" type="submit" value="Submit">Get Metrics</button>
+                <div className="compare">
+                    <button id="compare-button" className="compare-button" type="submit" value="Submit">Get Metrics</button>
                 </div>
             </form>
             <div id="loading">
-                <div class="intro">
-                    <p class="slogan">Decide what Github repositories to use with in-depth metrics and analysis</p>
-                    <p class="instructions">To get started, search repositories by inserting the github link or entering "owner/name"</p>
+                <div className="intro">
+                    <p className="slogan">Decide what Github repositories to use with in-depth metrics and analysis</p>
+                    <p className="instructions">To get started, search repositories by inserting the github link or entering "owner/name"</p>
                 </div>
             </div>
-            <div class="head2head" id="head2head"></div>
+            <div className="head2head" id="head2head"></div>
 
             < svg view-box="0 0 1600 900" >
                 <path fill="#5b4693" opacity="1" d="M0,297C267,403,534,368,801,577,C1068,786,1335,391,1602,451,C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900C1600, 900,1600, 900,1600, 900L1600,900C1333,900,1066,900,799,900,C532,900,265,900,-2,900,C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900C0, 900,0, 900,0, 900L1401,900L0,900Z" />
