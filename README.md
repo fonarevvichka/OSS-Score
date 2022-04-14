@@ -71,7 +71,7 @@ The full specification can be found in [`licenseScoring.csv`](https://github.com
 
 The API is a completley serverless and uses AWS' API Gateway, SQS, and Lambda functions.
 
-[TODO: DIAGRAM]
+![OSS-Score API drawio](https://user-images.githubusercontent.com/14360853/163482102-a3ef41a7-a3f1-4da6-bcc7-35f610bf6cc3.png)
 
 We use serverless for orchestration and deployment.
 ### DB
