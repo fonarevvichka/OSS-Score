@@ -137,6 +137,12 @@ type IssueResponseRest struct {
 	Closed_at  time.Time
 }
 
+type PullResponseRest struct {
+	State      string
+	Created_at time.Time
+	Closed_at  time.Time
+}
+
 type ReleaseResponse struct {
 	Data struct {
 		Repository struct {
@@ -173,6 +179,20 @@ type Issues struct {
 	ClosedIssues []ClosedIssue
 }
 
+type OpenPR struct {
+	CreateDate time.Time
+}
+
+type ClosedPR struct {
+	CreateDate time.Time
+	CloseDate time.Time
+}
+
+type PullRequests struct {
+	OpenPR []OpenPR
+	ClosedPR []ClosedPR
+}
+
 type Release struct {
 	CreateDate time.Time
 }
@@ -197,7 +217,7 @@ type RepoInfo struct {
 
 	DefaultBranch string
 
-	Status int //0 - not calculated, 1 - queued, 2 - pulled from queue, 3 - ready
+	Status int //0 - not calculated, 1 - queued, 2 - pulled from queue, 3 - ready, 4 -error
 
 	DataStartPoint time.Time
 	UpdatedAt      time.Time
@@ -210,6 +230,7 @@ type RepoInfo struct {
 	Releases     []Release
 	Languages    []string
 	Issues       Issues
+	PullRequests PullRequests
 	Dependencies []Dependency
 	Commits      []Commit
 }
