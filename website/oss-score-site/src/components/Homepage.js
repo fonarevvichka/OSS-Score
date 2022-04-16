@@ -304,7 +304,7 @@ export default function Home(props) {
                         <div className='time-frame-months-label' id='time-frame-months-label'>months</div>
                         <NumericInput id='time-frame-num' min={0} max={48} value={"12"}/>
                         <div className="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
-                            <span className="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected (default 12)</span>
+                            <span className="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected (default 12). Note: Longer timeframes will take longer to load </span>
                         </div>
                     </div>
                 </div>
