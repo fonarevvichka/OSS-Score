@@ -60,13 +60,20 @@ label {
 }
 
 .time-frame-input {
-    width: 145px;
+    width: 85px;
     margin: auto;
 
 }
 
+
 #time-frame-num {
-    width: 120px;
+    width: 60px;
+    background-color: #e6e6e6;
+    border-style: solid;
+    border-width: 1.5px;
+    border-color: #000000;
+    padding:0 5px 0 5px;
+
 }
 
 .time-frame-label {
@@ -78,10 +85,12 @@ label {
 .time-frame-months-label {
     position: absolute;
     color: #666666;
-    margin-left: 38px;
+    margin-left: 33px;
     z-index: 1;
     pointer-events: none;
 }
+
+
 
 .compare {
     margin-top: 20px;
