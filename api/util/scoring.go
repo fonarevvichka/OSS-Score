@@ -103,6 +103,40 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 	return (totalClosureTime / 24.0) / closedIssueCounter, 100
 }
 
+// pull requests:
+// pull out all prs that are < X years old
+// of those closed prs calc avg pr closure time
+func ParsePulls(pulls PullRequests, startPoint time.Time) (float64, float64) {
+	totalClosureTime := 0.0
+	closedPullCounter := 0.0
+
+	for _, pull := range pulls.ClosedPR {
+		if pull.CreateDate.After(startPoint) {
+			totalClosureTime += pull.CloseDate.Sub(pull.CreateDate).Hours()
+			closedPullCounter += 1
+		}
+	}
+
+	if closedPullCounter == 0 {
+		openPullCounter := 0.0
+		for _, pull := range pulls.OpenPR {
+			if pull.CreateDate.After(startPoint) {
+				openPullCounter += 1
+				break
+			}
+		}
+
+		// no open issues over the time frame either
+		if openPullCounter == 0 {
+			return 0, 0
+		} else {
+			return math.MaxFloat64, 100
+		}
+	}
+
+	return (totalClosureTime / 24.0) / closedPullCounter, 100
+}
+
 // commits
 // pull out all commits that are < X year old
 // note the age of the most recent commit

@@ -32,6 +32,7 @@ type allMetricsResponse struct {
 	CommitCadence           singleMetricRepsone `json:"commitCadence"`
 	Contributors            singleMetricRepsone `json:"contributors"`
 	IssueClosureTime        singleMetricRepsone `json:"issueClosureTime"`
+	PrClosureTime	        singleMetricRepsone `json:"prClosureTime"`
 	RepoActivityScore       singleMetricRepsone `json:"repoActivityScore"`
 	DependencyActivityScore singleMetricRepsone `json:"dependencyActivityScore"`
 	RepoLicenseScore        singleMetricRepsone `json:"repoLicenseScore"`
@@ -186,6 +187,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					confidence = 100
 				case "issueClosureTime":
 					metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+				case "prClosureTime":
+					metricValue, confidence = util.ParsePulls(repo.PullRequests, startPoint)
 				case "repoActivityScore":
 					score, err = util.CalculateRepoActivityScore(&repo, startPoint)
 					if err != nil {
@@ -278,6 +281,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 					metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
 					allMetrics.IssueClosureTime = singleMetricRepsone{
+						Metric:     metricValue,
+						Confidence: confidence,
+					}
+
+					metricValue, confidence = util.ParsePulls(repo.PullRequests, startPoint)
+					allMetrics.PrClosureTime = singleMetricRepsone{
 						Metric:     metricValue,
 						Confidence: confidence,
 					}
