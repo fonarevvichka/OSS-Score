@@ -50,7 +50,7 @@ label {
 }
 
 .time-frame-container {
-    margin-left: 28px;
+    margin-left: 23px;
     padding-bottom: 10px;
 }
 
@@ -108,8 +108,7 @@ label {
     padding-right: 10px;
 
     border-color: black;
-    border-radius: 20px
-
+    border-radius: 20px;
 }
 
 .error-message {

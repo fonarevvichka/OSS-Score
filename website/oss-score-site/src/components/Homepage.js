@@ -331,6 +331,9 @@ export default function Home(props) {
                     <p className="gettingStarted">
                         To get started, search repositories using a github link or entering "owner/name".
                         Entering a single repo will give you in depth metrics and entering two will do a head-to-head comparison.
+                        The timeframe over which the metrics are collected can be adjusted by entering a number of months 
+                        in the timeframe input box (default 12 months, maximum 48 months). Note that the longer the timeframe, the 
+                        longer it will take to retrieve the metrics.
                     </p>
                     <br/>
                     <br/>
