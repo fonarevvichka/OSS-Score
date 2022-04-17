@@ -134,7 +134,17 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
                 result += '<div class="metric-confidence">Score: ' + metricScore.metric + '/10</div>'
             }
         } else if (metricName === 'Last Commit') {
-            result += '<div class="metric-num">' + Math.round(metricScore.metric) + ' days'
+            let roundedMetric = Math.round(metricScore.metric)
+            if (roundedMetric <= 0) {
+                result += '<div class="metric-num"> <1 day'
+            } else {
+                result += '<div class="metric-num">' + roundedMetric
+                if (roundedMetric === 1) {
+                    result += ' day'
+                } else {
+                    result += ' days' 
+                }
+            }
         } else {
             result += '<div class="metric-num">' + metricScore.metric
         }
