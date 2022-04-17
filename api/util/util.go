@@ -364,12 +364,16 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 	src5 := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_5")},
 	)
+	src6 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_6")},
+	)
 
 	httpClient1 := oauth2.NewClient(ctx, src1)
 	httpClient2 := oauth2.NewClient(ctx, src2)
 	httpClient3 := oauth2.NewClient(ctx, src3)
 	httpClient4 := oauth2.NewClient(ctx, src4)
 	httpClient5 := oauth2.NewClient(ctx, src5)
+	httpClient6 := oauth2.NewClient(ctx, src6)
 
 	errs.Go(func() error {
 		return GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
@@ -389,6 +393,10 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 
 	errs.Go(func() error {
 		return GetGithubCommitsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
+	})
+	
+	errs.Go(func() error {
+		return GetGithubPullRequestsRest(httpClient6, repo, startPoint.Format(time.RFC3339))
 	})
 
 	return errs.Wait()

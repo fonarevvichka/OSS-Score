@@ -103,6 +103,40 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 	return (totalClosureTime / 24.0) / closedIssueCounter, 100
 }
 
+// pull requests:
+// pull out all prs that are < X years old
+// of those closed prs calc avg pr closure time
+func ParsePullRequests(pulls PullRequests, startPoint time.Time) (float64, float64) {
+	totalClosureTime := 0.0
+	closedPullCounter := 0.0
+
+	for _, pull := range pulls.ClosedPR {
+		if pull.CreateDate.After(startPoint) {
+			totalClosureTime += pull.CloseDate.Sub(pull.CreateDate).Hours()
+			closedPullCounter += 1
+		}
+	}
+
+	if closedPullCounter == 0 {
+		openPullCounter := 0.0
+		for _, pull := range pulls.OpenPR {
+			if pull.CreateDate.After(startPoint) {
+				openPullCounter += 1
+				break
+			}
+		}
+
+		// no open issues over the time frame either
+		if openPullCounter == 0 {
+			return 0, 0
+		} else {
+			return math.MaxFloat64, 100
+		}
+	}
+
+	return (totalClosureTime / 24.0) / closedPullCounter, 100
+}
+
 // commits
 // pull out all commits that are < X year old
 // note the age of the most recent commit
@@ -160,7 +194,6 @@ func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.
 		return math.MaxFloat64, 0.0, 100
 	}
 
-
 	releaseCounter := 0.0
 	for _, release := range releases {
 		if release.CreateDate.After(startPoint) {
@@ -199,24 +232,27 @@ func CalculateRepoActivityScore(repo *RepoInfo, startPoint time.Time) (Score, er
 
 	commitCadenceInfo := categoryMap["commitCadence"]
 	issueClosureTimeInfo := categoryMap["issueClosureRate"]
+	prClosureTimeInfo := categoryMap["prClosureRate"]
 	contributorInfo := categoryMap["contributors"]
 	ageLastReleaseInfo := categoryMap["ageLastRelease"]
 	releaseCadenceInfo := categoryMap["releaseCadence"]
 
 	// Parse data
 	avgIssueClosureTime, issueConfidence := ParseIssues(repo.Issues, startPoint)
+	avgPrClosureTime, prConfidence := ParsePullRequests(repo.PullRequests, startPoint)
 	_, commitCadence, contributors, commitConfidence := ParseCommits(repo.Commits, startPoint)
 	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
 
 	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
 	commitCadenceScore, commitCadenceConfidence := calculateCategoryScore(commitCadence, commitConfidence, commitCadenceInfo, false)
 	issueClosureTimeScore, issueClosureTimeConfidence := calculateCategoryScore(avgIssueClosureTime, issueConfidence, issueClosureTimeInfo, true)
+	prClosureTimeScore, prClosureTimeConfidence := calculateCategoryScore(avgPrClosureTime, prConfidence, prClosureTimeInfo, true)
 	contributorScore, contributorConfidence := calculateCategoryScore(float64(contributors), commitConfidence, contributorInfo, false)
 	ageLastReleaseScore, ageLastReleaseConfidence := calculateCategoryScore(ageLastRelease, releaseConfidence, ageLastReleaseInfo, true)
 	releaseCadenceScore, releaseCadenceConfidence := calculateCategoryScore(releaseCadence, releaseConfidence, releaseCadenceInfo, false)
 
-	score := commitCadenceScore + contributorScore + ageLastReleaseScore + releaseCadenceScore + issueClosureTimeScore
-	confidence := commitCadenceConfidence + issueClosureTimeConfidence + contributorConfidence + ageLastReleaseConfidence + releaseCadenceConfidence
+	score := commitCadenceScore + contributorScore + ageLastReleaseScore + releaseCadenceScore + issueClosureTimeScore + prClosureTimeScore
+	confidence := commitCadenceConfidence + contributorConfidence + ageLastReleaseConfidence + releaseCadenceConfidence + issueClosureTimeConfidence + prClosureTimeConfidence
 
 	repoScore := Score{
 		Score:      10 * score,
