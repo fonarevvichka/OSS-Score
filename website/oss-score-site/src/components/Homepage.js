@@ -9,8 +9,8 @@ import { AiOutlineInfoCircle } from "react-icons/ai";
 export default function Home(props) {
 
     const [inputs, setInputs] = useState("");
-    //const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
-    const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
+    const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
+    // const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
     // const basePath = 'https://4oam7avy4i.execute-api.us-east-2.amazonaws.com/staging/catalog/github' //staging
     const calculationMessages = ['Metric not yet calculated', 'Error querying score', 'Data out of date']
     //const errorMessages = ['Could not access repo, check that it was inputted correctly and is public', 'Cannot provide score for private repo']
@@ -305,7 +305,7 @@ export default function Home(props) {
                 </div>
 
                 <div className='time-frame-container'>
-                    <div className='time-frame-label'>Enter Timeframe: </div>
+                    <div className='time-frame-label'>Data Timeframe: </div>
                     <div className='time-frame-input'>
                         <div className='time-frame-months-label' id='time-frame-months-label'>months</div>
                         <NumericInput id='time-frame-num' min={1} max={48} value={"12"} style={false} snap format={roundTime} />
