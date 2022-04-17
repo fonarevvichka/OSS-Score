@@ -226,7 +226,7 @@ label {
     text-align: center;
     padding: 3px 3px;
     border-radius: 6px;
-    z-index: 1;
+    z-index: 2;
   
     /* Position the tooltip text */
     position: absolute;

@@ -41,6 +41,10 @@ export default function Home(props) {
         return true;
     }
 
+    const roundTime = (num) => {
+        return Math.round(num)
+    }
+
 
     /* function to display error for invalid github URL */
     const displayError = (repoNum) => {
@@ -238,6 +242,8 @@ export default function Home(props) {
             TimeFrame = 12
         }
 
+        TimeFrame= Math.round(TimeFrame)
+
 
         if (validateURL(inputs.search1, "1")) {
             // parse Name and Author, call API
@@ -291,7 +297,7 @@ export default function Home(props) {
                             onChange = {handleChange("2")} value={inputs.search2} />
                         <div className="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
                             <span className="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> <div>Insert github repo as:</div>
-                                <div>owner/name</div><div>github.com/owner/name</div><div>https://github.com/owner/name</div>
+                                <div>owner/name <b>OR</b></div><div>github.com/owner/name <b>OR</b></div><div>https://github.com/owner/name</div>
                             </span>
                         </div>
                         <div className="error-message" id="error-message2" name="error-message2">Please enter a valid Github URL</div>
@@ -302,7 +308,7 @@ export default function Home(props) {
                     <div className='time-frame-label'>Enter Timeframe: </div>
                     <div className='time-frame-input'>
                         <div className='time-frame-months-label' id='time-frame-months-label'>months</div>
-                        <NumericInput id='time-frame-num' min={0} max={48} value={"12"} style={false} />
+                        <NumericInput id='time-frame-num' min={1} max={48} value={"12"} style={false} snap format={roundTime} />
                         <div className="tool-tip-repo"> <AiOutlineInfoCircle color="white" />
                             <span className="tooltiptext-repo" style={{ width: "230px", marginLeft: "-115px" }}> The timeframe (in months) over which you want the metrics to be collected (default 12). Note: Longer timeframes will take longer to load </span>
                         </div>
