@@ -22,6 +22,11 @@ let MetricStats = {
 
     "Last Commit-tooltip": "Time since last commit",
 
+    "PR Closure Time-min": 60,
+    "PR Closure Time-max": 0,
+    "PR Closure Time-units": "days",
+    "PR Closure Time-tooltip": "Average time for a pull request in the project to be closed. NOTE: This is only calculated based on the closed PRs",
+
     "Issue Closure Time-min": 60,
     "Issue Closure Time-max": 0,
     "Issue Closure Time-units": "days",
@@ -258,6 +263,7 @@ const DisplayScores = (metrics) => {
         result += '<div class="metric-category">Activity Score Breakdown</div>'
         result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false, false)
         result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false, false)
+        result += getMetricDisplay(metricsAll[i].prClosureTime, 'PR Closure Time', true, false, false)
         result += getMetricDisplay(metricsAll[i].releaseCadence, 'Release Cadence', true, false, false)
         result += getMetricDisplay(metricsAll[i].ageLastRelease, 'Age of Last Release', true, false, false)
         result += '</div >'
