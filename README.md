@@ -65,6 +65,12 @@ Common Licenses:
 
 The full specification can be found in [`licenseScoring.csv`](https://github.com/fonarevvichka/OSS-Score/blob/main/api/util/scores/licenseScoring.csv)
 
+## Disclaimers / Limitations
+
+* All metrics need to be pulled from GitHub, we try to cache as much as possible but sometimes queries can take a long time if we have no data cached. New repos can take anywhere from 30 seconds to a few minutes. Please be patient.
+
+* We have an aritificial shelf life for our data. Data is considiered 'in-date' if is is less than three days old. As such some metrics may not quite line up with what you see on the repo homepage.
+
 ## Components
 
 ### API
@@ -139,8 +145,6 @@ The website is run as react app.
 
 To deploy to heroku follow their instructions and make sure to use `mars/create-react-app` buildpack
 
-## Disclaimer / Limitations
-TODO
 
 ## Endpoints
 All paths for an API Gateway will have the following prefix: `https://<id>.execute-api.us-east-2.amazonaws.com/<env></env>/`
