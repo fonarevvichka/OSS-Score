@@ -20,24 +20,24 @@ const Navigation = () => {
             <Navbar className='navigation-bar' expand="lg" variant="dark">
             <Nav.Link className='oss-logo' href="/" style={{ fontSize: "20px", color: "#FFFFFF8C" }}
                 onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>
-                <img className='navLogo' src={smallLogo}></img> OSS-Score
+                <img className='navLogo' alt="OSS-Score Logo" src={smallLogo}></img> OSS-Score
             </Nav.Link>
 
 
                     <Nav className="navbar-nav ms-auto">
-                        <Nav.Link class="nav-home" href="/" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-home" href="/" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Home</Nav.Link>
-                        <Nav.Link class="nav-link" href="/about" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-link" href="/about" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>About</Nav.Link>
-                        <Nav.Link class="nav-link" href="/extension" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-link" href="/extension" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Extension</Nav.Link>
-                        <Nav.Link class="nav-link" href="/generate-scores" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-link" href="/generate-scores" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>How We Score</Nav.Link>
-                        <Nav.Link class="nav-link" href="/privacypolicy" style={{color:"#FFFFFF8C"}}
+                        <Nav.Link className="nav-link" href="/privacypolicy" style={{color:"#FFFFFF8C"}}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>Privacy Policy</Nav.Link>
                         
                         <Nav.Link href="https://github.com/fonarevvichka/OSS-Score"
-                            target="_blank" class="OSSScoreLink"
+                            target="_blank" rel="noreferrer" className="OSSScoreLink"
                             style={{color: "#FFFFFF8C" }}
                             onMouseEnter={changeTabColor("hover")} onMouseLeave={changeTabColor("")}>
                             <ImGit size={21}/> fonarevvichka/OSS-Score
