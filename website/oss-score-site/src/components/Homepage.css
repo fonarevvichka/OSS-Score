@@ -60,14 +60,14 @@ label {
 }
 
 .time-frame-input {
-    width: 85px;
+    width: 120px;
     margin: auto;
 
 }
 
 
 #time-frame-num {
-    width: 60px;
+    width: 90px;
     background-color: #e6e6e6;
     border-style: solid;
     border-width: 1.5px;
