@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"golang.org/x/oauth2"
 )
 
 type response struct {
@@ -48,7 +49,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	log.Println("Ready to submit request for ", owner, "/", name)
 	// CHECK IF REPO IS VALID AND PUBLIC
-	access, err := util.CheckRepoAccess(owner, name)
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	)
+	httpClient := oauth2.NewClient(ctx, src)
+
+	access, err := util.CheckRepoAccess(httpClient, owner, name)
 	if err != nil {
 		log.Println(err)
 	}

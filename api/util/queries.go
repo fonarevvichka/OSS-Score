@@ -379,10 +379,17 @@ func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDa
 	return len(commits) == 100, nil
 }
 
-func CheckRepoAccess(owner string, name string) (int, error) {
+func CheckRepoAccess(client *http.Client, owner string, name string) (int, error) {
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
 
-	resp, err := http.Get(requestUrl)
+	body := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrl, body)
+	if err != nil {
+		log.Println(err)
+		return 0, err
+	}
+
+	resp, err := client.Do(request)
 	if err != nil {
 		log.Println(err)
 		return 0, err
