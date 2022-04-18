@@ -45,8 +45,6 @@ functions:
     name: ${self:provider.stage}-get-score
     handler: bin/getScore
     timeout: 15
-    environment:
-      GIT_PAT: ${env:GIT_PAT_0}
     iamRoleStatementsName: ${self:provider.stage}-get-score-role
     package:
       patterns:
@@ -69,8 +67,6 @@ functions:
     name: ${self:provider.stage}-get-metric
     handler: bin/getMetric
     timeout: 15
-    environment:
-      GIT_PAT: ${env:GIT_PAT_0}
     iamRoleStatementsName: ${self:provider.stage}-get-metric-role
     package:
       patterns:
@@ -94,7 +90,6 @@ functions:
     handler: bin/queryRepoHandler
     timeout: 15
     environment:
-      GIT_PAT: ${env:GIT_PAT_1}
       QUEUE_URL:
         Ref: repoQueryQueue
     iamRoleStatementsName: ${self:provider.stage}-query-repo-handler-role

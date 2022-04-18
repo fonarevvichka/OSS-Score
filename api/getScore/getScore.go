@@ -11,7 +11,6 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
-	"golang.org/x/oauth2"
 )
 
 type response struct {
@@ -65,11 +64,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}
 	}
 
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
-	)
-	httpClient := oauth2.NewClient(ctx, src)
-	access, err := util.CheckRepoAccess(httpClient, owner, name)
+	access, err := util.CheckRepoAccess(owner, name)
 	if err != nil {
 		log.Println(err)
 	}
