@@ -252,7 +252,6 @@ func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string,
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls?", repo.Owner, repo.Name)
 	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
 
-
 	responseBody := bytes.NewBuffer(make([]byte, 0))
 	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
 	if err != nil {
@@ -290,7 +289,7 @@ func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string,
 			}
 			repo.PullRequests.OpenPR = append(repo.PullRequests.OpenPR, newPR)
 		} else {
-			newPR := ClosedPR {
+			newPR := ClosedPR{
 				CreateDate: pr.Created_at,
 				CloseDate:  pr.Closed_at,
 			}
@@ -401,18 +400,10 @@ func CheckRepoAccess(client *http.Client, owner string, name string) (int, error
 	switch resp.StatusCode {
 	case 200:
 		return 1, nil
-	case 404:
-		decoder := json.NewDecoder(resp.Body)
-		var respBody GitRestBody
-		err :=  decoder.Decode(&respBody)
-		if err != nil {
-			return 0, err
-		}
-		if respBody.Message == "Not Found" {
-			return 0, nil
-		} else {
-			return -1, nil
-		}
+	case 403: // rate limiting exceeded
+		return -1, nil
+	case 404: // repo not found
+		return 0, nil
 	default:
 		return 0, nil
 	}

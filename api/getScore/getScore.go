@@ -81,13 +81,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			Headers:    headers,
 			Body:       string(message),
 		}, nil
-	} else if access == -1 {
-		message, _ := json.Marshal(response{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
-		return events.APIGatewayProxyResponse{
-			StatusCode: 503,
-			Headers:    headers,
-			Body:       string(message),
-		}, nil
 	}
 
 	mongoClient, connected, err := util.GetMongoClient(ctx)
@@ -118,7 +111,16 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	if message == "" {
 		if scoreStatus == 0 {
-			message = "Score not yet calculated"
+			if access == -1 {
+				message, _ := json.Marshal(response{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
+				return events.APIGatewayProxyResponse{
+					StatusCode: 503,
+					Headers:    headers,
+					Body:       string(message),
+				}, nil
+			} else {
+				message = "Score not yet calculated"
+			}
 		} else if scoreStatus == 1 {
 			message = "Score calculation queued"
 		} else if scoreStatus == 2 {
