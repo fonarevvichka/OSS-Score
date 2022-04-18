@@ -69,6 +69,8 @@ functions:
     name: ${self:provider.stage}-get-metric
     handler: bin/getMetric
     timeout: 15
+    environment:
+      GIT_PAT: ${env:GIT_PAT_0}
     iamRoleStatementsName: ${self:provider.stage}-get-metric-role
     package:
       patterns:
