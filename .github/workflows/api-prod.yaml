@@ -26,6 +26,7 @@ jobs:
         make clean build 
     - name: deploy
       env:
+        GIT_PAT_0: ${{ secrets.PROD_GIT_PAT_00 }}
         GIT_PAT_1: ${{ secrets.PROD_GIT_PAT_01 }}
         GIT_PAT_2: ${{ secrets.PROD_GIT_PAT_02 }}
         GIT_PAT_3: ${{ secrets.PROD_GIT_PAT_03 }}
