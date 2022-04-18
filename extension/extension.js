@@ -1,8 +1,11 @@
-const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
+// const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
 //const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
+const basePath = 'https://4oam7avy4i.execute-api.us-east-2.amazonaws.com/staging/catalog/github' //staging
 const ossScoreSite = 'https://oss-score.herokuapp.com'
 const calculationMessages = ['Score not yet calculated', 'Error querying score', 'Data out of date']
-const errorMessages = ['Could not access repo, check that it was inputted correctly and is public', 'Cannot provide score for private repo']
+const errorMessages = ['Could not access repo, check that it was inputted correctly and is public',
+                        'Cannot provide score for private repo',
+                        'Github API rate limiting exceeded, cannot verify repo access at this time']
 var UpdateTime = 15000;
 var AwaitTime = 1000;
 
@@ -182,7 +185,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
         let parent = releases.parentNode;
         parent.insertBefore(scoreDiv, releases);
     } catch (error) {
-        console.log("Error in insertScoreSection: " + error);
+        console.error("Error in insertScoreSection: " + error);
         return;
     }
     insertHTML(scoreDiv, null, "loading");
@@ -234,7 +237,9 @@ async function getScores(owner, repo) {
                 });
             } else if (response.status == 406)  {
                 scores.message = "Cannot provide score for private repo";
-            } else if ((response.status == 501) || (response.status == 503))  {
+            } else if (response.status == 503) {
+                scores.message = "Github API rate limiting exceeded, cannot verify repo access at this time";
+            } else if (response.status == 501)  {
                 scores.message = "Error: Internal Servor Error";
             } else {
                 scores.message = "Un-handled response from OSS-Score API";
@@ -261,8 +266,10 @@ async function getScores(owner, repo) {
                 });
             } else if (response.status == 406)  {
                 scores.message = "Cannot provide score for private repo";
-            } else if ((response.status == 501) || (response.status == 503))  {
-                scores.message = "Error: cannot calculate score request";
+            } else if (response.status == 503) {
+                scores.message = "Github API rate limiting exceeded, cannot verify repo access at this time";
+            } else if (response.status == 501)  {
+                scores.message = "Error: Internal Servor Error";
             } else {
                 scores.message = "Un-handled response from OSS-Score API";
             }
@@ -272,7 +279,6 @@ async function getScores(owner, repo) {
     );
 
     await Promise.all(promises);
-
     return scores;
 }
 
