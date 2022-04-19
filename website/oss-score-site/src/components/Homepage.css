@@ -338,6 +338,10 @@ label {
     color: #e6e6e6;
 }
 
+#repoOwnerName:hover {
+    color: rgb(184, 184, 184);
+}
+
 .metric-category {
     font-weight: bold;
     font-size: 22px;

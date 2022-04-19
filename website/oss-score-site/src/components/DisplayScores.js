@@ -78,9 +78,9 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
     
     if (metricScore.highlight) {
         // result += 'style="background-color: #b4aadf;">' // light
-        result += 'style="background-color: #ab9fd5;">' // med
+        result += 'style="background-color: #d3d3d3;">' // med
     } else {
-        result += 'style="background-color: #d3d3d3;">'
+        result += 'style="background-color: #ab9fd5;">'
     }
     
     result += '<div class="tool-tip">' + infoLogoString +
