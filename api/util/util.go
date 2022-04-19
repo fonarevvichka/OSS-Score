@@ -379,30 +379,45 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 	httpClient5 := oauth2.NewClient(ctx, src5)
 	httpClient6 := oauth2.NewClient(ctx, src6)
 
-	errs.Go(func() error {
-		return GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
-	})
-
+	// errs.Go(func() error {
+	err := GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
+	if err != nil {
+		return err
+	}
+	// })
+	// 52 seconds parallel
 	// STOP GAP RATE LIMITING
 	// errs.Go(func() error {
 	// 	return GetGithubDependencies(httpClient2, repo)
 	// })
 
-	errs.Go(func() error {
-		return GetGithubReleases(httpClient3, repo, startPoint.Format(time.RFC3339))
-	})
+	// errs.Go(func() error {
+	err = GetGithubReleases(httpClient3, repo, startPoint.Format(time.RFC3339))
+	// })
+	if err != nil {
+		return err
+	}
 
-	errs.Go(func() error {
-		return GetCoreRepoInfo(httpClient4, repo)
-	})
+	// errs.Go(func() error {
+	err = GetCoreRepoInfo(httpClient4, repo)
+	// })
+	if err != nil {
+		return err
+	}
 
-	errs.Go(func() error {
-		return GetGithubCommitsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
-	})
+	// errs.Go(func() error {
+	err = GetGithubCommitsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
+	// })
+	if err != nil {
+		return err
+	}
 
-	errs.Go(func() error {
-		return GetGithubPullRequestsRest(httpClient6, repo, startPoint.Format(time.RFC3339))
-	})
+	// errs.Go(func() error {
+	err = GetGithubPullRequestsRest(httpClient6, repo, startPoint.Format(time.RFC3339))
+	// })
+	if err != nil {
+		return err
+	}
 
 	return errs.Wait()
 }

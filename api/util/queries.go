@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -228,6 +229,7 @@ func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) 
 			if err != nil {
 				return err
 			}
+			time.Sleep(250 * time.Millisecond)
 			closePage += 1
 		}
 		return nil
@@ -237,6 +239,7 @@ func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) 
 		var err error
 		for openHasNextPage {
 			openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
+			time.Sleep(250 * time.Millisecond)
 			if err != nil {
 				return err
 			}
@@ -314,6 +317,7 @@ func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate st
 			if err != nil {
 				return err
 			}
+			time.Sleep(250 * time.Millisecond)
 			closePage += 1
 		}
 		return nil
@@ -326,6 +330,7 @@ func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate st
 			if err != nil {
 				return err
 			}
+			time.Sleep(250 * time.Millisecond)
 			openPage += 1
 		}
 		return nil
@@ -420,6 +425,7 @@ func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string)
 			log.Println(err)
 			return err
 		}
+		time.Sleep(250 * time.Millisecond)
 		page += 1
 	}
 
@@ -636,6 +642,7 @@ func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) er
 		}
 		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
 		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
+		time.Sleep(250 * time.Millisecond)
 	}
 
 	return nil
