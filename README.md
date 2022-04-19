@@ -2,6 +2,9 @@
 
 We generate an activity and license score for open source projects based on their GitHub meta-data and the data of their dependencies. This data can be viewed in detail on our website, or inserted directly into the GitHub page via our Chrome extension
 
+## Disclaimer
+As of 4/17/22 GitHub has made all PATs contribute to the same over all rate limit of an account, which massivley reduced our throughput. We are temporarily not querying any dependencies and even regular queries are experiencing significant slowdowns. We are working on some alternative methods, but currently we are operating in at a significantly reduced capacity.
+
 ## Scoring
 
 Scores are calculated based on github metadata and the metadata for the projects dependencies. Dependencies account for 25% of the score and the rest is the project itself. If we do not have the score for a dependency its score will be reported as max, with zero confidence.
