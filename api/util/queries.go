@@ -214,7 +214,7 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	return len(issues) == 100, nil
 }
 
-func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) error {
+func GetGithubIssuesRest(clientA *http.Client, clientB *http.Client, repo *RepoInfo, startDate string) error {
 	errs, _ := errgroup.WithContext(context.Background())
 	closedHasNextPage := true
 	openHasNextPage := true
@@ -224,7 +224,7 @@ func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) 
 	errs.Go(func() error {
 		var err error
 		for closedHasNextPage {
-			closedHasNextPage, err = getGithubIssuePage(client, repo, "closed", closePage, startDate)
+			closedHasNextPage, err = getGithubIssuePage(clientA, repo, "closed", closePage, startDate)
 			if err != nil {
 				return err
 			}
@@ -236,7 +236,7 @@ func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) 
 	errs.Go(func() error {
 		var err error
 		for openHasNextPage {
-			openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
+			openHasNextPage, err = getGithubIssuePage(clientB, repo, "open", openPage, startDate)
 			if err != nil {
 				return err
 			}
@@ -300,7 +300,7 @@ func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string,
 	return len(prs) == 100, nil
 }
 
-func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate string) error {
+func GetGithubPullRequestsRest(clientA *http.Client, clientB *http.Client, repo *RepoInfo, startDate string) error {
 	errs, _ := errgroup.WithContext(context.Background())
 	closedHasNextPage := true
 	openHasNextPage := true
@@ -310,7 +310,7 @@ func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate st
 	errs.Go(func() error {
 		var err error
 		for closedHasNextPage {
-			closedHasNextPage, err = getGithubPullRequestPage(client, repo, "closed", closePage, startDate)
+			closedHasNextPage, err = getGithubPullRequestPage(clientA, repo, "closed", closePage, startDate)
 			if err != nil {
 				return err
 			}
@@ -322,7 +322,7 @@ func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate st
 	errs.Go(func() error {
 		var err error
 		for openHasNextPage {
-			openHasNextPage, err = getGithubPullRequestPage(client, repo, "open", openPage, startDate)
+			openHasNextPage, err = getGithubPullRequestPage(clientB, repo, "open", openPage, startDate)
 			if err != nil {
 				return err
 			}
@@ -409,18 +409,89 @@ func CheckRepoAccess(client *http.Client, owner string, name string) (int, error
 	}
 }
 
-func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) error {
+func GetGithubCommitsRest(clientA *http.Client, clientB *http.Client, repo *RepoInfo, startDate string) error {
 	hasNextPage := true
 	var err error
 	page := 1
-
+	var client *http.Client
 	for hasNextPage {
+		// alternate clients to increase rate limit
+		if page % 2 == 0 {
+			client = clientA
+		} else {
+			client = clientB
+		}
 		hasNextPage, err = getGithubCommitsPage(client, repo, page, startDate)
 		if err != nil {
 			log.Println(err)
 			return err
 		}
 		page += 1
+	}
+
+	return nil
+}
+
+func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) error {
+	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	hasNextPage := true
+	cursor := "init"
+
+	var data ReleaseResponse
+	var variables string
+
+	for hasNextPage {
+		if cursor == "init" {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
+		} else {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
+		}
+
+		postBody, _ := json.Marshal(map[string]string{
+			"query":     query,
+			"variables": variables,
+		})
+		responseBody := bytes.NewBuffer(postBody)
+
+		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			log.Println(resp.Status)
+			log.Println(resp.Header)
+			log.Println(resp.Body)
+			log.Println("Error querying github for releases")
+			return fmt.Errorf("failed to query github: releases\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+		}
+
+		decoder := json.NewDecoder(resp.Body)
+		if decoder.Decode(&data) != nil {
+			log.Println(err)
+			return err
+		}
+
+		for _, node := range data.Data.Repository.Releases.Edges {
+			repo.Releases = append(repo.Releases, Release{
+				CreateDate: node.Node.CreatedAt,
+			})
+		}
+		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
+		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
 	}
 
 	return nil
@@ -571,71 +642,6 @@ func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate stri
 		}
 		hasNextPage = data.Data.Repository.Ref.Target.History.PageInfo.HasNextPage
 		cursor = data.Data.Repository.Ref.Target.History.PageInfo.EndCursor
-	}
-
-	return nil
-}
-
-func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) error {
-	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	hasNextPage := true
-	cursor := "init"
-
-	var data ReleaseResponse
-	var variables string
-
-	for hasNextPage {
-		if cursor == "init" {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
-		} else {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
-		}
-
-		postBody, _ := json.Marshal(map[string]string{
-			"query":     query,
-			"variables": variables,
-		})
-		responseBody := bytes.NewBuffer(postBody)
-
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-
-		resp, err := client.Do(post_request)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != 200 {
-			log.Println(resp.Status)
-			log.Println(resp.Header)
-			log.Println(resp.Body)
-			log.Println("Error querying github for releases")
-			return fmt.Errorf("failed to query github: releases\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-		}
-
-		decoder := json.NewDecoder(resp.Body)
-		if decoder.Decode(&data) != nil {
-			log.Println(err)
-			return err
-		}
-
-		for _, node := range data.Data.Repository.Releases.Edges {
-			repo.Releases = append(repo.Releases, Release{
-				CreateDate: node.Node.CreatedAt,
-			})
-		}
-		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
-		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
 	}
 
 	return nil

@@ -367,36 +367,48 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 	src6 := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_6")},
 	)
+	src7 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_7")},
+	)
+	src8 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_8")},
+	)
+	src9 := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_9")},
+	)
 
-	httpClient1 := oauth2.NewClient(ctx, src1)
-	httpClient2 := oauth2.NewClient(ctx, src2)
-	httpClient3 := oauth2.NewClient(ctx, src3)
-	httpClient4 := oauth2.NewClient(ctx, src4)
-	httpClient5 := oauth2.NewClient(ctx, src5)
-	httpClient6 := oauth2.NewClient(ctx, src6)
+	issueClientA := oauth2.NewClient(ctx, src1)
+	issueClientB := oauth2.NewClient(ctx, src2)
+	depClient := oauth2.NewClient(ctx, src3)
+	releaseClient := oauth2.NewClient(ctx, src4)
+	coreClient := oauth2.NewClient(ctx, src5)
+	commitClientA := oauth2.NewClient(ctx, src6)
+	commitClientB := oauth2.NewClient(ctx, src7)
+	pullRequestClientA := oauth2.NewClient(ctx, src8)
+	pullRequestClientB := oauth2.NewClient(ctx, src9)
 
 	errs.Go(func() error {
-		return GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
+		return GetGithubIssuesRest(issueClientA, issueClientB, repo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetGithubDependencies(httpClient2, repo)
+		return GetGithubDependencies(depClient, repo)
 	})
 
 	errs.Go(func() error {
-		return GetGithubReleases(httpClient3, repo, startPoint.Format(time.RFC3339))
+		return GetGithubReleases(releaseClient, repo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetCoreRepoInfo(httpClient4, repo)
+		return GetCoreRepoInfo(coreClient, repo)
 	})
 
 	errs.Go(func() error {
-		return GetGithubCommitsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
+		return GetGithubCommitsRest(commitClientA, commitClientB, repo, startPoint.Format(time.RFC3339))
 	})
 	
 	errs.Go(func() error {
-		return GetGithubPullRequestsRest(httpClient6, repo, startPoint.Format(time.RFC3339))
+		return GetGithubPullRequestsRest(pullRequestClientA, pullRequestClientB, repo, startPoint.Format(time.RFC3339))
 	})
 
 	return errs.Wait()
