@@ -299,6 +299,10 @@ func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string
 func QueryProject(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
 	repo, err := addUpdateRepo(ctx, collection, catalog, owner, name, timeFrame)
 
+	// STOP GAP MEASURE TO WIPE OUT DEPS FOR SCORING
+	repo.Dependencies = nil
+	// STOP GAP MEASURE TO WIPE OUT DEPS FOR SCORING
+
 	if err != nil {
 		log.Println(err)
 		return RepoInfo{}, err
@@ -394,7 +398,7 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 	errs.Go(func() error {
 		return GetGithubCommitsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
 	})
-	
+
 	errs.Go(func() error {
 		return GetGithubPullRequestsRest(httpClient6, repo, startPoint.Format(time.RFC3339))
 	})
