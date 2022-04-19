@@ -41,6 +41,12 @@ jobs:
         GIT_PAT_12: ${{ secrets.PROD_GIT_PAT_12 }}
         GIT_PAT_13: ${{ secrets.PROD_GIT_PAT_13 }}
         GIT_PAT_14: ${{ secrets.PROD_GIT_PAT_14 }}
+        GIT_PAT_15: ${{ secrets.PROD_GIT_PAT_15 }}
+        GIT_PAT_16: ${{ secrets.PROD_GIT_PAT_16 }}
+        GIT_PAT_17: ${{ secrets.PROD_GIT_PAT_17 }}
+        GIT_PAT_18: ${{ secrets.PROD_GIT_PAT_18 }}
+        GIT_PAT_19: ${{ secrets.PROD_GIT_PAT_19 }}
+        GIT_PAT_20: ${{ secrets.PROD_GIT_PAT_20 }}
         AUTH: ${{ secrets.MONGO_CERT }}
       run: |
         cd api

@@ -134,6 +134,9 @@ functions:
       GIT_PAT_4: ${env:GIT_PAT_6}
       GIT_PAT_5: ${env:GIT_PAT_7}
       GIT_PAT_6: ${env:GIT_PAT_8}
+      GIT_PAT_7: ${env:GIT_PAT_9}
+      GIT_PAT_8: ${env:GIT_PAT_10}
+      GIT_PAT_9: ${env:GIT_PAT_11}
       QUEUE_URL:
         Ref: depQueryQueue
     iamRoleStatementsName: ${self:provider.stage}-query-repo-processing-role
@@ -163,12 +166,15 @@ functions:
     timeout: 900
     reservedConcurrency: 10
     environment:
-      GIT_PAT_1: ${env:GIT_PAT_9}
-      GIT_PAT_2: ${env:GIT_PAT_10}
-      GIT_PAT_3: ${env:GIT_PAT_11}
-      GIT_PAT_4: ${env:GIT_PAT_12}
-      GIT_PAT_5: ${env:GIT_PAT_13}
-      GIT_PAT_6: ${env:GIT_PAT_14}
+      GIT_PAT_1: ${env:GIT_PAT_12}
+      GIT_PAT_2: ${env:GIT_PAT_13}
+      GIT_PAT_3: ${env:GIT_PAT_14}
+      GIT_PAT_4: ${env:GIT_PAT_15}
+      GIT_PAT_5: ${env:GIT_PAT_16}
+      GIT_PAT_6: ${env:GIT_PAT_17}
+      GIT_PAT_7: ${env:GIT_PAT_18}
+      GIT_PAT_8: ${env:GIT_PAT_19}
+      GIT_PAT_9: ${env:GIT_PAT_20}
     iamRoleStatementsName: ${self:provider.stage}-query-dep-processing-role
     package:
       patterns:
