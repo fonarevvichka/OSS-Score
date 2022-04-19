@@ -6,6 +6,16 @@ header {
     color: white;
 }
 
+.intro-instructions {
+    color: white;
+    padding-top: 10px;
+    font-size: 30px;
+    font-weight: 600;
+    width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /*** form css ***/
 
 label {
@@ -19,7 +29,9 @@ label {
 
     border-style: solid;
     border-width: 1.5px;
-    border-color: #000000
+    border-color: #000000;
+
+    margin-left: 25px;
 }
 
 ::placeholder {
@@ -37,7 +49,51 @@ label {
     padding: 30px;
 }
 
+.time-frame-container {
+    margin-left: 23px;
+    padding-bottom: 10px;
+}
+
+.time-frame-label {
+    font-size: 15px;
+    margin-right: 23px;
+}
+
+.time-frame-input {
+    width: 120px;
+    margin: auto;
+
+}
+
+
+#time-frame-num {
+    width: 90px;
+    background-color: #e6e6e6;
+    border-style: solid;
+    border-width: 1.5px;
+    border-color: #000000;
+    padding:0 5px 0 5px;
+
+}
+
+.time-frame-label {
+    color: white;
+    padding-bottom: 5px;
+    
+}
+
+.time-frame-months-label {
+    position: absolute;
+    color: #666666;
+    margin-left: 33px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+
+
 .compare {
+    margin-top: 20px;
     text-align: center;
     font-size: 20px;
 }
@@ -52,15 +108,13 @@ label {
     padding-right: 10px;
 
     border-color: black;
-    border-radius: 20px
-
+    border-radius: 20px;
 }
 
 .error-message {
     display: block;
     visibility: hidden;
     color: #cc0000;
-    text-align: left;
     font-size: 10px;
 }
 
@@ -74,15 +128,17 @@ label {
     padding-right: 20px;
 }
 
-.slogan {
+.sectionHeader {
     color: white;
     font-weight: 600;
-    font-size: 30px;
+    font-size: 26px;
 }
 
-.instructions {
+.about, .gettingStarted, .disclaimers {
     color: white;
-    font-size: 20px;
+    font-size: 18px;
+    text-align: justify;
+    justify-content: center;
 }
 
 /*** loading ***/
@@ -104,7 +160,6 @@ label {
 /* Tooltip container */
 .tool-tip {
     position: absolute;
-    /* position: relative; */
     top: 0px;
     right: 0px;
     display: inline-block;
@@ -169,8 +224,9 @@ label {
     background-color: #555;
     color: #fff;
     text-align: center;
-    padding: 5px 5px;
+    padding: 3px 3px;
     border-radius: 6px;
+    z-index: 2;
   
     /* Position the tooltip text */
     position: absolute;
@@ -298,9 +354,6 @@ label {
 
 .metric-container-title {
     font-size: 20px;
-}
-
-.submetric-container {
 }
 
 .submetric-container-title {

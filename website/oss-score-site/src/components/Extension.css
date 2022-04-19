@@ -1,12 +1,104 @@
 #extension_descript {
-    text-align: center;
     margin-left: 20%;
     margin-right: 20%;
     margin-top: 10px;
     margin-bottom: 10px;
+
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: left;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
 }
 
-#download {
-    text-align: center;
-    align-content: center;
+
+/* Chrome button styling */ 
+.chrome-button {
+    width: 120px;
+    height:50px;
+    background-color: grey;
+    border-radius: 10px;
+    color: white;
+    font-size: 15px;
+    line-height: 17px;
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.chrome-logo {
+    position: relative;
+    float: left;
+    left: 5px;
+    top: 10px;
+}
+
+.chrome-link {
+    text-decoration: none;
+}
+
+.chrome-button:hover {
+    color: rgb(184, 184, 184)
+}
+
+.chrome-button div {
+    position: relative;
+    top: 7px;
+}
+
+/* extension instructions */
+
+.chrome-instructions {
+    text-align: left;
+}
+
+.extension-instructions {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: left;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+}
+
+
+.manual-step {
+    margin-bottom: 3px;
+}
+
+.magic {
+    position: relative;
+    top: -5px;
+}
+
+
+@media only screen and (max-width: 767.6px) {
+    .extension-instructions {
+        width: 600px;
+    }
+
+    #extension_descript{
+        width: 600px;
+    }
+    
+}
+
+@media only screen and (max-width: 698px) {
+    .extension-instructions {
+        width: 500px;
+    }
+
+    #extension_descript {
+        width: 500px;
+    }
+
 }

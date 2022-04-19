@@ -10,9 +10,9 @@ let MetricStats = {
 
     "Activity Score-tooltip": "Overall activity score based on github metadata",
 
-    "License Score-tooltip": "Direct mapping based on the license of the repo",
+    "License-tooltip": "Direct mapping based on the license of the repo",
 
-    "Stars-tooltip": "The number of stars gazers for the repository",
+    "Stars-tooltip": "The number of stargazers for the repository",
 
     "Contributors-tooltip": "The number of unique users who have contributed to the project over the given query time frame",
 
@@ -22,13 +22,18 @@ let MetricStats = {
 
     "Last Commit-tooltip": "Time since last commit",
 
-    "Issue Closure Time-min": 176,
+    "PR Closure Time-min": 60,
+    "PR Closure Time-max": 0,
+    "PR Closure Time-units": "days",
+    "PR Closure Time-tooltip": "Average time for a pull request in the project to be closed. NOTE: This is only calculated based on the closed PRs",
+
+    "Issue Closure Time-min": 60,
     "Issue Closure Time-max": 0,
     "Issue Closure Time-units": "days",
     "Issue Closure Time-tooltip": "Average time for an issue in the project to be closed. NOTE: This is only calculated based on the closed issues",
 
     "Commit Cadence-min": 0,
-    "Commit Cadence-max": 2,
+    "Commit Cadence-max": 7,
     "Commit Cadence-units": "commits/week",
     "Commit Cadence-tooltip": "Average pace of commits in the project. Total number of commits divided by the query time frame",
 
@@ -37,7 +42,7 @@ let MetricStats = {
     "Release Cadence-units": "releases/month",
     "Release Cadence-tooltip": "Average pace of releases in the project. Total number of releases divided by the query time frame",
 
-    "Age of Last Release-min": 26,
+    "Age of Last Release-min": 52,
     "Age of Last Release-max": 0,
     "Age of Last Release-units": "weeks",
     "Age of Last Release-tooltip": "Time since the last release release",
@@ -77,7 +82,7 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
     } else {
         result += 'style="background-color: #d3d3d3;">'
     }
-
+    
     result += '<div class="tool-tip">' + infoLogoString +
         '<span class="tooltiptext">' + MetricStats[metricName + "-tooltip"] + '</span>\n' +
         '</div>'
@@ -134,7 +139,17 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
                 result += '<div class="metric-confidence">Score: ' + metricScore.metric + '/10</div>'
             }
         } else if (metricName === 'Last Commit') {
-            result += '<div class="metric-num">' + Math.round(metricScore.metric) + ' days'
+            let roundedMetric = Math.round(metricScore.metric)
+            if (roundedMetric <= 0) {
+                result += '<div class="metric-num"> <1 day'
+            } else {
+                result += '<div class="metric-num">' + roundedMetric
+                if (roundedMetric === 1) {
+                    result += ' day'
+                } else {
+                    result += ' days' 
+                }
+            }
         } else {
             result += '<div class="metric-num">' + metricScore.metric
         }
@@ -258,6 +273,7 @@ const DisplayScores = (metrics) => {
         result += '<div class="metric-category">Activity Score Breakdown</div>'
         result += getMetricDisplay(metricsAll[i].issueClosureTime, 'Issue Closure Time', true, false, false)
         result += getMetricDisplay(metricsAll[i].commitCadence, 'Commit Cadence', true, false, false)
+        result += getMetricDisplay(metricsAll[i].prClosureTime, 'PR Closure Time', true, false, false)
         result += getMetricDisplay(metricsAll[i].releaseCadence, 'Release Cadence', true, false, false)
         result += getMetricDisplay(metricsAll[i].ageLastRelease, 'Age of Last Release', true, false, false)
         result += '</div >'

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
@@ -34,6 +35,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	if !found {
 		log.Fatalln("no name variable in path")
 	}
+
+	// Convert to lowercase
+	catalog = strings.ToLower(catalog)
+	owner = strings.ToLower(owner)
+	name = strings.ToLower(name)
 
 	headers := map[string]string{
 		"Access-Control-Allow-Origin":  "*",

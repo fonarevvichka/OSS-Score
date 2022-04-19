@@ -248,6 +248,92 @@ func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) 
 	return errs.Wait()
 }
 
+func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
+	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls?", repo.Owner, repo.Name)
+	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
+
+	responseBody := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Println(resp.Body)
+		log.Println("Error querying github for PR page")
+		return false, fmt.Errorf("failed to query github: PR page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+	}
+
+	prs := []PullResponseRest{}
+	decoder := json.NewDecoder(resp.Body)
+	if decoder.Decode(&prs) != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	// Pull out PR info
+	for _, pr := range prs {
+		if pr.State == "open" {
+			newPR := OpenPR{
+				CreateDate: pr.Created_at,
+			}
+			repo.PullRequests.OpenPR = append(repo.PullRequests.OpenPR, newPR)
+		} else {
+			newPR := ClosedPR{
+				CreateDate: pr.Created_at,
+				CloseDate:  pr.Closed_at,
+			}
+			repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, newPR)
+		}
+	}
+
+	return len(prs) == 100, nil
+}
+
+func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate string) error {
+	errs, _ := errgroup.WithContext(context.Background())
+	closedHasNextPage := true
+	openHasNextPage := true
+	closePage := 1
+	openPage := 1
+
+	errs.Go(func() error {
+		var err error
+		for closedHasNextPage {
+			closedHasNextPage, err = getGithubPullRequestPage(client, repo, "closed", closePage, startDate)
+			if err != nil {
+				return err
+			}
+			closePage += 1
+		}
+		return nil
+	})
+
+	errs.Go(func() error {
+		var err error
+		for openHasNextPage {
+			openHasNextPage, err = getGithubPullRequestPage(client, repo, "open", openPage, startDate)
+			if err != nil {
+				return err
+			}
+			openPage += 1
+		}
+		return nil
+	})
+
+	return errs.Wait()
+}
+
 func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) (bool, error) {
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits?", repo.Owner, repo.Name)
 	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate)
@@ -314,18 +400,10 @@ func CheckRepoAccess(client *http.Client, owner string, name string) (int, error
 	switch resp.StatusCode {
 	case 200:
 		return 1, nil
-	case 404:
-		decoder := json.NewDecoder(resp.Body)
-		var respBody GitRestBody
-		err :=  decoder.Decode(&respBody)
-		if err != nil {
-			return 0, err
-		}
-		if respBody.Message == "Not Found" {
-			return 0, nil
-		} else {
-			return -1, nil
-		}
+	case 403: // rate limiting exceeded
+		return -1, nil
+	case 404: // repo not found
+		return 0, nil
 	default:
 		return 0, nil
 	}

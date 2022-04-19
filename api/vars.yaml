@@ -2,7 +2,7 @@ staging:
   MONGO_DB: oss-score-staging
   MONGO_DEPLOYMENT: oss-score
   MONGO_CERT: ./util/mongo_cert.pem
-  SHELF_LIFE: 7
+  SHELF_LIFE: 3
   REPO_QUERY_QUEUE: RepoQueryQueue.fifo
   DEP_QUERY_QUEUE: DependencyQueryQueue
 
@@ -10,7 +10,7 @@ dev:
   MONGO_DB: oss-score-dev
   MONGO_DEPLOYMENT: oss-score
   MONGO_CERT: ./util/mongo_cert.pem
-  SHELF_LIFE: 7
+  SHELF_LIFE: 3
   REPO_QUERY_QUEUE: RepoQueryQueue.fifo
   DEP_QUERY_QUEUE: DependencyQueryQueue
 
@@ -18,6 +18,6 @@ prod:
   MONGO_DB: oss-score-prod
   MONGO_DEPLOYMENT: oss-score
   MONGO_CERT: ./util/mongo_cert.pem
-  SHELF_LIFE: 7
+  SHELF_LIFE: 3
   REPO_QUERY_QUEUE: RepoQueryQueue.fifo
   DEP_QUERY_QUEUE: DependencyQueryQueue

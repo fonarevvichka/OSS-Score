@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -31,6 +32,7 @@ type allMetricsResponse struct {
 	CommitCadence           singleMetricRepsone `json:"commitCadence"`
 	Contributors            singleMetricRepsone `json:"contributors"`
 	IssueClosureTime        singleMetricRepsone `json:"issueClosureTime"`
+	PrClosureTime           singleMetricRepsone `json:"prClosureTime"`
 	RepoActivityScore       singleMetricRepsone `json:"repoActivityScore"`
 	DependencyActivityScore singleMetricRepsone `json:"dependencyActivityScore"`
 	RepoLicenseScore        singleMetricRepsone `json:"repoLicenseScore"`
@@ -71,6 +73,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no metric variable in path")
 	}
 
+	// Convert to lowercase
+	catalog = strings.ToLower(catalog)
+	owner = strings.ToLower(owner)
+	name = strings.ToLower(name)
+
 	timeFrame := 12
 	timeFrameString, found := request.QueryStringParameters["timeFrame"]
 	if found {
@@ -102,13 +109,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 			Headers:    headers,
 			Body:       string(message),
 		}, err
-	} else if access == -1 {
-		message, _ := json.Marshal(singleMetricRepsone{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
-		return events.APIGatewayProxyResponse{
-			StatusCode: 503,
-			Headers:    headers,
-			Body:       string(message),
-		}, nil
 	}
 
 	mongoClient, connected, err := util.GetMongoClient(ctx)
@@ -155,8 +155,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		} else {
 			expireDate := time.Now().AddDate(0, 0, -shelfLife)
 			startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
+			if startPoint.Before(repo.CreateDate) {
+				startPoint = repo.CreateDate
+			}
 
-			if repo.UpdatedAt.After(expireDate) && repo.DataStartPoint.Before(startPoint) {
+			if repo.UpdatedAt.After(expireDate) && (repo.DataStartPoint.Before(startPoint) || repo.DataStartPoint.Equal(startPoint)) {
 				message = "Metric ready"
 
 				switch metric {
@@ -177,6 +180,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 					confidence = 100
 				case "issueClosureTime":
 					metricValue, confidence = util.ParseIssues(repo.Issues, startPoint)
+				case "prClosureTime":
+					metricValue, confidence = util.ParsePullRequests(repo.PullRequests, startPoint)
 				case "repoActivityScore":
 					score, err = util.CalculateRepoActivityScore(&repo, startPoint)
 					if err != nil {
@@ -273,6 +278,12 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 						Confidence: confidence,
 					}
 
+					metricValue, confidence = util.ParsePullRequests(repo.PullRequests, startPoint)
+					allMetrics.PrClosureTime = singleMetricRepsone{
+						Metric:     metricValue,
+						Confidence: confidence,
+					}
+
 					score, err = util.CalculateRepoActivityScore(&repo, startPoint)
 					if err != nil {
 						message = err.Error()
@@ -323,6 +334,13 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 				message = "Data out of date"
 			}
 		}
+	} else if access == -1 {
+		message, _ := json.Marshal(singleMetricRepsone{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
+		return events.APIGatewayProxyResponse{
+			StatusCode: 503,
+			Headers:    headers,
+			Body:       string(message),
+		}, nil
 	} else {
 		message = "Metric not yet calculated"
 	}

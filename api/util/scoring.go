@@ -73,19 +73,68 @@ func GetLicenseMap(path string) (map[string]float64, error) {
 // pull out all issues that are < X years old
 // of those closed issues calc avg issue closure time
 func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
-	var totalClosureTime float64
-	var issueCounter float64 = 0
-	for _, closedIssue := range issues.ClosedIssues {
-		if closedIssue.CreateDate.After(startPoint) {
-			totalClosureTime += closedIssue.CloseDate.Sub(closedIssue.CreateDate).Hours()
-			issueCounter += 1
+	totalClosureTime := 0.0
+	closedIssueCounter := 0.0
+
+	for _, issue := range issues.ClosedIssues {
+		if issue.CreateDate.After(startPoint) {
+			totalClosureTime += issue.CloseDate.Sub(issue.CreateDate).Hours()
+			closedIssueCounter += 1
 		}
 	}
-	if issueCounter == 0 {
-		return 0, 100
+
+	if closedIssueCounter == 0 {
+		openIssueCounter := 0.0
+		for _, issue := range issues.OpenIssues {
+			if issue.CreateDate.After(startPoint) {
+				openIssueCounter += 1
+				break
+			}
+		}
+
+		// no open issues over the time frame either
+		if openIssueCounter == 0 {
+			return 0, 0
+		} else {
+			return math.MaxFloat64, 100
+		}
 	}
 
-	return (totalClosureTime / 24.0) / issueCounter, 100
+	return (totalClosureTime / 24.0) / closedIssueCounter, 100
+}
+
+// pull requests:
+// pull out all prs that are < X years old
+// of those closed prs calc avg pr closure time
+func ParsePullRequests(pulls PullRequests, startPoint time.Time) (float64, float64) {
+	totalClosureTime := 0.0
+	closedPullCounter := 0.0
+
+	for _, pull := range pulls.ClosedPR {
+		if pull.CreateDate.After(startPoint) {
+			totalClosureTime += pull.CloseDate.Sub(pull.CreateDate).Hours()
+			closedPullCounter += 1
+		}
+	}
+
+	if closedPullCounter == 0 {
+		openPullCounter := 0.0
+		for _, pull := range pulls.OpenPR {
+			if pull.CreateDate.After(startPoint) {
+				openPullCounter += 1
+				break
+			}
+		}
+
+		// no open issues over the time frame either
+		if openPullCounter == 0 {
+			return 0, 0
+		} else {
+			return math.MaxFloat64, 100
+		}
+	}
+
+	return (totalClosureTime / 24.0) / closedPullCounter, 100
 }
 
 // commits
@@ -135,12 +184,17 @@ func ParseCommits(commits []Commit, startPoint time.Time) (float64, float64, int
 // releases / 12 = releases per month
 // NET: Last release age and release cadence
 func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.Time) (float64, float64, float64) {
-	if len(releases) == 0 {
-		return math.MaxFloat64, 0, 100
+	// no latest release implies no releases in repo --> max scores with zero confidence
+	if LatestRelease.IsZero() {
+		return 0.0, math.MaxFloat64, 0.0
 	}
 
-	var releaseCounter float64
+	// safegaurd for dividing by 0
+	if len(releases) == 0 {
+		return math.MaxFloat64, 0.0, 100
+	}
 
+	releaseCounter := 0.0
 	for _, release := range releases {
 		if release.CreateDate.After(startPoint) {
 			releaseCounter += 1
@@ -168,7 +222,7 @@ func calculateCategoryScore(metric float64, confidence float64, scoreCategory Sc
 	return scoreCategory.Weight * score, scoreCategory.Weight * confidence
 }
 
-func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) (Score, error) {
+func CalculateRepoActivityScore(repo *RepoInfo, startPoint time.Time) (Score, error) {
 	// Scoring Info
 	categoryMap, err := GetActivityScoringData("./util/scores/activityScoring.csv")
 	if err != nil {
@@ -178,24 +232,27 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) (Score
 
 	commitCadenceInfo := categoryMap["commitCadence"]
 	issueClosureTimeInfo := categoryMap["issueClosureRate"]
+	prClosureTimeInfo := categoryMap["prClosureRate"]
 	contributorInfo := categoryMap["contributors"]
 	ageLastReleaseInfo := categoryMap["ageLastRelease"]
 	releaseCadenceInfo := categoryMap["releaseCadence"]
 
 	// Parse data
-	avgIssueClosureTime, issueConfidence := ParseIssues(repoInfo.Issues, startPoint)
-	_, commitCadence, contributors, commitConfidence := ParseCommits(repoInfo.Commits, startPoint)
-	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repoInfo.Releases, repoInfo.LatestRelease, startPoint)
+	avgIssueClosureTime, issueConfidence := ParseIssues(repo.Issues, startPoint)
+	avgPrClosureTime, prConfidence := ParsePullRequests(repo.PullRequests, startPoint)
+	_, commitCadence, contributors, commitConfidence := ParseCommits(repo.Commits, startPoint)
+	ageLastRelease, releaseCadence, releaseConfidence := ParseReleases(repo.Releases, repo.LatestRelease, startPoint)
 
 	// NEEDS MORE RESEARCH FOR ACTUAL VALUES
 	commitCadenceScore, commitCadenceConfidence := calculateCategoryScore(commitCadence, commitConfidence, commitCadenceInfo, false)
 	issueClosureTimeScore, issueClosureTimeConfidence := calculateCategoryScore(avgIssueClosureTime, issueConfidence, issueClosureTimeInfo, true)
+	prClosureTimeScore, prClosureTimeConfidence := calculateCategoryScore(avgPrClosureTime, prConfidence, prClosureTimeInfo, true)
 	contributorScore, contributorConfidence := calculateCategoryScore(float64(contributors), commitConfidence, contributorInfo, false)
 	ageLastReleaseScore, ageLastReleaseConfidence := calculateCategoryScore(ageLastRelease, releaseConfidence, ageLastReleaseInfo, true)
 	releaseCadenceScore, releaseCadenceConfidence := calculateCategoryScore(releaseCadence, releaseConfidence, releaseCadenceInfo, false)
 
-	score := commitCadenceScore + contributorScore + ageLastReleaseScore + releaseCadenceScore + issueClosureTimeScore
-	confidence := commitCadenceConfidence + issueClosureTimeConfidence + contributorConfidence + ageLastReleaseConfidence + releaseCadenceConfidence
+	score := commitCadenceScore + contributorScore + ageLastReleaseScore + releaseCadenceScore + issueClosureTimeScore + prClosureTimeScore
+	confidence := commitCadenceConfidence + contributorConfidence + ageLastReleaseConfidence + releaseCadenceConfidence + issueClosureTimeConfidence + prClosureTimeConfidence
 
 	repoScore := Score{
 		Score:      10 * score,
@@ -205,8 +262,8 @@ func CalculateRepoActivityScore(repoInfo *RepoInfo, startPoint time.Time) (Score
 	return repoScore, nil
 }
 
-func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, startPoint time.Time) (Score, float64, error) {
-	if len(repoInfo.Dependencies) == 0 {
+func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Collection, repo *RepoInfo, startPoint time.Time) (Score, float64, error) {
+	if len(repo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
 			Confidence: 100,
@@ -219,7 +276,7 @@ func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Col
 	depsWithScores := 0
 
 	var repos []NameOwner
-	for _, dependency := range repoInfo.Dependencies {
+	for _, dependency := range repo.Dependencies {
 		repos = append(repos, NameOwner{
 			Owner: dependency.Owner,
 			Name:  dependency.Name,
@@ -251,7 +308,7 @@ func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Col
 			}
 		}(dep, startPoint)
 	}
-	totalDeps := len(repoInfo.Dependencies)
+	totalDeps := len(repo.Dependencies)
 
 	wg.Wait()
 
@@ -271,11 +328,11 @@ func CalculateDependencyActivityScore(ctx context.Context, collection *mongo.Col
 	}, depRatio, nil
 }
 
-func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]float64) Score {
+func CalculateRepoLicenseScore(repo *RepoInfo, licenseMap map[string]float64) Score {
 	licenseScore := 0.0
 	confidence := 100.0
 
-	license := repoInfo.License
+	license := repo.License
 
 	// Zero confidence if we can't find the license
 	if license == "other" {
@@ -293,8 +350,8 @@ func CalculateRepoLicenseScore(repoInfo *RepoInfo, licenseMap map[string]float64
 	return repoScore
 }
 
-func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Collection, repoInfo *RepoInfo, licenseMap map[string]float64) (Score, float64, error) {
-	if len(repoInfo.Dependencies) == 0 {
+func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Collection, repo *RepoInfo, licenseMap map[string]float64) (Score, float64, error) {
+	if len(repo.Dependencies) == 0 {
 		return Score{
 			Score:      10,
 			Confidence: 100,
@@ -307,7 +364,7 @@ func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Coll
 	depsWithScores := 0.0
 
 	var repos []NameOwner
-	for _, dependency := range repoInfo.Dependencies {
+	for _, dependency := range repo.Dependencies {
 		repos = append(repos, NameOwner{
 			Owner: dependency.Owner,
 			Name:  dependency.Name,
@@ -334,7 +391,7 @@ func CalculateDependencyLicenseScore(ctx context.Context, collection *mongo.Coll
 			depsWithScores++
 		}(dep)
 	}
-	totalDeps := float64(len(repoInfo.Dependencies))
+	totalDeps := float64(len(repo.Dependencies))
 
 	wg.Wait()
 

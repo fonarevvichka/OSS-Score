@@ -2,6 +2,9 @@
 
 We generate an activity and license score for open source projects based on their GitHub meta-data and the data of their dependencies. This data can be viewed in detail on our website, or inserted directly into the GitHub page via our Chrome extension
 
+## Disclaimer
+As of 4/17/22 GitHub has made all PATs contribute to the same over all rate limit of an account, which massivley reduced our throughput. We are temporarily not querying any dependencies and even regular queries are experiencing significant slowdowns. We are working on some alternative methods, but currently we are operating in at a significantly reduced capacity.
+
 ## Scoring
 
 Scores are calculated based on github metadata and the metadata for the projects dependencies. Dependencies account for 25% of the score and the rest is the project itself. If we do not have the score for a dependency its score will be reported as max, with zero confidence.
@@ -19,13 +22,13 @@ Categories
 
   Average time for an issue in the project to be closed. NOTE: This is only calculated based on the closed issues.
   * Weight: 25%
-  * Linear Scale: 176 -- 0 closure in days
+  * Linear Scale: 60 -- 0 closure in days
 
 * Commit Cadence
 
   Average pace of commits in the project. Total number of commits divided by the query time frame.
   * Weight: 25%
-  * Linear Scale: 0 -- 2 commits / week
+  * Linear Scale: 0 -- 7 commits / week
 
 * Contributors
 
@@ -37,7 +40,7 @@ Categories
 
   Time since the last release release.
   * Weight: 12.5%
-  * Linear Scale: 26 -- 0 weeks since last release
+  * Linear Scale: 52 -- 0 weeks since last release
 
 * Release Cadence
 
@@ -65,13 +68,19 @@ Common Licenses:
 
 The full specification can be found in [`licenseScoring.csv`](https://github.com/fonarevvichka/OSS-Score/blob/main/api/util/scores/licenseScoring.csv)
 
+## Disclaimers / Limitations
+
+* All metrics need to be pulled from GitHub, we try to cache as much as possible but sometimes queries can take a long time if we have no data cached. New repos can take anywhere from 30 seconds to a few minutes. Please be patient.
+
+* We have an aritificial shelf life for our data. Data is considiered 'in-date' if is is less than three days old. As such some metrics may not quite line up with what you see on the repo homepage.
+
 ## Components
 
 ### API
 
 The API is a completley serverless and uses AWS' API Gateway, SQS, and Lambda functions.
 
-[TODO: DIAGRAM]
+![OSS-Score API drawio](https://user-images.githubusercontent.com/14360853/163482102-a3ef41a7-a3f1-4da6-bcc7-35f610bf6cc3.png)
 
 We use serverless for orchestration and deployment.
 ### DB
@@ -139,8 +148,6 @@ The website is run as react app.
 
 To deploy to heroku follow their instructions and make sure to use `mars/create-react-app` buildpack
 
-## Disclaimer / Limitations
-TODO
 
 ## Endpoints
 All paths for an API Gateway will have the following prefix: `https://<id>.execute-api.us-east-2.amazonaws.com/<env></env>/`

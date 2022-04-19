@@ -1,3 +1,207 @@
-p {
+.main-header {
+    font-size: 45px;
+}
+
+.internal-link {
+    color: white;
+}
+
+.internal-link:hover {
+    color: rgb(184, 184, 184);
+}
+
+div {
     text-align: center;
+}
+
+.about,
+.gettingStarted,
+.disclaimers {
+    color: white;
+    font-size: 20px;
+    text-align: justify;
+    justify-content: center;
+}
+
+
+.about-container {
+    justify-content: center;
+}
+
+.opener {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: justify;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+}
+
+.mission-statement {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: justify;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+}
+
+.solution {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: justify;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+    justify-content: center;
+}
+
+.solution div {
+    text-align: justify;
+}
+
+.sectionHeader {
+    text-align: center;
+    padding-top: 16px;
+}
+
+.image-container {
+    width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    color: white;
+    padding-top: 20px;
+}
+
+.image-container img {
+    width: 400px;
+}
+
+.meet-the-team {
+    background-color: #5b4da2;
+    color: white;
+    font-size: 20px;
+    width: 750px;
+    text-align: justify;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: auto;
+}
+
+.meet-the-team .team-blurb {
+    text-align: justify;
+}
+
+.team-image-container {
+    width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    color: white;
+}
+
+.team-image-container img {
+    width: 700px;
+}
+
+
+.team-members {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 30px;
+
+}
+
+.blurb {
+    font-size: 15px;
+}
+
+.photo {
+    width: 150px;
+    height: 120px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.photo img {
+    width: 150px;
+    height: 120px;
+    border-radius: 10%;
+    object-fit: cover;
+}
+
+.parent {
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 20px;
+    padding-bottom: 150px;
+    width: 500px;
+}
+
+.image1 {
+    position: relative;
+    width: 500px;
+}
+
+.image2 {
+    position: absolute;
+    width: 240px;
+    top: 70px;
+    left: 140px;
+    border: 4px green solid;
+    border-radius: 20%;
+}
+
+
+@media only screen and (max-width: 767.6px) {
+    .meet-the-team {
+        width: 600px;
+    }
+
+    .solution {
+        width: 600px;
+    }
+
+    .mission-statement {
+        width: 600px;
+    }
+
+    .opener {
+        width: 600px;
+    }
+
+
+}
+
+@media only screen and (max-width: 698px) {
+    .meet-the-team {
+        width: 500px;
+    }
+    
+    .solution {
+        width: 500px;
+    }
+    
+    .mission-statement {
+        width: 500px;
+    }
+    
+    .opener {
+        width: 500px;
+    }
 }

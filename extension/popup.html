@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>OSS Score</title>
+        <link rel="stylesheet" href="popup.css">
+        <script type = "text/javascript" src="popup.js"></script>
+    </head>
+    <body style="width:175px;">
+        <h1>Configure Time Frame for Metrics</h1>
+        <p id="current" class="small-text">Current Time Frame: 12 Months</p>
+        <label class = "small-text">Enter Desired Time Frame: 
+            <input type="number" id="newTimeFrame" placeholder="Time Frame in Months" pattern="[0-9]+"/>
+        </label>
+        <br><br>
+        <div class="box">
+            <button type="submit" id="submit" class="button">Submit</button>
+            <button type="reset" id="reset" class="button">Reset</button>
+        </div>
+    </body>
+</html>

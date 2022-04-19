@@ -1,8 +1,13 @@
-const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
+// const basePath = 'https://hvacjx4u1l.execute-api.us-east-2.amazonaws.com/prod/catalog/github' //prod
 //const basePath = 'https://xvzhkajkzh.execute-api.us-east-2.amazonaws.com/dev/catalog/github' //dev
+const basePath = 'https://4oam7avy4i.execute-api.us-east-2.amazonaws.com/staging/catalog/github' //staging
 const ossScoreSite = 'https://oss-score.herokuapp.com'
 const calculationMessages = ['Score not yet calculated', 'Error querying score', 'Data out of date']
-const errorMessages = ['Could not access repo, check that it was inputted correctly and is public', 'Cannot provide score for private repo']
+const errorMessages = ['Could not access repo, check that it was inputted correctly and is public',
+                        'Cannot provide score for private repo',
+                        'Github API rate limiting exceeded, cannot verify repo access at this time']
+var UpdateTime = 15000;
+var AwaitTime = 1000;
 
 function promiseTimeout (time) {
     return new Promise(function(resolve, reject) {
@@ -14,11 +19,15 @@ async function requestScores(owner, repo) {
     let message = null;
     let success = false
     let requestURL = basePath + '/owner/' + owner + '/name/' + repo;
-
+    let requestBody = null;
+    if (TimeFrame != null){
+        requestBody = JSON.stringify({"timeFrame": parseInt(TimeFrame)});
+    }
     let promise = 
         fetch(requestURL, {
             method: 'POST',
-            mode: 'cors'
+            mode: 'cors',
+            body: requestBody
         }).then(async (response) => {
             if (response.status == 201) {
                 let messagePromise = response.json();
@@ -49,7 +58,7 @@ async function requestScores(owner, repo) {
 }
 
 async function updateScores(scoreDiv, owner, repo) {
-    promiseTimeout(15000).then(() => {
+    promiseTimeout(UpdateTime).then(() => {
         console.log('Updating Score');
         getScores(owner, repo).then(scores => {
             if ((scores.activity != null) && (scores.license != null)) {
@@ -65,7 +74,7 @@ async function updateScores(scoreDiv, owner, repo) {
 }
 
 async function awaitResults(scoreDiv, owner, repo) {
-    promiseTimeout(1000).then(() => {
+    promiseTimeout(AwaitTime).then(() => {
         console.log('Requesting Score');
         getScores(owner, repo).then(scores => {
             if (scores.activity != null && scores.license != null) {
@@ -176,7 +185,7 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
         let parent = releases.parentNode;
         parent.insertBefore(scoreDiv, releases);
     } catch (error) {
-        console.log("Error in insertScoreSection: " + error);
+        console.error("Error in insertScoreSection: " + error);
         return;
     }
     insertHTML(scoreDiv, null, "loading");
@@ -206,8 +215,12 @@ async function insertScoreSection(owner, repo, scoreDiv, scoresPromise) {
 
 async function getScores(owner, repo) {
     let scores = {license: null, activity: null, message: null, depRatio: 0};
-    let promises = [];    
-    let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license';
+    let promises = [];
+    let queryParams = '';    
+    if (TimeFrame != null) {
+        queryParams = "?timeFrame=" + TimeFrame;
+    }
+    let licenseRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/license' + queryParams;
     promises.push(
         fetch(licenseRequestUrl).then(async (response) => {
             if (response.status == 200) {
@@ -224,7 +237,9 @@ async function getScores(owner, repo) {
                 });
             } else if (response.status == 406)  {
                 scores.message = "Cannot provide score for private repo";
-            } else if ((response.status == 501) || (response.status == 503))  {
+            } else if (response.status == 503) {
+                scores.message = "Github API rate limiting exceeded, cannot verify repo access at this time";
+            } else if (response.status == 501)  {
                 scores.message = "Error: Internal Servor Error";
             } else {
                 scores.message = "Un-handled response from OSS-Score API";
@@ -234,7 +249,7 @@ async function getScores(owner, repo) {
         })
     );
 
-    let activityRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/activity';
+    let activityRequestUrl = basePath + '/owner/' + owner + '/name/' + repo + '/type/activity' + queryParams;
     promises.push(
         fetch(activityRequestUrl).then(async (response) => {
             if (response.status == 200) {
@@ -251,8 +266,10 @@ async function getScores(owner, repo) {
                 });
             } else if (response.status == 406)  {
                 scores.message = "Cannot provide score for private repo";
-            } else if ((response.status == 501) || (response.status == 503))  {
-                scores.message = "Error: cannot calculate score request";
+            } else if (response.status == 503) {
+                scores.message = "Github API rate limiting exceeded, cannot verify repo access at this time";
+            } else if (response.status == 501)  {
+                scores.message = "Error: Internal Servor Error";
             } else {
                 scores.message = "Un-handled response from OSS-Score API";
             }
@@ -262,7 +279,6 @@ async function getScores(owner, repo) {
     );
 
     await Promise.all(promises);
-
     return scores;
 }
 
@@ -282,8 +298,22 @@ if (splitUrl.length == 2) { // Repo homepage
     }
 }
 
+var TimeFrame = null;
+chrome.storage.sync.get(['key'], function(result) {
+    console.log('Value currently is ' + result.key);
+    TimeFrame = result.key
+});
+
 if (owner != '' && repo != '') {
     let scoreDiv = document.createElement('div');
     scoreDiv.className = 'BorderGrid-cell';
+    
+    chrome.runtime.onMessage.addListener(
+        function(request, sender, sendResponse) {
+          TimeFrame = request.timeFrame;
+          sendResponse({message: "recieved new time frame"});
+          insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
+        }
+      );
     insertScoreSection(owner, repo, scoreDiv, getScores(owner, repo, scoreDiv));
 }

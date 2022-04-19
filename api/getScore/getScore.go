@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
@@ -44,6 +45,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		log.Fatalln("no scoreType variable in path")
 	}
 
+	// Convert to lowercase
+	catalog = strings.ToLower(catalog)
+	owner = strings.ToLower(owner)
+	name = strings.ToLower(name)
+
 	timeFrame := 12
 	timeFrameString, found := request.QueryStringParameters["timeFrame"]
 	if found {
@@ -72,13 +78,6 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		message, _ := json.Marshal(response{Message: "Could not access repo, check that it was inputted correctly and is public"})
 		return events.APIGatewayProxyResponse{
 			StatusCode: 406,
-			Headers:    headers,
-			Body:       string(message),
-		}, nil
-	} else if access == -1 {
-		message, _ := json.Marshal(response{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
-		return events.APIGatewayProxyResponse{
-			StatusCode: 503,
 			Headers:    headers,
 			Body:       string(message),
 		}, nil
@@ -112,7 +111,16 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	if message == "" {
 		if scoreStatus == 0 {
-			message = "Score not yet calculated"
+			if access == -1 {
+				message, _ := json.Marshal(response{Message: "Github API rate limiting exceeded, cannot verify repo access at this time"})
+				return events.APIGatewayProxyResponse{
+					StatusCode: 503,
+					Headers:    headers,
+					Body:       string(message),
+				}, nil
+			} else {
+				message = "Score not yet calculated"
+			}
 		} else if scoreStatus == 1 {
 			message = "Score calculation queued"
 		} else if scoreStatus == 2 {
