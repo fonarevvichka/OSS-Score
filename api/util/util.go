@@ -383,6 +383,7 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 		return GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
 	})
 
+	// STOP GAP RATE LIMITING
 	// errs.Go(func() error {
 	// 	return GetGithubDependencies(httpClient2, repo)
 	// })
