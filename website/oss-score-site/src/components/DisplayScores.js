@@ -75,12 +75,11 @@ const getMetricDisplay = (metricScore, metricName, barDisplay, outOfTen, lg) => 
     } else {
         result += '<div class="metric-container sm-container" '
     }
-    
+
     if (metricScore.highlight) {
-        // result += 'style="background-color: #b4aadf;">' // light
-        result += 'style="background-color: #d3d3d3;">' // med
+        result += 'style="background-color: #2f9d2f;">'
     } else {
-        result += 'style="background-color: #ab9fd5;">'
+        result += 'style="background-color: #D6D6D6;">'
     }
     
     result += '<div class="tool-tip">' + infoLogoString +
@@ -238,6 +237,8 @@ const AddHighlightJSON = (metricsAll) => {
         }
     }
 }
+
+
 
 
 const DisplayScores = (metrics) => {
