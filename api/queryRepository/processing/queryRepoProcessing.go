@@ -12,7 +12,7 @@ import (
 )
 
 func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
-	var repo util.RepoInfo
+	// var repo util.RepoInfo
 	for _, message := range sqsEvent.Records {
 		catalog := *message.MessageAttributes["catalog"].StringValue
 		owner := *message.MessageAttributes["owner"].StringValue
@@ -39,7 +39,7 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return err
 		}
 
-		repo, err = util.QueryProject(ctx, collection, catalog, owner, name, timeFrame)
+		_, err = util.QueryProject(ctx, collection, catalog, owner, name, timeFrame)
 		if err != nil {
 			log.Println(err)
 			util.SetScoreState(ctx, collection, catalog, owner, name, 4)
@@ -47,12 +47,12 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 	}
 
-	sqsClient := util.GetSqsClient(ctx)
-	queueURL := os.Getenv("QUEUE_URL")
-	for _, dependency := range repo.Dependencies {
-		log.Println("submitting dep to queue")
-		util.SubmitDependencies(ctx, sqsClient, queueURL, dependency.Catalog, dependency.Owner, dependency.Name)
-	}
+	// sqsClient := util.GetSqsClient(ctx)
+	// queueURL := os.Getenv("QUEUE_URL")
+	// for _, dependency := range repo.Dependencies {
+	// 	log.Println("submitting dep to queue")
+	// 	util.SubmitDependencies(ctx, sqsClient, queueURL, dependency.Catalog, dependency.Owner, dependency.Name)
+	// }
 
 	return nil
 }
