@@ -137,6 +137,23 @@ type IssueResponseRest struct {
 	Closed_at  time.Time
 }
 
+type PullResponse struct {
+	Data struct {
+		Repository struct {
+			PullRequests struct {
+				Edges []struct {
+					Node struct {
+						Closed    bool
+						CreatedAt time.Time
+						ClosedAt  time.Time
+					}
+				}
+				PageInfo PageInfo
+			}
+		}
+	}
+}
+
 type PullResponseRest struct {
 	State      string
 	Created_at time.Time
@@ -185,11 +202,11 @@ type OpenPR struct {
 
 type ClosedPR struct {
 	CreateDate time.Time
-	CloseDate time.Time
+	CloseDate  time.Time
 }
 
 type PullRequests struct {
-	OpenPR []OpenPR
+	OpenPR   []OpenPR
 	ClosedPR []ClosedPR
 }
 

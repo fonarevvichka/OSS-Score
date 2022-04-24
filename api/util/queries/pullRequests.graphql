@@ -1,6 +1,6 @@
 query ($name: String!, $owner: String!, $cursor: String) {
   repository(owner: $owner, name: $name) {
-		pullRequests (first: 100, after: $cursor, orderBy: {field: CREATED_AT, direction: ASC}) {
+		pullRequests (first: 100, after: $cursor, orderBy: {field: CREATED_AT, direction: DESC}) {
       edges {
         node {
           closed

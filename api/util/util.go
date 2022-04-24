@@ -19,6 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"golang.org/x/oauth2"
+	"golang.org/x/sync/errgroup"
 )
 
 func GetSqsClient(ctx context.Context) *sqs.Client {
@@ -350,74 +351,44 @@ func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 }
 
 func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
-	// errs, ctx := errgroup.WithContext(context.Background())
+	errs, ctx := errgroup.WithContext(context.Background())
 
-	src1 := oauth2.StaticTokenSource(
+	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_1")},
 	)
-	// src2 := oauth2.StaticTokenSource(
-	// 	&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_2")},
-	// )
-	src3 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_3")},
-	)
-	src4 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_4")},
-	)
-	src5 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_5")},
-	)
-	src6 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_6")},
-	)
 
-	httpClient1 := oauth2.NewClient(ctx, src1)
-	// httpClient2 := oauth2.NewClient(ctx, src2)
-	httpClient3 := oauth2.NewClient(ctx, src3)
-	httpClient4 := oauth2.NewClient(ctx, src4)
-	httpClient5 := oauth2.NewClient(ctx, src5)
-	httpClient6 := oauth2.NewClient(ctx, src6)
+	httpClient1 := oauth2.NewClient(ctx, src)
+	httpClient2 := oauth2.NewClient(ctx, src)
+	httpClient3 := oauth2.NewClient(ctx, src)
+	httpClient4 := oauth2.NewClient(ctx, src)
+	httpClient5 := oauth2.NewClient(ctx, src)
+	// httpClient6 := oauth2.NewClient(ctx, src)
 
-	// errs.Go(func() error {
-	err := GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
-	if err != nil {
-		return err
-	}
-	// })
-	// STOP GAP RATE LIMITING
-	// errs.Go(func() error {
-	// 	return GetGithubDependencies(httpClient2, repo)
-	// })
+	errs.Go(func() error {
+		return GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
+	})
+
+	errs.Go(func() error {
+		return GetGithubReleases(httpClient2, repo, startPoint.Format(time.RFC3339))
+	})
+
+	errs.Go(func() error {
+		return GetCoreRepoInfo(httpClient3, repo)
+	})
+
+	errs.Go(func() error {
+		return GetGithubCommitsRest(httpClient4, repo, startPoint.Format(time.RFC3339))
+	})
+
+	errs.Go(func() error {
+		return GetGithubPullRequestsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
+	})
 
 	// errs.Go(func() error {
-	err = GetGithubReleases(httpClient3, repo, startPoint.Format(time.RFC3339))
+	// 	return GetGithubDependencies(httpClient6, repo)
 	// })
-	if err != nil {
-		return err
-	}
 
-	// errs.Go(func() error {
-	err = GetCoreRepoInfo(httpClient4, repo)
-	// })
-	if err != nil {
-		return err
-	}
-
-	// errs.Go(func() error {
-	err = GetGithubCommitsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
-	// })
-	if err != nil {
-		return err
-	}
-
-	// errs.Go(func() error {
-	err = GetGithubPullRequestsRest(httpClient6, repo, startPoint.Format(time.RFC3339))
-	// })
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return errs.Wait()
 }
 
 func dependencyInSlice(dependency Dependency, dependencies []Dependency) bool {

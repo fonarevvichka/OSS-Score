@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 const GitUrl = "https://api.github.com/graphql"
@@ -213,31 +216,37 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 }
 
 func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) error {
+	errs, _ := errgroup.WithContext(context.Background())
 	closedHasNextPage := true
 	openHasNextPage := true
 	closePage := 1
 	openPage := 1
 
-	var err error
-	for closedHasNextPage {
-		closedHasNextPage, err = getGithubIssuePage(client, repo, "closed", closePage, startDate)
-		if err != nil {
-			return err
+	errs.Go(func() error {
+		var err error
+		for closedHasNextPage {
+			closedHasNextPage, err = getGithubIssuePage(client, repo, "closed", closePage, startDate)
+			if err != nil {
+				return err
+			}
+			closePage += 1
 		}
-		closePage += 1
-		time.Sleep(250 * time.Millisecond)
-	}
+		return nil
+	})
 
-	for openHasNextPage {
-		openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
-		if err != nil {
-			return err
+	errs.Go(func() error {
+		var err error
+		for openHasNextPage {
+			openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
+			if err != nil {
+				return err
+			}
+			openPage += 1
 		}
-		openPage += 1
-		time.Sleep(250 * time.Millisecond)
-	}
+		return nil
+	})
 
-	return nil
+	return errs.Wait()
 }
 
 func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
@@ -293,31 +302,37 @@ func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string,
 }
 
 func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate string) error {
+	errs, _ := errgroup.WithContext(context.TODO())
 	closedHasNextPage := true
 	openHasNextPage := true
 	closePage := 1
 	openPage := 1
 
-	var err error
-	for closedHasNextPage {
-		closedHasNextPage, err = getGithubPullRequestPage(client, repo, "closed", closePage, startDate)
-		if err != nil {
-			return err
+	errs.Go(func() error {
+		var err error
+		for closedHasNextPage {
+			closedHasNextPage, err = getGithubPullRequestPage(client, repo, "closed", closePage, startDate)
+			if err != nil {
+				return err
+			}
+			closePage += 1
 		}
-		time.Sleep(250 * time.Millisecond)
-		closePage += 1
-	}
+		return nil
+	})
 
-	for openHasNextPage {
-		openHasNextPage, err = getGithubPullRequestPage(client, repo, "open", openPage, startDate)
-		if err != nil {
-			return err
+	errs.Go(func() error {
+		var err error
+		for openHasNextPage {
+			openHasNextPage, err = getGithubPullRequestPage(client, repo, "open", openPage, startDate)
+			if err != nil {
+				return err
+			}
+			openPage += 1
 		}
-		time.Sleep(250 * time.Millisecond)
-		openPage += 1
-	}
+		return nil
+	})
 
-	return nil
+	return errs.Wait()
 }
 
 func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) (bool, error) {
@@ -479,7 +494,90 @@ func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) er
 	return nil
 }
 
+func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.Time) error {
+	query, err := importQuery("./util/queries/pullRequests.graphql") //TODO: Make this a an env var probably
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	hasNextPage := true
+	stop := false
+	cursor := "init"
+
+	var openPulls []OpenPR
+	var closedPulls []ClosedPR
+	var data PullResponse
+	var variables string
+	for hasNextPage && !stop {
+		if cursor == "init" {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null}", repo.Owner, repo.Name)
+		} else {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\"}", repo.Owner, repo.Name, cursor)
+		}
+		postBody, _ := json.Marshal(map[string]string{
+			"query":     query,
+			"variables": variables,
+		})
+		responseBody := bytes.NewBuffer(postBody)
+
+		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			log.Println(resp.Status)
+			log.Println(resp.Header)
+			log.Println(resp.Body)
+			log.Println("Error querying github for issues")
+			return fmt.Errorf("failed to query github: issues\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+		}
+
+		decoder := json.NewDecoder(resp.Body)
+		if decoder.Decode(&data) != nil {
+			log.Println(err)
+			return err
+		}
+
+		for _, node := range data.Data.Repository.PullRequests.Edges {
+			if node.Node.CreatedAt.Before(startPoint) {
+				stop = true
+				break
+			}
+			if node.Node.Closed {
+				pull := ClosedPR{
+					CreateDate: node.Node.CreatedAt,
+					CloseDate:  node.Node.ClosedAt,
+				}
+				closedPulls = append(closedPulls, pull)
+			} else {
+				pull := OpenPR{
+					CreateDate: node.Node.CreatedAt,
+				}
+				openPulls = append(openPulls, pull)
+			}
+		}
+		hasNextPage = data.Data.Repository.PullRequests.PageInfo.HasNextPage
+		cursor = data.Data.Repository.PullRequests.PageInfo.EndCursor
+	}
+
+	repo.PullRequests.OpenPR = append(repo.PullRequests.OpenPR, openPulls...)
+	repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, closedPulls...)
+
+	return nil
+}
+
 // deprecated
+// startDate filter does not seem to be applied
 func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
 	query, err := importQuery("./util/queries/issues.graphql") //TODO: Make this a an env var probably
 	if err != nil {
