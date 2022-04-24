@@ -419,7 +419,7 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 		return err
 	}
 
-	return errs.Wait()
+	return nil
 }
 
 func dependencyInSlice(dependency Dependency, dependencies []Dependency) bool {
