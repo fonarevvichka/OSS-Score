@@ -19,7 +19,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"golang.org/x/oauth2"
-	"golang.org/x/sync/errgroup"
 )
 
 func GetSqsClient(ctx context.Context) *sqs.Client {
@@ -351,7 +350,7 @@ func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 }
 
 func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
-	errs, ctx := errgroup.WithContext(context.Background())
+	// errs, ctx := errgroup.WithContext(context.Background())
 
 	src1 := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_1")},
@@ -385,7 +384,6 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 		return err
 	}
 	// })
-	// 52 seconds parallel
 	// STOP GAP RATE LIMITING
 	// errs.Go(func() error {
 	// 	return GetGithubDependencies(httpClient2, repo)
