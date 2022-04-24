@@ -2,7 +2,6 @@ package util
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"golang.org/x/sync/errgroup"
 )
 
 const GitUrl = "https://api.github.com/graphql"
@@ -216,39 +213,39 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 }
 
 func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) error {
-	errs, _ := errgroup.WithContext(context.Background())
+	// errs, _ := errgroup.WithContext(context.Background())
 	closedHasNextPage := true
 	openHasNextPage := true
 	closePage := 1
 	openPage := 1
 
-	errs.Go(func() error {
-		var err error
-		for closedHasNextPage {
-			closedHasNextPage, err = getGithubIssuePage(client, repo, "closed", closePage, startDate)
-			if err != nil {
-				return err
-			}
-			time.Sleep(250 * time.Millisecond)
-			closePage += 1
+	// errs.Go(func() error {
+	var err error
+	for closedHasNextPage {
+		closedHasNextPage, err = getGithubIssuePage(client, repo, "closed", closePage, startDate)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+		time.Sleep(250 * time.Millisecond)
+		closePage += 1
+	}
+	// return nil
+	// })
 
-	errs.Go(func() error {
-		var err error
-		for openHasNextPage {
-			openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
-			time.Sleep(250 * time.Millisecond)
-			if err != nil {
-				return err
-			}
-			openPage += 1
+	// errs.Go(func() error {
+	// var err error
+	for openHasNextPage {
+		openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
+		time.Sleep(250 * time.Millisecond)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+		openPage += 1
+	}
+	return nil
+	// })
 
-	return errs.Wait()
+	// return errs.Wait()
 }
 
 func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
@@ -304,39 +301,39 @@ func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string,
 }
 
 func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate string) error {
-	errs, _ := errgroup.WithContext(context.Background())
+	// errs, _ := errgroup.WithContext(context.Background())
 	closedHasNextPage := true
 	openHasNextPage := true
 	closePage := 1
 	openPage := 1
 
-	errs.Go(func() error {
-		var err error
-		for closedHasNextPage {
-			closedHasNextPage, err = getGithubPullRequestPage(client, repo, "closed", closePage, startDate)
-			if err != nil {
-				return err
-			}
-			time.Sleep(250 * time.Millisecond)
-			closePage += 1
+	// errs.Go(func() error {
+	var err error
+	for closedHasNextPage {
+		closedHasNextPage, err = getGithubPullRequestPage(client, repo, "closed", closePage, startDate)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+		time.Sleep(250 * time.Millisecond)
+		closePage += 1
+	}
+	// return nil
+	// })
 
-	errs.Go(func() error {
-		var err error
-		for openHasNextPage {
-			openHasNextPage, err = getGithubPullRequestPage(client, repo, "open", openPage, startDate)
-			if err != nil {
-				return err
-			}
-			time.Sleep(250 * time.Millisecond)
-			openPage += 1
+	// errs.Go(func() error {
+	// var err error
+	for openHasNextPage {
+		openHasNextPage, err = getGithubPullRequestPage(client, repo, "open", openPage, startDate)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+		time.Sleep(250 * time.Millisecond)
+		openPage += 1
+	}
+	return nil
+	// })
 
-	return errs.Wait()
+	// return errs.Wait()
 }
 
 func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) (bool, error) {
