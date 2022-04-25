@@ -126,7 +126,7 @@ functions:
     name: ${self:provider.stage}-query-repo-processing
     handler: bin/queryRepoProcessing
     timeout: 300
-    reservedConcurrency: 10
+    reservedConcurrency: 5
     environment:
       GIT_PAT: ${env:GIT_PAT}
       QUEUE_URL:
