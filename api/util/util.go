@@ -226,7 +226,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		log.Println(owner + "/" + name + " Not in DB, need to do full query")
 		repo.DataStartPoint = startPoint
 
-		err = QueryGithub(&repo, startPoint)
+		err = QueryGithub(ctx, &repo, startPoint)
 
 		if err != nil {
 			log.Println(err)
@@ -242,7 +242,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 				startPoint = repo.UpdatedAt
 			}
 
-			err = QueryGithub(&repo, startPoint)
+			err = QueryGithub(ctx, &repo, startPoint)
 			if err != nil {
 				log.Println(err)
 				return repo, err
@@ -349,15 +349,15 @@ func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 	return nil
 }
 
-func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
-	errs, ctx := errgroup.WithContext(context.Background())
+func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) error {
+	errs, ctx := errgroup.WithContext(ctx)
 
 	httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
 	))
 
 	errs.Go(func() error {
-		return GetGithubIssuesRest(httpClient, repo, startPoint.Format(time.RFC3339))
+		return GetGithubIssuesRest(ctx, httpClient, repo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {

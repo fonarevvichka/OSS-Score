@@ -215,8 +215,8 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	return len(issues) == 100, nil
 }
 
-func GetGithubIssuesRest(client *http.Client, repo *RepoInfo, startDate string) error {
-	errs, _ := errgroup.WithContext(context.Background())
+func GetGithubIssuesRest(ctx context.Context, client *http.Client, repo *RepoInfo, startDate string) error {
+	errs, _ := errgroup.WithContext(ctx)
 	closedHasNextPage := true
 	openHasNextPage := true
 	closePage := 1
@@ -301,8 +301,8 @@ func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string,
 	return len(prs) == 100, nil
 }
 
-func GetGithubPullRequestsRest(client *http.Client, repo *RepoInfo, startDate string) error {
-	errs, _ := errgroup.WithContext(context.TODO())
+func GetGithubPullRequestsRest(ctx context.Context, client *http.Client, repo *RepoInfo, startDate string) error {
+	errs, _ := errgroup.WithContext(ctx)
 	closedHasNextPage := true
 	openHasNextPage := true
 	closePage := 1
