@@ -421,7 +421,6 @@ func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string)
 			log.Println(err)
 			return err
 		}
-		time.Sleep(250 * time.Millisecond)
 		page += 1
 	}
 
@@ -488,7 +487,6 @@ func GetGithubReleasesGraphQL(client *http.Client, repo *RepoInfo, startDate str
 		}
 		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
 		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
-		time.Sleep(250 * time.Millisecond)
 	}
 
 	return nil
