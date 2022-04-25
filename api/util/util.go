@@ -202,6 +202,8 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 		}
 	}
 
+	// HARDCODE DEP RATIO TO 1 to prevent chrome extension from spamming
+	depRatio = 1
 	return combinedScore, depRatio, repo.Status, message, nil
 }
 
