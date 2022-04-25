@@ -371,6 +371,7 @@ func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 	})
 
 	errs.Go(func() error {
+		// COULD BE GRAPHQL with 70% performace
 		return GetGithubCommitsRest(httpClient, repo, startPoint.Format(time.RFC3339))
 	})
 
