@@ -353,39 +353,34 @@ func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
 	errs, ctx := errgroup.WithContext(context.Background())
 
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_1")},
-	)
-
-	httpClient1 := oauth2.NewClient(ctx, src)
-	httpClient2 := oauth2.NewClient(ctx, src)
-	httpClient3 := oauth2.NewClient(ctx, src)
-	httpClient4 := oauth2.NewClient(ctx, src)
-	httpClient5 := oauth2.NewClient(ctx, src)
-	// httpClient6 := oauth2.NewClient(ctx, src)
+	httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	))
 
 	errs.Go(func() error {
-		return GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
+		return GetGithubIssuesRest(httpClient, repo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetGithubReleases(httpClient2, repo, startPoint.Format(time.RFC3339))
+		// TODO, not taking into account the timeframe
+		return GetGithubReleasesGraphQL(httpClient, repo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetCoreRepoInfo(httpClient3, repo)
+		return GetCoreRepoInfo(httpClient, repo)
 	})
 
 	errs.Go(func() error {
-		return GetGithubCommitsRest(httpClient4, repo, startPoint.Format(time.RFC3339))
+		return GetGithubCommitsRest(httpClient, repo, startPoint.Format(time.RFC3339))
 	})
 
 	errs.Go(func() error {
-		return GetGithubPullRequestsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
+		return GetGithubPullsGraphQL(httpClient, repo, startPoint)
 	})
 
+	// TEMPORARILY STILL DISABLED
 	// errs.Go(func() error {
-	// 	return GetGithubDependencies(httpClient6, repo)
+	// 	return GetGithubDependencies(httpClient, repo)
 	// })
 
 	return errs.Wait()

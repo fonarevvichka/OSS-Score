@@ -428,7 +428,7 @@ func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string)
 	return nil
 }
 
-func GetGithubReleases(client *http.Client, repo *RepoInfo, startDate string) error {
+func GetGithubReleasesGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
 	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
@@ -660,7 +660,7 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 	return nil
 }
 
-// deprecated
+// about 70% as fast as using the rest
 func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
 	query, err := importQuery("./util/queries/commits.graphql") //TODO: Make this a an env var probably
 	if err != nil {
