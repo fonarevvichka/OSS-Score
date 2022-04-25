@@ -46,7 +46,7 @@ functions:
     handler: bin/getScore
     timeout: 15
     environment:
-      GIT_PAT: ${env:GIT_PAT_0}
+      GIT_PAT: ${env:GIT_PAT}
     iamRoleStatementsName: ${self:provider.stage}-get-score-role
     package:
       patterns:
@@ -70,7 +70,7 @@ functions:
     handler: bin/getMetric
     timeout: 15
     environment:
-      GIT_PAT: ${env:GIT_PAT_1}
+      GIT_PAT: ${env:GIT_PAT}
     iamRoleStatementsName: ${self:provider.stage}-get-metric-role
     package:
       patterns:
@@ -94,7 +94,7 @@ functions:
     handler: bin/queryRepoHandler
     timeout: 15
     environment:
-      GIT_PAT: ${env:GIT_PAT_2}
+      GIT_PAT: ${env:GIT_PAT}
       QUEUE_URL:
         Ref: repoQueryQueue
     iamRoleStatementsName: ${self:provider.stage}-query-repo-handler-role
@@ -128,12 +128,7 @@ functions:
     timeout: 300
     reservedConcurrency: 10
     environment:
-      GIT_PAT_1: ${env:GIT_PAT_3}
-      GIT_PAT_2: ${env:GIT_PAT_4}
-      GIT_PAT_3: ${env:GIT_PAT_5}
-      GIT_PAT_4: ${env:GIT_PAT_6}
-      GIT_PAT_5: ${env:GIT_PAT_7}
-      GIT_PAT_6: ${env:GIT_PAT_8}
+      GIT_PAT: ${env:GIT_PAT}
       QUEUE_URL:
         Ref: depQueryQueue
     iamRoleStatementsName: ${self:provider.stage}-query-repo-processing-role
@@ -163,12 +158,7 @@ functions:
     timeout: 900
     reservedConcurrency: 10
     environment:
-      GIT_PAT_1: ${env:GIT_PAT_9}
-      GIT_PAT_2: ${env:GIT_PAT_10}
-      GIT_PAT_3: ${env:GIT_PAT_11}
-      GIT_PAT_4: ${env:GIT_PAT_12}
-      GIT_PAT_5: ${env:GIT_PAT_13}
-      GIT_PAT_6: ${env:GIT_PAT_14}
+      GIT_PAT: ${env:GIT_PAT}
     iamRoleStatementsName: ${self:provider.stage}-query-dep-processing-role
     package:
       patterns:
