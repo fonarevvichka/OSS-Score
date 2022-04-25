@@ -167,7 +167,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 						log.Println(err)
 						return combinedScore, depRatio, repo.Status, "", err
 					}
-					depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
+					// depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
 					if err != nil {
 						log.Println(err)
 						return combinedScore, depRatio, repo.Status, "", err
@@ -179,14 +179,15 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 						return combinedScore, depRatio, repo.Status, "", err
 					}
 					repoScore = CalculateRepoLicenseScore(&repo, licenseMap)
-					depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
+					// depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
 					if err != nil {
 						return combinedScore, depRatio, repo.Status, "", err
 					}
 				}
 
 				// if there are no deps we want to not include them in the score
-				if len(repo.Dependencies) == 0 {
+				// TEMP MEASURE TO NOT INCLUDE THE SCORES OF DEPENDENCIES
+				if len(repo.Dependencies) == 0 || true {
 					repoWeight = 1
 					dependencyWeight = 0
 				}
@@ -298,10 +299,6 @@ func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string
 
 func QueryProject(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
 	repo, err := addUpdateRepo(ctx, collection, catalog, owner, name, timeFrame)
-
-	// STOP GAP MEASURE TO WIPE OUT DEPS FOR SCORING
-	repo.Dependencies = nil
-	// STOP GAP MEASURE TO WIPE OUT DEPS FOR SCORING
 
 	if err != nil {
 		log.Println(err)
