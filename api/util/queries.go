@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/go-github/v43/github"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -380,34 +381,47 @@ func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDa
 	return len(commits) == 100, nil
 }
 
-func CheckRepoAccess(client *http.Client, owner string, name string) (int, error) {
-	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
+func CheckRepoAccess(ctx context.Context, httpClient *http.Client, owner string, name string) (int, error) {
+	client := github.NewClient(httpClient)
 
-	body := bytes.NewBuffer(make([]byte, 0))
-	request, err := http.NewRequest("GET", requestUrl, body)
+	opts := github.BranchListOptions{
+		ListOptions: github.ListOptions{
+			PerPage: 1,
+		},
+	}
+	_, _, err := client.Repositories.ListBranches(ctx, owner, name, &opts)
 	if err != nil {
-		log.Println(err)
 		return 0, err
 	}
+	// requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
 
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println(err)
-		return 0, err
-	}
+	// body := bytes.NewBuffer(make([]byte, 0))
+	// request, err := http.NewRequest("GET", requestUrl, body)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return 0, err
+	// }
 
-	defer resp.Body.Close()
+	// resp, err := client.Do(request)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return 0, err
+	// }
 
-	switch resp.StatusCode {
-	case 200:
-		return 1, nil
-	case 403: // rate limiting exceeded
-		return -1, nil
-	case 404: // repo not found
-		return 0, nil
-	default:
-		return 0, nil
-	}
+	// defer resp.Body.Close()
+
+	// switch resp.StatusCode {
+	// case 200:
+	// 	return 1, nil
+	// case 403: // rate limiting exceeded
+	// 	return -1, nil
+	// case 404: // repo not found
+	// 	return 0, nil
+	// default:
+	// 	return 0, nil
+	// }
+
+	return 0, nil
 }
 
 func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) error {
