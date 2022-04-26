@@ -167,7 +167,7 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 						log.Println(err)
 						return combinedScore, depRatio, repo.Status, "", err
 					}
-					depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
+					// depScore, depRatio, err = CalculateDependencyActivityScore(ctx, collection, &repo, startPoint)
 					if err != nil {
 						log.Println(err)
 						return combinedScore, depRatio, repo.Status, "", err
@@ -179,14 +179,15 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 						return combinedScore, depRatio, repo.Status, "", err
 					}
 					repoScore = CalculateRepoLicenseScore(&repo, licenseMap)
-					depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
+					// depScore, depRatio, err = CalculateDependencyLicenseScore(ctx, collection, &repo, licenseMap)
 					if err != nil {
 						return combinedScore, depRatio, repo.Status, "", err
 					}
 				}
 
 				// if there are no deps we want to not include them in the score
-				if len(repo.Dependencies) == 0 {
+				// TEMP MEASURE TO NOT INCLUDE THE SCORES OF DEPENDENCIES
+				if len(repo.Dependencies) == 0 || true {
 					repoWeight = 1
 					dependencyWeight = 0
 				}
@@ -201,6 +202,8 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 		}
 	}
 
+	// HARDCODE DEP RATIO TO 1 to prevent chrome extension from spamming
+	depRatio = 1
 	return combinedScore, depRatio, repo.Status, message, nil
 }
 
@@ -223,7 +226,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		log.Println(owner + "/" + name + " Not in DB, need to do full query")
 		repo.DataStartPoint = startPoint
 
-		err = QueryGithub(&repo, startPoint)
+		err = QueryGithub(ctx, &repo, startPoint)
 
 		if err != nil {
 			log.Println(err)
@@ -239,7 +242,7 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 				startPoint = repo.UpdatedAt
 			}
 
-			err = QueryGithub(&repo, startPoint)
+			err = QueryGithub(ctx, &repo, startPoint)
 			if err != nil {
 				log.Println(err)
 				return repo, err
@@ -299,10 +302,6 @@ func SubmitDependencies(ctx context.Context, client *sqs.Client, queueURL string
 func QueryProject(ctx context.Context, collection *mongo.Collection, catalog string, owner string, name string, timeFrame int) (RepoInfo, error) {
 	repo, err := addUpdateRepo(ctx, collection, catalog, owner, name, timeFrame)
 
-	// STOP GAP MEASURE TO WIPE OUT DEPS FOR SCORING
-	repo.Dependencies = nil
-	// STOP GAP MEASURE TO WIPE OUT DEPS FOR SCORING
-
 	if err != nil {
 		log.Println(err)
 		return RepoInfo{}, err
@@ -350,59 +349,39 @@ func SyncRepoWithDB(ctx context.Context, collection *mongo.Collection, repo Repo
 	return nil
 }
 
-func QueryGithub(repo *RepoInfo, startPoint time.Time) error {
-	errs, ctx := errgroup.WithContext(context.Background())
+func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) error {
+	errs, ctx := errgroup.WithContext(ctx)
 
-	src1 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_1")},
-	)
-	// src2 := oauth2.StaticTokenSource(
-	// 	&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_2")},
-	// )
-	src3 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_3")},
-	)
-	src4 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_4")},
-	)
-	src5 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_5")},
-	)
-	src6 := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT_6")},
-	)
-
-	httpClient1 := oauth2.NewClient(ctx, src1)
-	// httpClient2 := oauth2.NewClient(ctx, src2)
-	httpClient3 := oauth2.NewClient(ctx, src3)
-	httpClient4 := oauth2.NewClient(ctx, src4)
-	httpClient5 := oauth2.NewClient(ctx, src5)
-	httpClient6 := oauth2.NewClient(ctx, src6)
+	httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GIT_PAT")},
+	))
 
 	errs.Go(func() error {
-		return GetGithubIssuesRest(httpClient1, repo, startPoint.Format(time.RFC3339))
+		return GetGithubIssuesRest(ctx, httpClient, repo, startPoint.Format(time.RFC3339))
 	})
 
-	// STOP GAP RATE LIMITING
+	errs.Go(func() error {
+		// TODO, not taking into account the timeframe
+		return GetGithubReleasesGraphQL(httpClient, repo, startPoint.Format(time.RFC3339))
+	})
+
+	errs.Go(func() error {
+		return GetCoreRepoInfo(httpClient, repo)
+	})
+
+	errs.Go(func() error {
+		// COULD BE GRAPHQL with 70% performace
+		return GetGithubCommitsRest(httpClient, repo, startPoint.Format(time.RFC3339))
+	})
+
+	errs.Go(func() error {
+		return GetGithubPullsGraphQL(httpClient, repo, startPoint)
+	})
+
+	// TEMPORARILY STILL DISABLED
 	// errs.Go(func() error {
-	// 	return GetGithubDependencies(httpClient2, repo)
+	// 	return GetGithubDependencies(httpClient, repo)
 	// })
-
-	errs.Go(func() error {
-		return GetGithubReleases(httpClient3, repo, startPoint.Format(time.RFC3339))
-	})
-
-	errs.Go(func() error {
-		return GetCoreRepoInfo(httpClient4, repo)
-	})
-
-	errs.Go(func() error {
-		return GetGithubCommitsRest(httpClient5, repo, startPoint.Format(time.RFC3339))
-	})
-
-	errs.Go(func() error {
-		return GetGithubPullRequestsRest(httpClient6, repo, startPoint.Format(time.RFC3339))
-	})
 
 	return errs.Wait()
 }

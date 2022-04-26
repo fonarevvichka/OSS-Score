@@ -127,10 +127,10 @@ We use serverless as our deployment/orchestration tool and this will handle the 
 #### Enviroment Variables
 DO NOT skip this section, if you do not set these up properly nothing will work.
 
-You will need 12 GitHub personal access tokens or PATs.
+You will need a single GitHub personal access token or PAT.
 [Instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token).
-* The only permissions these PATs need is `public_repo`. But if you want to be able to score your private repos then give them that additional permission.
-* These PAT's need to be stored in your enviroment under the following naming convention: `GIT_PAT_<NUMBER>`
+* The only permissions this PAT needs is `public_repo`. But if you want to be able to score your private repos then give them that additional permission.
+* This PAT needs to be stored in your enviroment under `GIT_PAT`
 
 There are a number of other enviroment variables that are all stored in `OSS-Score/api/vars.yaml`. The default values are all set but these allow you to customize the `shelf_life` of your data as well as the naming of different queues and database naming scheme.
 
