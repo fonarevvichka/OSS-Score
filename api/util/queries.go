@@ -458,6 +458,27 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 	return nil
 }
 
+// Takes file path and reads in the query from it
+func importQuery(filename string) (string, error) {
+	file, err := os.Open(filename)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	defer file.Close()
+
+	query, err := ioutil.ReadAll(file)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return string(query[:]), nil // converts byte array to string
+}
+
 // deprecated
 // startDate filter does not seem to be applied
 func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
@@ -542,7 +563,8 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 	return nil
 }
 
-// about 70% as fast as using the rest
+// deprecated
+// about 70% as fast as using REST
 func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
 	query, err := importQuery("./util/queries/commits.graphql") //TODO: Make this a an env var probably
 	if err != nil {
@@ -607,27 +629,6 @@ func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate stri
 	}
 
 	return nil
-}
-
-// Takes file path and reads in the query from it
-func importQuery(filename string) (string, error) {
-	file, err := os.Open(filename)
-
-	if err != nil {
-		log.Println(err)
-		return "", err
-	}
-
-	defer file.Close()
-
-	query, err := ioutil.ReadAll(file)
-
-	if err != nil {
-		log.Println(err)
-		return "", err
-	}
-
-	return string(query[:]), nil // converts byte array to string
 }
 
 // deprecated
