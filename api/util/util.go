@@ -371,17 +371,16 @@ func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) erro
 
 	errs.Go(func() error {
 		// COULD BE GRAPHQL with 70% performace
-		return GetGithubCommitsRest(httpClient, repo, startPoint.Format(time.RFC3339))
+		return GetGithubCommitsRest(ctx, httpClient, repo, startPoint)
 	})
 
 	errs.Go(func() error {
 		return GetGithubPullsGraphQL(httpClient, repo, startPoint)
 	})
 
-	// TEMPORARILY STILL DISABLED
-	// errs.Go(func() error {
-	// 	return GetGithubDependencies(httpClient, repo)
-	// })
+	errs.Go(func() error {
+		return GetGithubDependencies(httpClient, repo)
+	})
 
 	return errs.Wait()
 }

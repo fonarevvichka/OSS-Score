@@ -77,6 +77,32 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	return nil
 }
 
+func CheckRepoAccess(ctx context.Context, httpClient *http.Client, owner string, name string) (int, error) {
+	client := github.NewClient(httpClient)
+
+	// Only need 1 item to check if we can access it
+	opts := github.BranchListOptions{
+		ListOptions: github.ListOptions{
+			PerPage: 1,
+		},
+	}
+	_, _, err := client.Repositories.ListBranches(ctx, owner, name, &opts)
+
+	if _, ok := err.(*github.RateLimitError); ok {
+		return -1, nil
+	} else if _, ok := err.(*github.ErrorResponse); ok { // should probably just check for 404 here not general error
+		if err.(*github.ErrorResponse).Message == "Not Found" {
+			return 0, nil
+		} else {
+			return 0, err
+		}
+	} else if err != nil {
+		return 0, err
+	}
+
+	return 1, nil
+}
+
 func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 	query, err := importQuery("./util/queries/dependencies.graphql")
 	if err != nil {
@@ -336,89 +362,36 @@ func GetGithubPullRequestsRest(ctx context.Context, client *http.Client, repo *R
 	return errs.Wait()
 }
 
-func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) (bool, error) {
-	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits?", repo.Owner, repo.Name)
-	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate)
-
-	responseBody := bytes.NewBuffer(make([]byte, 0))
-	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		log.Println(resp.Status)
-		log.Println(resp.Header)
-		log.Println(resp.Body)
-		log.Println("Error querying github for core commit page")
-		return false, fmt.Errorf("failed to query github: commit page\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-	}
-
-	commits := []CommitResponseRest{}
-	decoder := json.NewDecoder(resp.Body)
-	if decoder.Decode(&commits) != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	for _, commitResponse := range commits {
-		newCommit := Commit{
-			Author:     commitResponse.Commit.Author.Name,
-			PushedDate: commitResponse.Commit.Author.Date,
-		}
-
-		repo.Commits = append(repo.Commits, newCommit)
-	}
-
-	return len(commits) == 100, nil
-}
-
-func CheckRepoAccess(ctx context.Context, httpClient *http.Client, owner string, name string) (int, error) {
+func GetGithubCommitsRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
 	client := github.NewClient(httpClient)
 
-	// Only need 1 item to check if we can access it
-	opts := github.BranchListOptions{
+	opts := &github.CommitsListOptions{
+		Since: startPoint,
 		ListOptions: github.ListOptions{
-			PerPage: 1,
+			PerPage: 100,
 		},
 	}
-	_, _, err := client.Repositories.ListBranches(ctx, owner, name, &opts)
 
-	if _, ok := err.(*github.RateLimitError); ok {
-		return -1, nil
-	} else if _, ok := err.(*github.ErrorResponse); ok { // should probably just check for 404 here not general error
-		if err.(*github.ErrorResponse).Message == "Not Found" {
-			return 0, nil
-		} else {
-			return 0, err
-		}
-	} else if err != nil {
-		return 0, err
-	}
+	for {
+		commits, resp, err := client.Repositories.ListCommits(ctx, repo.Owner, repo.Name, opts)
 
-	return 1, nil
-}
-
-func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) error {
-	hasNextPage := true
-	var err error
-	page := 1
-
-	for hasNextPage {
-		hasNextPage, err = getGithubCommitsPage(client, repo, page, startDate)
+		// May want more granularity here, but for now i think we can check for ratelimitng a step above
 		if err != nil {
-			log.Println(err)
 			return err
 		}
-		page += 1
+
+		// pull out commits and record them
+		for _, gitCommit := range commits {
+			repo.Commits = append(repo.Commits, Commit{
+				Author:     gitCommit.Commit.Author.GetName(),
+				PushedDate: *gitCommit.Commit.Committer.Date,
+			})
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
 	}
 
 	return nil
