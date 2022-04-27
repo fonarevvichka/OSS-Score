@@ -54,7 +54,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	)
 	httpClient := oauth2.NewClient(ctx, src)
 
-	access, err := util.CheckRepoAccess(httpClient, owner, name)
+	access, err := util.CheckRepoAccess(ctx, httpClient, owner, name)
 	if err != nil {
 		log.Println(err)
 	}
