@@ -225,15 +225,15 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 		if issueResponse.State == "open" {
 			newIssue := OpenIssue{
 				CreateDate: issueResponse.Created_at,
-				Comments:   issueResponse.Comments,
-				Assignees:  len(issueResponse.Assignees),
+				// Comments:   issueResponse.Comments,
+				Assignees: len(issueResponse.Assignees),
 			}
 			repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, newIssue)
 		} else {
 			newIssue := ClosedIssue{
 				CreateDate: issueResponse.Created_at,
 				CloseDate:  issueResponse.Closed_at,
-				Comments:   issueResponse.Comments,
+				// Comments:   issueResponse.Comments,
 			}
 			repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, newIssue)
 		}
@@ -262,17 +262,18 @@ func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *Rep
 		}
 
 		for _, gitIssue := range issues {
-			fmt.Println(*gitIssue.Title)
-			if *gitIssue.State == "open" { // issue not yet closed
-				repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
-					CreateDate: gitIssue.GetCreatedAt(),
-					Assignees:  len(gitIssue.Assignees),
-				})
-			} else {
-				repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, ClosedIssue{
-					CreateDate: gitIssue.GetCreatedAt(),
-					CloseDate:  gitIssue.GetClosedAt(),
-				})
+			if !gitIssue.IsPullRequest() {
+				if *gitIssue.State == "open" { // issue not yet closed
+					repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
+						CreateDate: gitIssue.GetCreatedAt(),
+						Assignees:  len(gitIssue.Assignees),
+					})
+				} else {
+					repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, ClosedIssue{
+						CreateDate: gitIssue.GetCreatedAt(),
+						CloseDate:  gitIssue.GetClosedAt(),
+					})
+				}
 			}
 		}
 
@@ -578,18 +579,18 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 		for _, node := range data.Data.Repository.Issues.Edges {
 			if node.Node.Closed {
 				issue := ClosedIssue{
-					CreateDate:   node.Node.CreatedAt,
-					CloseDate:    node.Node.ClosedAt,
-					Participants: node.Node.Participants.TotalCount,
-					Comments:     node.Node.Assignees.TotalCount,
+					CreateDate: node.Node.CreatedAt,
+					CloseDate:  node.Node.ClosedAt,
+					// Participants: node.Node.Participants.TotalCount,
+					// Comments:     node.Node.Assignees.TotalCount,
 				}
 				closedIssues = append(closedIssues, issue)
 			} else {
 				issue := OpenIssue{
-					CreateDate:   node.Node.CreatedAt,
-					Assignees:    node.Node.Assignees.TotalCount,
-					Participants: node.Node.Participants.TotalCount,
-					Comments:     node.Node.Assignees.TotalCount,
+					CreateDate: node.Node.CreatedAt,
+					Assignees:  node.Node.Assignees.TotalCount,
+					// Participants: node.Node.Participants.TotalCount,
+					// Comments:     node.Node.Assignees.TotalCount,
 				}
 				openIssues = append(openIssues, issue)
 			}

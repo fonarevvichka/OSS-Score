@@ -178,17 +178,12 @@ type ReleaseResponse struct {
 type OpenIssue struct {
 	CreateDate time.Time
 
-	Participants int
-	Comments     int
-	Assignees    int
+	Assignees int
 }
 
 type ClosedIssue struct {
 	CreateDate time.Time
 	CloseDate  time.Time
-
-	Participants int
-	Comments     int
 }
 
 type Issues struct {
