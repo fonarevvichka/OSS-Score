@@ -242,38 +242,79 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	return len(issues) == 100, nil
 }
 
-func GetGithubIssuesRest(ctx context.Context, client *http.Client, repo *RepoInfo, startDate string) error {
-	errs, _ := errgroup.WithContext(ctx)
-	closedHasNextPage := true
-	openHasNextPage := true
-	closePage := 1
-	openPage := 1
+func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
+	client := github.NewClient(httpClient)
 
-	errs.Go(func() error {
-		var err error
-		for closedHasNextPage {
-			closedHasNextPage, err = getGithubIssuePage(client, repo, "closed", closePage, startDate)
-			if err != nil {
-				return err
-			}
-			closePage += 1
+	opts := &github.IssueListByRepoOptions{
+		Since: startPoint,
+		State: "all",
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	for {
+		issues, resp, err := client.Issues.ListByRepo(ctx, repo.Owner, repo.Name, opts)
+
+		// May want more granularity here, but for now i think we can check for ratelimitng a step above
+		if err != nil {
+			return err
 		}
-		return nil
-	})
 
-	errs.Go(func() error {
-		var err error
-		for openHasNextPage {
-			openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
-			if err != nil {
-				return err
+		for _, gitIssue := range issues {
+			fmt.Println(*gitIssue.Title)
+			if *gitIssue.State == "open" { // issue not yet closed
+				repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
+					CreateDate: gitIssue.GetCreatedAt(),
+					Assignees:  len(gitIssue.Assignees),
+				})
+			} else {
+				repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, ClosedIssue{
+					CreateDate: gitIssue.GetCreatedAt(),
+					CloseDate:  gitIssue.GetClosedAt(),
+				})
 			}
-			openPage += 1
 		}
-		return nil
-	})
 
-	return errs.Wait()
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return nil
+
+	// errs, _ := errgroup.WithContext(ctx)
+	// closedHasNextPage := true
+	// openHasNextPage := true
+	// closePage := 1
+	// openPage := 1
+
+	// errs.Go(func() error {
+	// 	var err error
+	// 	for closedHasNextPage {
+	// 		closedHasNextPage, err = getGithubIssuePage(httpClient, repo, "closed", closePage, startDate)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		closePage += 1
+	// 	}
+	// 	return nil
+	// })
+
+	// errs.Go(func() error {
+	// 	var err error
+	// 	for openHasNextPage {
+	// 		openHasNextPage, err = getGithubIssuePage(httpClient, repo, "open", openPage, startDate)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		openPage += 1
+	// 	}
+	// 	return nil
+	// })
+
+	// return errs.Wait()
 }
 
 func GetGithubCommitsRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {

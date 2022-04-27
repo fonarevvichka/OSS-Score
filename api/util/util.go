@@ -357,7 +357,7 @@ func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) erro
 	))
 
 	errs.Go(func() error {
-		return GetGithubIssuesRest(ctx, httpClient, repo, startPoint.Format(time.RFC3339))
+		return GetGithubIssuesRest(ctx, httpClient, repo, startPoint)
 	})
 
 	errs.Go(func() error {
