@@ -384,44 +384,27 @@ func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDa
 func CheckRepoAccess(ctx context.Context, httpClient *http.Client, owner string, name string) (int, error) {
 	client := github.NewClient(httpClient)
 
+	// Only need 1 item to check if we can access it
 	opts := github.BranchListOptions{
 		ListOptions: github.ListOptions{
 			PerPage: 1,
 		},
 	}
 	_, _, err := client.Repositories.ListBranches(ctx, owner, name, &opts)
-	if err != nil {
+
+	if _, ok := err.(*github.RateLimitError); ok {
+		return -1, nil
+	} else if _, ok := err.(*github.ErrorResponse); ok { // should probably just check for 404 here not general error
+		if err.(*github.ErrorResponse).Message == "Not Found" {
+			return 0, nil
+		} else {
+			return 0, err
+		}
+	} else if err != nil {
 		return 0, err
 	}
-	// requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
 
-	// body := bytes.NewBuffer(make([]byte, 0))
-	// request, err := http.NewRequest("GET", requestUrl, body)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return 0, err
-	// }
-
-	// resp, err := client.Do(request)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return 0, err
-	// }
-
-	// defer resp.Body.Close()
-
-	// switch resp.StatusCode {
-	// case 200:
-	// 	return 1, nil
-	// case 403: // rate limiting exceeded
-	// 	return -1, nil
-	// case 404: // repo not found
-	// 	return 0, nil
-	// default:
-	// 	return 0, nil
-	// }
-
-	return 0, nil
+	return 1, nil
 }
 
 func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) error {
