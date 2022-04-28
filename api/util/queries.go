@@ -243,19 +243,9 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	return len(issues) == 100, nil
 }
 
-func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
-	client := github.NewClient(httpClient)
-
-	opts := &github.IssueListByRepoOptions{
-		Since: startPoint,
-		State: "all",
-		ListOptions: github.ListOptions{
-			PerPage: 100,
-		},
-	}
-
+func getGithubIssueRestTyped(ctx context.Context, client *github.Client, repo *RepoInfo, opts github.IssueListByRepoOptions) error {
 	for {
-		issues, resp, err := client.Issues.ListByRepo(ctx, repo.Owner, repo.Name, opts)
+		issues, resp, err := client.Issues.ListByRepo(ctx, repo.Owner, repo.Name, &opts)
 
 		// May want more granularity here, but for now i think we can check for ratelimitng a step above
 		if err != nil {
@@ -263,7 +253,7 @@ func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *Rep
 		}
 
 		for _, gitIssue := range issues {
-			if gitIssue.GetCreatedAt().After(startPoint) {
+			if gitIssue.GetCreatedAt().After(opts.Since) {
 				if !gitIssue.IsPullRequest() {
 					if *gitIssue.State == "open" { // issue not yet closed
 						repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
@@ -287,6 +277,30 @@ func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *Rep
 	}
 
 	return nil
+}
+
+func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
+	errs, ctx := errgroup.WithContext(ctx)
+	client := github.NewClient(httpClient)
+
+	opts := github.IssueListByRepoOptions{
+		Since: startPoint,
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	errs.Go(func() error {
+		opts.State = "open"
+		return getGithubIssueRestTyped(ctx, client, repo, opts)
+	})
+
+	errs.Go(func() error {
+		opts.State = "closed"
+		return getGithubIssueRestTyped(ctx, client, repo, opts)
+	})
+
+	return errs.Wait()
 }
 
 func GetGithubCommitsRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
