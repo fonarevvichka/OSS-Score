@@ -187,6 +187,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 	return nil
 }
 
+// deprecated
 func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
 	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?", repo.Owner, repo.Name)
 	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
@@ -242,7 +243,7 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	return len(issues) == 100, nil
 }
 
-func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
+func GetGithubIssuesAndPullsRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
 	client := github.NewClient(httpClient)
 
 	opts := &github.IssueListByRepoOptions{
@@ -262,17 +263,19 @@ func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *Rep
 		}
 
 		for _, gitIssue := range issues {
-			if !gitIssue.IsPullRequest() {
-				if *gitIssue.State == "open" { // issue not yet closed
-					repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
-						CreateDate: gitIssue.GetCreatedAt(),
-						Assignees:  len(gitIssue.Assignees),
-					})
-				} else {
-					repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, ClosedIssue{
-						CreateDate: gitIssue.GetCreatedAt(),
-						CloseDate:  gitIssue.GetClosedAt(),
-					})
+			if gitIssue.GetCreatedAt().After(startPoint) {
+				if gitIssue.IsPullRequest() {
+					if *gitIssue.State == "open" { // issue not yet closed
+						repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
+							CreateDate: gitIssue.GetCreatedAt(),
+							Assignees:  len(gitIssue.Assignees),
+						})
+					} else {
+						repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, ClosedIssue{
+							CreateDate: gitIssue.GetCreatedAt(),
+							CloseDate:  gitIssue.GetClosedAt(),
+						})
+					}
 				}
 			}
 		}
