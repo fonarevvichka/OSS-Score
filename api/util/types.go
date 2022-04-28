@@ -9,6 +9,7 @@ type PageInfo struct {
 	EndCursor   string
 }
 
+// GraphQL Responses
 type RepoInfoResponse struct {
 	Data struct {
 		Repository struct {
@@ -30,37 +31,6 @@ type RepoInfoResponse struct {
 					}
 				}
 			}
-		}
-	}
-}
-
-type CommitResponse struct {
-	Data struct {
-		Repository struct {
-			Ref struct {
-				Target struct {
-					History struct {
-						Edges []struct {
-							Node struct {
-								PushedDate time.Time
-								Author     struct {
-									Name string
-								}
-							}
-						}
-						PageInfo PageInfo
-					}
-				}
-			}
-		}
-	}
-}
-
-type CommitResponseRest struct {
-	Commit struct {
-		Author struct {
-			Name string
-			Date time.Time
 		}
 	}
 }
@@ -96,47 +66,6 @@ type DependencyResponse struct {
 	}
 }
 
-type Dependency struct {
-	Catalog string
-	Owner   string
-	Name    string
-	Version string
-}
-
-type IssueResponse struct {
-	Data struct {
-		Repository struct {
-			Issues struct {
-				Edges []struct {
-					Node struct {
-						Closed    bool
-						CreatedAt time.Time
-						ClosedAt  time.Time
-						Assignees struct {
-							TotalCount int
-						}
-						Participants struct {
-							TotalCount int
-						}
-						Comments struct {
-							TotalCount int
-						}
-					}
-				}
-				PageInfo PageInfo
-			}
-		}
-	}
-}
-
-type IssueResponseRest struct {
-	State      string
-	Assignees  []interface{}
-	Comments   int
-	Created_at time.Time
-	Closed_at  time.Time
-}
-
 type PullResponse struct {
 	Data struct {
 		Repository struct {
@@ -153,12 +82,6 @@ type PullResponse struct {
 			}
 		}
 	}
-}
-
-type PullResponseRest struct {
-	State      string
-	Created_at time.Time
-	Closed_at  time.Time
 }
 
 type ReleaseResponse struct {
@@ -215,6 +138,13 @@ type Commit struct {
 	Author     string
 }
 
+type Dependency struct {
+	Catalog string
+	Owner   string
+	Name    string
+	Version string
+}
+
 type RepoRequestInfo struct {
 	Name    string
 	Owner   string
@@ -258,11 +188,6 @@ type NameOwner struct {
 	Name  string
 }
 
-type GitRestBody struct {
-	Message string `json:"message"`
-	DocUrl  string `json:"documentation_url"`
-}
-
 type ScoreRequestBody struct {
 	TimeFrame int `json:"timeFrame"`
 }
@@ -271,4 +196,77 @@ type ScoreCategory struct {
 	Min    float64
 	Max    float64
 	Weight float64
+}
+
+// Deprecated GraphQL Responses
+type CommitResponse struct {
+	Data struct {
+		Repository struct {
+			Ref struct {
+				Target struct {
+					History struct {
+						Edges []struct {
+							Node struct {
+								PushedDate time.Time
+								Author     struct {
+									Name string
+								}
+							}
+						}
+						PageInfo PageInfo
+					}
+				}
+			}
+		}
+	}
+}
+
+type IssueResponse struct {
+	Data struct {
+		Repository struct {
+			Issues struct {
+				Edges []struct {
+					Node struct {
+						Closed    bool
+						CreatedAt time.Time
+						ClosedAt  time.Time
+						Assignees struct {
+							TotalCount int
+						}
+						Participants struct {
+							TotalCount int
+						}
+						Comments struct {
+							TotalCount int
+						}
+					}
+				}
+				PageInfo PageInfo
+			}
+		}
+	}
+}
+
+// Deprecated REST Responses
+type CommitResponseRest struct {
+	Commit struct {
+		Author struct {
+			Name string
+			Date time.Time
+		}
+	}
+}
+
+type IssueResponseRest struct {
+	State      string
+	Assignees  []interface{}
+	Comments   int
+	Created_at time.Time
+	Closed_at  time.Time
+}
+
+type PullResponseRest struct {
+	State      string
+	Created_at time.Time
+	Closed_at  time.Time
 }
