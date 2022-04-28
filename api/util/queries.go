@@ -15,7 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const GitUrl = "https://api.github.com/graphql"
+const GraphQLEndpoint = "https://api.github.com/graphql"
 
 func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	query, err := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
@@ -32,7 +32,7 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	})
 	responseBody := bytes.NewBuffer(postBody)
 
-	postRequest, err := http.NewRequest("POST", GitUrl, responseBody)
+	postRequest, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -128,7 +128,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -308,7 +308,7 @@ func GetGithubReleasesGraphQL(client *http.Client, repo *RepoInfo, startDate str
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -374,7 +374,7 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -536,7 +536,7 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -620,7 +620,7 @@ func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate stri
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
