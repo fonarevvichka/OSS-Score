@@ -155,8 +155,8 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-		if startPoint.Before(repo.CreateDate) {
-			startPoint = repo.CreateDate
+		if startPoint.Before(repo.CreatedAt) {
+			startPoint = repo.CreatedAt
 		}
 
 		if repo.Status == 3 {
@@ -255,8 +255,8 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		}
 	}
 
-	if repo.DataStartPoint.Before(repo.CreateDate) {
-		repo.DataStartPoint = repo.CreateDate
+	if repo.DataStartPoint.Before(repo.CreatedAt) {
+		repo.DataStartPoint = repo.CreatedAt
 	}
 
 	repo.UpdatedAt = time.Now()

@@ -77,8 +77,8 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 	closedIssueCounter := 0.0
 
 	for _, issue := range issues.ClosedIssues {
-		if issue.CreateDate.After(startPoint) {
-			totalClosureTime += issue.CloseDate.Sub(issue.CreateDate).Hours()
+		if issue.CreatedAt.After(startPoint) {
+			totalClosureTime += issue.CloseDate.Sub(issue.CreatedAt).Hours()
 			closedIssueCounter += 1
 		}
 	}
@@ -86,7 +86,7 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 	if closedIssueCounter == 0 {
 		openIssueCounter := 0.0
 		for _, issue := range issues.OpenIssues {
-			if issue.CreateDate.After(startPoint) {
+			if issue.CreatedAt.After(startPoint) {
 				openIssueCounter += 1
 				break
 			}
@@ -111,8 +111,8 @@ func ParsePullRequests(pulls PullRequests, startPoint time.Time) (float64, float
 	closedPullCounter := 0.0
 
 	for _, pull := range pulls.ClosedPR {
-		if pull.CreateDate.After(startPoint) {
-			totalClosureTime += pull.CloseDate.Sub(pull.CreateDate).Hours()
+		if pull.CreatedAt.After(startPoint) {
+			totalClosureTime += pull.CloseDate.Sub(pull.CreatedAt).Hours()
 			closedPullCounter += 1
 		}
 	}
@@ -120,7 +120,7 @@ func ParsePullRequests(pulls PullRequests, startPoint time.Time) (float64, float
 	if closedPullCounter == 0 {
 		openPullCounter := 0.0
 		for _, pull := range pulls.OpenPR {
-			if pull.CreateDate.After(startPoint) {
+			if pull.CreatedAt.After(startPoint) {
 				openPullCounter += 1
 				break
 			}
@@ -196,7 +196,7 @@ func ParseReleases(releases []Release, LatestRelease time.Time, startPoint time.
 
 	releaseCounter := 0.0
 	for _, release := range releases {
-		if release.CreateDate.After(startPoint) {
+		if release.CreatedAt.After(startPoint) {
 			releaseCounter += 1
 		}
 	}

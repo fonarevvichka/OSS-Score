@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v43/github"
+	"github.com/shurcooL/githubv4"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -68,7 +69,7 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	}
 
 	repo.License = data.Data.Repository.LicenseInfo.Key
-	repo.CreateDate = data.Data.Repository.CreatedAt
+	repo.CreatedAt = data.Data.Repository.CreatedAt
 	repo.LatestRelease = data.Data.Repository.LatestRelease.CreatedAt
 	repo.Stars = data.Data.Repository.StargazerCount
 	repo.DefaultBranch = data.Data.Repository.DefaultBranchRef.Name
@@ -201,13 +202,13 @@ func getGithubIssueRestTyped(ctx context.Context, client *github.Client, repo *R
 				if !gitIssue.IsPullRequest() {
 					if *gitIssue.State == "open" { // issue not yet closed
 						repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
-							CreateDate: gitIssue.GetCreatedAt(),
-							Assignees:  len(gitIssue.Assignees),
+							CreatedAt: gitIssue.GetCreatedAt(),
+							Assignees: len(gitIssue.Assignees),
 						})
 					} else {
 						repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, ClosedIssue{
-							CreateDate: gitIssue.GetCreatedAt(),
-							CloseDate:  gitIssue.GetClosedAt(),
+							CreatedAt: gitIssue.GetCreatedAt(),
+							CloseDate: gitIssue.GetClosedAt(),
 						})
 					}
 				}
@@ -337,11 +338,45 @@ func GetGithubReleasesGraphQL(client *http.Client, repo *RepoInfo, startDate str
 
 		for _, node := range data.Data.Repository.Releases.Edges {
 			repo.Releases = append(repo.Releases, Release{
-				CreateDate: node.Node.CreatedAt,
+				CreatedAt: node.Node.CreatedAt,
 			})
 		}
 		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
 		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
+	}
+
+	return nil
+}
+
+func GetGithubReleasesGraphQLV2(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startDate string) error {
+	client := githubv4.NewClient(httpClient)
+
+	var q struct {
+		Repository struct {
+			Releases struct {
+				Nodes    []Release
+				PageInfo PageInfo
+			} `graphql:"releases(first: 100, after: $cursor, orderBy: {field: CREATED_AT, direction: ASC})"`
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
+	variables := map[string]interface{}{
+		"owner":  githubv4.String(repo.Owner),
+		"name":   githubv4.String(repo.Name),
+		"cursor": (*githubv4.String)(nil), // nil to start n first page
+	}
+
+	for {
+		err := client.Query(ctx, &q, variables)
+		if err != nil {
+			return err
+		}
+		repo.Releases = append(repo.Releases, q.Repository.Releases.Nodes...)
+
+		if !q.Repository.Releases.PageInfo.HasNextPage {
+			break
+		}
+		variables["cursor"] = githubv4.String(q.Repository.Releases.PageInfo.EndCursor)
 	}
 
 	return nil
@@ -409,14 +444,14 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 			if node.Node.Closed {
 				if node.Node.Merged {
 					pull := ClosedPR{
-						CreateDate: node.Node.CreatedAt,
-						CloseDate:  node.Node.ClosedAt,
+						CreatedAt: node.Node.CreatedAt,
+						CloseDate: node.Node.ClosedAt,
 					}
 					closedPulls = append(closedPulls, pull)
 				}
 			} else {
 				pull := OpenPR{
-					CreateDate: node.Node.CreatedAt,
+					CreatedAt: node.Node.CreatedAt,
 				}
 				openPulls = append(openPulls, pull)
 			}
@@ -490,15 +525,15 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	for _, issueResponse := range issues {
 		if issueResponse.State == "open" {
 			newIssue := OpenIssue{
-				CreateDate: issueResponse.Created_at,
+				CreatedAt: issueResponse.Created_at,
 				// Comments:   issueResponse.Comments,
 				Assignees: len(issueResponse.Assignees),
 			}
 			repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, newIssue)
 		} else {
 			newIssue := ClosedIssue{
-				CreateDate: issueResponse.Created_at,
-				CloseDate:  issueResponse.Closed_at,
+				CreatedAt: issueResponse.Created_at,
+				CloseDate: issueResponse.Closed_at,
 				// Comments:   issueResponse.Comments,
 			}
 			repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, newIssue)
@@ -566,16 +601,16 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 		for _, node := range data.Data.Repository.Issues.Edges {
 			if node.Node.Closed {
 				issue := ClosedIssue{
-					CreateDate: node.Node.CreatedAt,
-					CloseDate:  node.Node.ClosedAt,
+					CreatedAt: node.Node.CreatedAt,
+					CloseDate: node.Node.ClosedAt,
 					// Participants: node.Node.Participants.TotalCount,
 					// Comments:     node.Node.Assignees.TotalCount,
 				}
 				closedIssues = append(closedIssues, issue)
 			} else {
 				issue := OpenIssue{
-					CreateDate: node.Node.CreatedAt,
-					Assignees:  node.Node.Assignees.TotalCount,
+					CreatedAt: node.Node.CreatedAt,
+					Assignees: node.Node.Assignees.TotalCount,
 					// Participants: node.Node.Participants.TotalCount,
 					// Comments:     node.Node.Assignees.TotalCount,
 				}
@@ -744,13 +779,13 @@ func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string,
 	for _, pr := range prs {
 		if pr.State == "open" {
 			newPR := OpenPR{
-				CreateDate: pr.Created_at,
+				CreatedAt: pr.Created_at,
 			}
 			repo.PullRequests.OpenPR = append(repo.PullRequests.OpenPR, newPR)
 		} else {
 			newPR := ClosedPR{
-				CreateDate: pr.Created_at,
-				CloseDate:  pr.Closed_at,
+				CreatedAt: pr.Created_at,
+				CloseDate: pr.Closed_at,
 			}
 			repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, newPR)
 		}

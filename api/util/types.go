@@ -100,14 +100,14 @@ type ReleaseResponse struct {
 }
 
 type OpenIssue struct {
-	CreateDate time.Time
+	CreatedAt time.Time
 
 	Assignees int
 }
 
 type ClosedIssue struct {
-	CreateDate time.Time
-	CloseDate  time.Time
+	CreatedAt time.Time
+	CloseDate time.Time
 }
 
 type Issues struct {
@@ -116,12 +116,12 @@ type Issues struct {
 }
 
 type OpenPR struct {
-	CreateDate time.Time
+	CreatedAt time.Time
 }
 
 type ClosedPR struct {
-	CreateDate time.Time
-	CloseDate  time.Time
+	CreatedAt time.Time
+	CloseDate time.Time
 }
 
 type PullRequests struct {
@@ -130,7 +130,7 @@ type PullRequests struct {
 }
 
 type Release struct {
-	CreateDate time.Time
+	CreatedAt time.Time
 }
 
 type Commit struct {
@@ -166,7 +166,7 @@ type RepoInfo struct {
 	UpdatedAt      time.Time
 
 	License       string
-	CreateDate    time.Time
+	CreatedAt     time.Time
 	LatestRelease time.Time
 	Stars         int
 
