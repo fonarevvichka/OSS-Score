@@ -11,10 +11,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/go-github/v43/github"
 	"golang.org/x/sync/errgroup"
 )
 
-const GitUrl = "https://api.github.com/graphql"
+const GraphQLEndpoint = "https://api.github.com/graphql"
 
 func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	query, err := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
@@ -31,7 +32,7 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	})
 	responseBody := bytes.NewBuffer(postBody)
 
-	postRequest, err := http.NewRequest("POST", GitUrl, responseBody)
+	postRequest, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -76,6 +77,32 @@ func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
 	return nil
 }
 
+func CheckRepoAccess(ctx context.Context, httpClient *http.Client, owner string, name string) (int, error) {
+	client := github.NewClient(httpClient)
+
+	// Only need 1 item to check if we can access it
+	opts := github.BranchListOptions{
+		ListOptions: github.ListOptions{
+			PerPage: 1,
+		},
+	}
+	_, _, err := client.Repositories.ListBranches(ctx, owner, name, &opts)
+
+	if _, ok := err.(*github.RateLimitError); ok {
+		return -1, nil
+	} else if _, ok := err.(*github.ErrorResponse); ok { // should probably just check for 404 here not general error
+		if err.(*github.ErrorResponse).Message == "Not Found" {
+			return 0, nil
+		} else {
+			return 0, err
+		}
+	} else if err != nil {
+		return 0, err
+	}
+
+	return 1, nil
+}
+
 func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 	query, err := importQuery("./util/queries/dependencies.graphql")
 	if err != nil {
@@ -101,7 +128,7 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -160,268 +187,96 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 	return nil
 }
 
-func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
-	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?", repo.Owner, repo.Name)
-	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
+func getGithubIssueRestTyped(ctx context.Context, client *github.Client, repo *RepoInfo, opts github.IssueListByRepoOptions) error {
+	for {
+		issues, resp, err := client.Issues.ListByRepo(ctx, repo.Owner, repo.Name, &opts)
 
-	responseBody := bytes.NewBuffer(make([]byte, 0))
-	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		log.Println(resp.Status)
-		log.Println(resp.Header)
-		log.Println(resp.Body)
-		log.Println("Error querying github for issue page")
-		return false, fmt.Errorf("failed to query github: issue page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-	}
-
-	issues := []IssueResponseRest{}
-	decoder := json.NewDecoder(resp.Body)
-	if decoder.Decode(&issues) != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	// Pull out issue info
-	for _, issueResponse := range issues {
-		if issueResponse.State == "open" {
-			newIssue := OpenIssue{
-				CreateDate: issueResponse.Created_at,
-				Comments:   issueResponse.Comments,
-				Assignees:  len(issueResponse.Assignees),
-			}
-			repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, newIssue)
-		} else {
-			newIssue := ClosedIssue{
-				CreateDate: issueResponse.Created_at,
-				CloseDate:  issueResponse.Closed_at,
-				Comments:   issueResponse.Comments,
-			}
-			repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, newIssue)
-		}
-	}
-
-	return len(issues) == 100, nil
-}
-
-func GetGithubIssuesRest(ctx context.Context, client *http.Client, repo *RepoInfo, startDate string) error {
-	errs, _ := errgroup.WithContext(ctx)
-	closedHasNextPage := true
-	openHasNextPage := true
-	closePage := 1
-	openPage := 1
-
-	errs.Go(func() error {
-		var err error
-		for closedHasNextPage {
-			closedHasNextPage, err = getGithubIssuePage(client, repo, "closed", closePage, startDate)
-			if err != nil {
-				return err
-			}
-			closePage += 1
-		}
-		return nil
-	})
-
-	errs.Go(func() error {
-		var err error
-		for openHasNextPage {
-			openHasNextPage, err = getGithubIssuePage(client, repo, "open", openPage, startDate)
-			if err != nil {
-				return err
-			}
-			openPage += 1
-		}
-		return nil
-	})
-
-	return errs.Wait()
-}
-
-func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
-	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls?", repo.Owner, repo.Name)
-	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
-
-	responseBody := bytes.NewBuffer(make([]byte, 0))
-	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		log.Println(resp.Status)
-		log.Println(resp.Header)
-		log.Println(resp.Body)
-		log.Println("Error querying github for PR page")
-		return false, fmt.Errorf("failed to query github: PR page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-	}
-
-	prs := []PullResponseRest{}
-	decoder := json.NewDecoder(resp.Body)
-	if decoder.Decode(&prs) != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	// Pull out PR info
-	for _, pr := range prs {
-		if pr.State == "open" {
-			newPR := OpenPR{
-				CreateDate: pr.Created_at,
-			}
-			repo.PullRequests.OpenPR = append(repo.PullRequests.OpenPR, newPR)
-		} else {
-			newPR := ClosedPR{
-				CreateDate: pr.Created_at,
-				CloseDate:  pr.Closed_at,
-			}
-			repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, newPR)
-		}
-	}
-
-	return len(prs) == 100, nil
-}
-
-func GetGithubPullRequestsRest(ctx context.Context, client *http.Client, repo *RepoInfo, startDate string) error {
-	errs, _ := errgroup.WithContext(ctx)
-	closedHasNextPage := true
-	openHasNextPage := true
-	closePage := 1
-	openPage := 1
-
-	errs.Go(func() error {
-		var err error
-		for closedHasNextPage {
-			closedHasNextPage, err = getGithubPullRequestPage(client, repo, "closed", closePage, startDate)
-			if err != nil {
-				return err
-			}
-			closePage += 1
-		}
-		return nil
-	})
-
-	errs.Go(func() error {
-		var err error
-		for openHasNextPage {
-			openHasNextPage, err = getGithubPullRequestPage(client, repo, "open", openPage, startDate)
-			if err != nil {
-				return err
-			}
-			openPage += 1
-		}
-		return nil
-	})
-
-	return errs.Wait()
-}
-
-func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) (bool, error) {
-	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits?", repo.Owner, repo.Name)
-	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate)
-
-	responseBody := bytes.NewBuffer(make([]byte, 0))
-	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		log.Println(resp.Status)
-		log.Println(resp.Header)
-		log.Println(resp.Body)
-		log.Println("Error querying github for core commit page")
-		return false, fmt.Errorf("failed to query github: commit page\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-	}
-
-	commits := []CommitResponseRest{}
-	decoder := json.NewDecoder(resp.Body)
-	if decoder.Decode(&commits) != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	for _, commitResponse := range commits {
-		newCommit := Commit{
-			Author:     commitResponse.Commit.Author.Name,
-			PushedDate: commitResponse.Commit.Author.Date,
-		}
-
-		repo.Commits = append(repo.Commits, newCommit)
-	}
-
-	return len(commits) == 100, nil
-}
-
-func CheckRepoAccess(client *http.Client, owner string, name string) (int, error) {
-	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, name)
-
-	body := bytes.NewBuffer(make([]byte, 0))
-	request, err := http.NewRequest("GET", requestUrl, body)
-	if err != nil {
-		log.Println(err)
-		return 0, err
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println(err)
-		return 0, err
-	}
-
-	defer resp.Body.Close()
-
-	switch resp.StatusCode {
-	case 200:
-		return 1, nil
-	case 403: // rate limiting exceeded
-		return -1, nil
-	case 404: // repo not found
-		return 0, nil
-	default:
-		return 0, nil
-	}
-}
-
-func GetGithubCommitsRest(client *http.Client, repo *RepoInfo, startDate string) error {
-	hasNextPage := true
-	var err error
-	page := 1
-
-	for hasNextPage {
-		hasNextPage, err = getGithubCommitsPage(client, repo, page, startDate)
+		// May want more granularity here, but for now i think we can check for ratelimitng a step above
 		if err != nil {
-			log.Println(err)
 			return err
 		}
-		page += 1
+
+		for _, gitIssue := range issues {
+			if gitIssue.GetCreatedAt().After(opts.Since) {
+				if !gitIssue.IsPullRequest() {
+					if *gitIssue.State == "open" { // issue not yet closed
+						repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
+							CreateDate: gitIssue.GetCreatedAt(),
+							Assignees:  len(gitIssue.Assignees),
+						})
+					} else {
+						repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, ClosedIssue{
+							CreateDate: gitIssue.GetCreatedAt(),
+							CloseDate:  gitIssue.GetClosedAt(),
+						})
+					}
+				}
+			}
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return nil
+}
+
+func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
+	errs, ctx := errgroup.WithContext(ctx)
+	client := github.NewClient(httpClient)
+
+	opts := github.IssueListByRepoOptions{
+		Since: startPoint,
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	errs.Go(func() error {
+		opts.State = "open"
+		return getGithubIssueRestTyped(ctx, client, repo, opts)
+	})
+
+	errs.Go(func() error {
+		opts.State = "closed"
+		return getGithubIssueRestTyped(ctx, client, repo, opts)
+	})
+
+	return errs.Wait()
+}
+
+func GetGithubCommitsRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
+	client := github.NewClient(httpClient)
+
+	opts := &github.CommitsListOptions{
+		Since: startPoint,
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	for {
+		commits, resp, err := client.Repositories.ListCommits(ctx, repo.Owner, repo.Name, opts)
+
+		// May want more granularity here, but for now i think we can check for ratelimitng a step above
+		if err != nil {
+			return err
+		}
+
+		// pull out commits and record them
+		for _, gitCommit := range commits {
+			repo.Commits = append(repo.Commits, Commit{
+				Author:     gitCommit.Commit.Author.GetName(),
+				PushedDate: *gitCommit.Commit.Committer.Date,
+			})
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
 	}
 
 	return nil
@@ -453,7 +308,7 @@ func GetGithubReleasesGraphQL(client *http.Client, repo *RepoInfo, startDate str
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -519,7 +374,7 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -552,11 +407,13 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 				break
 			}
 			if node.Node.Closed {
-				pull := ClosedPR{
-					CreateDate: node.Node.CreatedAt,
-					CloseDate:  node.Node.ClosedAt,
+				if node.Node.Merged {
+					pull := ClosedPR{
+						CreateDate: node.Node.CreatedAt,
+						CloseDate:  node.Node.ClosedAt,
+					}
+					closedPulls = append(closedPulls, pull)
 				}
-				closedPulls = append(closedPulls, pull)
 			} else {
 				pull := OpenPR{
 					CreateDate: node.Node.CreatedAt,
@@ -572,6 +429,83 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 	repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, closedPulls...)
 
 	return nil
+}
+
+// Takes file path and reads in the query from it
+func importQuery(filename string) (string, error) {
+	file, err := os.Open(filename)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	defer file.Close()
+
+	query, err := ioutil.ReadAll(file)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return string(query[:]), nil // converts byte array to string
+}
+
+// deprecated
+func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
+	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?", repo.Owner, repo.Name)
+	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
+
+	responseBody := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Println(resp.Body)
+		log.Println("Error querying github for issue page")
+		return false, fmt.Errorf("failed to query github: issue page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+	}
+
+	issues := []IssueResponseRest{}
+	decoder := json.NewDecoder(resp.Body)
+	if decoder.Decode(&issues) != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	// Pull out issue info
+	for _, issueResponse := range issues {
+		if issueResponse.State == "open" {
+			newIssue := OpenIssue{
+				CreateDate: issueResponse.Created_at,
+				// Comments:   issueResponse.Comments,
+				Assignees: len(issueResponse.Assignees),
+			}
+			repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, newIssue)
+		} else {
+			newIssue := ClosedIssue{
+				CreateDate: issueResponse.Created_at,
+				CloseDate:  issueResponse.Closed_at,
+				// Comments:   issueResponse.Comments,
+			}
+			repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, newIssue)
+		}
+	}
+
+	return len(issues) == 100, nil
 }
 
 // deprecated
@@ -602,7 +536,7 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -632,18 +566,18 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 		for _, node := range data.Data.Repository.Issues.Edges {
 			if node.Node.Closed {
 				issue := ClosedIssue{
-					CreateDate:   node.Node.CreatedAt,
-					CloseDate:    node.Node.ClosedAt,
-					Participants: node.Node.Participants.TotalCount,
-					Comments:     node.Node.Assignees.TotalCount,
+					CreateDate: node.Node.CreatedAt,
+					CloseDate:  node.Node.ClosedAt,
+					// Participants: node.Node.Participants.TotalCount,
+					// Comments:     node.Node.Assignees.TotalCount,
 				}
 				closedIssues = append(closedIssues, issue)
 			} else {
 				issue := OpenIssue{
-					CreateDate:   node.Node.CreatedAt,
-					Assignees:    node.Node.Assignees.TotalCount,
-					Participants: node.Node.Participants.TotalCount,
-					Comments:     node.Node.Assignees.TotalCount,
+					CreateDate: node.Node.CreatedAt,
+					Assignees:  node.Node.Assignees.TotalCount,
+					// Participants: node.Node.Participants.TotalCount,
+					// Comments:     node.Node.Assignees.TotalCount,
 				}
 				openIssues = append(openIssues, issue)
 			}
@@ -658,7 +592,8 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 	return nil
 }
 
-// about 70% as fast as using the rest
+// deprecated
+// about 70% as fast as using REST
 func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
 	query, err := importQuery("./util/queries/commits.graphql") //TODO: Make this a an env var probably
 	if err != nil {
@@ -685,7 +620,7 @@ func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate stri
 		})
 		responseBody := bytes.NewBuffer(postBody)
 
-		post_request, err := http.NewRequest("POST", GitUrl, responseBody)
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -725,23 +660,136 @@ func GetGithubCommitsGraphQL(client *http.Client, repo *RepoInfo, startDate stri
 	return nil
 }
 
-// Takes file path and reads in the query from it
-func importQuery(filename string) (string, error) {
-	file, err := os.Open(filename)
+// deprecated
+func getGithubCommitsPage(client *http.Client, repo *RepoInfo, page int, startDate string) (bool, error) {
+	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits?", repo.Owner, repo.Name)
+	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate)
 
+	responseBody := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return false, err
 	}
 
-	defer file.Close()
-
-	query, err := ioutil.ReadAll(file)
-
+	resp, err := client.Do(request)
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return false, err
 	}
 
-	return string(query[:]), nil // converts byte array to string
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Println(resp.Body)
+		log.Println("Error querying github for core commit page")
+		return false, fmt.Errorf("failed to query github: commit page\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+	}
+
+	commits := []CommitResponseRest{}
+	decoder := json.NewDecoder(resp.Body)
+	if decoder.Decode(&commits) != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	for _, commitResponse := range commits {
+		newCommit := Commit{
+			Author:     commitResponse.Commit.Author.Name,
+			PushedDate: commitResponse.Commit.Author.Date,
+		}
+
+		repo.Commits = append(repo.Commits, newCommit)
+	}
+
+	return len(commits) == 100, nil
+}
+
+// deprecated
+func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
+	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls?", repo.Owner, repo.Name)
+	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
+
+	responseBody := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Println(resp.Body)
+		log.Println("Error querying github for PR page")
+		return false, fmt.Errorf("failed to query github: PR page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+	}
+
+	prs := []PullResponseRest{}
+	decoder := json.NewDecoder(resp.Body)
+	if decoder.Decode(&prs) != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	// Pull out PR info
+	for _, pr := range prs {
+		if pr.State == "open" {
+			newPR := OpenPR{
+				CreateDate: pr.Created_at,
+			}
+			repo.PullRequests.OpenPR = append(repo.PullRequests.OpenPR, newPR)
+		} else {
+			newPR := ClosedPR{
+				CreateDate: pr.Created_at,
+				CloseDate:  pr.Closed_at,
+			}
+			repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, newPR)
+		}
+	}
+
+	return len(prs) == 100, nil
+}
+
+// deprecated
+func GetGithubPullRequestsRest(ctx context.Context, client *http.Client, repo *RepoInfo, startDate string) error {
+	errs, _ := errgroup.WithContext(ctx)
+	closedHasNextPage := true
+	openHasNextPage := true
+	closePage := 1
+	openPage := 1
+
+	errs.Go(func() error {
+		var err error
+		for closedHasNextPage {
+			closedHasNextPage, err = getGithubPullRequestPage(client, repo, "closed", closePage, startDate)
+			if err != nil {
+				return err
+			}
+			closePage += 1
+		}
+		return nil
+	})
+
+	errs.Go(func() error {
+		var err error
+		for openHasNextPage {
+			openHasNextPage, err = getGithubPullRequestPage(client, repo, "open", openPage, startDate)
+			if err != nil {
+				return err
+			}
+			openPage += 1
+		}
+		return nil
+	})
+
+	return errs.Wait()
 }
