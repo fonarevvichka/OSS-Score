@@ -463,11 +463,13 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 				break
 			}
 			if node.Node.Closed {
-				pull := ClosedPR{
-					CreateDate: node.Node.CreatedAt,
-					CloseDate:  node.Node.ClosedAt,
+				if node.Node.Merged {
+					pull := ClosedPR{
+						CreateDate: node.Node.CreatedAt,
+						CloseDate:  node.Node.ClosedAt,
+					}
+					closedPulls = append(closedPulls, pull)
 				}
-				closedPulls = append(closedPulls, pull)
 			} else {
 				pull := OpenPR{
 					CreateDate: node.Node.CreatedAt,

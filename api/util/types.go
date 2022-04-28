@@ -144,6 +144,7 @@ type PullResponse struct {
 				Edges []struct {
 					Node struct {
 						Closed    bool
+						Merged    bool
 						CreatedAt time.Time
 						ClosedAt  time.Time
 					}
