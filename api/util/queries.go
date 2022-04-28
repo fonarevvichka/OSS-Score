@@ -243,7 +243,7 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	return len(issues) == 100, nil
 }
 
-func GetGithubIssuesAndPullsRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
+func GetGithubIssuesRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
 	client := github.NewClient(httpClient)
 
 	opts := &github.IssueListByRepoOptions{
@@ -264,7 +264,7 @@ func GetGithubIssuesAndPullsRest(ctx context.Context, httpClient *http.Client, r
 
 		for _, gitIssue := range issues {
 			if gitIssue.GetCreatedAt().After(startPoint) {
-				if gitIssue.IsPullRequest() {
+				if !gitIssue.IsPullRequest() {
 					if *gitIssue.State == "open" { // issue not yet closed
 						repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
 							CreateDate: gitIssue.GetCreatedAt(),
@@ -287,38 +287,6 @@ func GetGithubIssuesAndPullsRest(ctx context.Context, httpClient *http.Client, r
 	}
 
 	return nil
-
-	// errs, _ := errgroup.WithContext(ctx)
-	// closedHasNextPage := true
-	// openHasNextPage := true
-	// closePage := 1
-	// openPage := 1
-
-	// errs.Go(func() error {
-	// 	var err error
-	// 	for closedHasNextPage {
-	// 		closedHasNextPage, err = getGithubIssuePage(httpClient, repo, "closed", closePage, startDate)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		closePage += 1
-	// 	}
-	// 	return nil
-	// })
-
-	// errs.Go(func() error {
-	// 	var err error
-	// 	for openHasNextPage {
-	// 		openHasNextPage, err = getGithubIssuePage(httpClient, repo, "open", openPage, startDate)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		openPage += 1
-	// 	}
-	// 	return nil
-	// })
-
-	// return errs.Wait()
 }
 
 func GetGithubCommitsRest(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
