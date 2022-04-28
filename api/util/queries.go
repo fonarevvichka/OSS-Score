@@ -187,62 +187,6 @@ func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
 	return nil
 }
 
-// deprecated
-func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
-	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?", repo.Owner, repo.Name)
-	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
-
-	responseBody := bytes.NewBuffer(make([]byte, 0))
-	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		log.Println(resp.Status)
-		log.Println(resp.Header)
-		log.Println(resp.Body)
-		log.Println("Error querying github for issue page")
-		return false, fmt.Errorf("failed to query github: issue page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-	}
-
-	issues := []IssueResponseRest{}
-	decoder := json.NewDecoder(resp.Body)
-	if decoder.Decode(&issues) != nil {
-		log.Println(err)
-		return false, err
-	}
-
-	// Pull out issue info
-	for _, issueResponse := range issues {
-		if issueResponse.State == "open" {
-			newIssue := OpenIssue{
-				CreateDate: issueResponse.Created_at,
-				// Comments:   issueResponse.Comments,
-				Assignees: len(issueResponse.Assignees),
-			}
-			repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, newIssue)
-		} else {
-			newIssue := ClosedIssue{
-				CreateDate: issueResponse.Created_at,
-				CloseDate:  issueResponse.Closed_at,
-				// Comments:   issueResponse.Comments,
-			}
-			repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, newIssue)
-		}
-	}
-
-	return len(issues) == 100, nil
-}
-
 func getGithubIssueRestTyped(ctx context.Context, client *github.Client, repo *RepoInfo, opts github.IssueListByRepoOptions) error {
 	for {
 		issues, resp, err := client.Issues.ListByRepo(ctx, repo.Owner, repo.Name, &opts)
@@ -506,6 +450,62 @@ func importQuery(filename string) (string, error) {
 	}
 
 	return string(query[:]), nil // converts byte array to string
+}
+
+// deprecated
+func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page int, startDate string) (bool, error) {
+	requestUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?", repo.Owner, repo.Name)
+	requestUrlWithParams := requestUrl + fmt.Sprintf("page=%d", page) + fmt.Sprintf("&per_page=%d", 100) + fmt.Sprintf("&since=%s", startDate) + fmt.Sprintf("&state=%s", state)
+
+	responseBody := bytes.NewBuffer(make([]byte, 0))
+	request, err := http.NewRequest("GET", requestUrlWithParams, responseBody)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Println(resp.Body)
+		log.Println("Error querying github for issue page")
+		return false, fmt.Errorf("failed to query github: issue page \n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+	}
+
+	issues := []IssueResponseRest{}
+	decoder := json.NewDecoder(resp.Body)
+	if decoder.Decode(&issues) != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	// Pull out issue info
+	for _, issueResponse := range issues {
+		if issueResponse.State == "open" {
+			newIssue := OpenIssue{
+				CreateDate: issueResponse.Created_at,
+				// Comments:   issueResponse.Comments,
+				Assignees: len(issueResponse.Assignees),
+			}
+			repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, newIssue)
+		} else {
+			newIssue := ClosedIssue{
+				CreateDate: issueResponse.Created_at,
+				CloseDate:  issueResponse.Closed_at,
+				// Comments:   issueResponse.Comments,
+			}
+			repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, newIssue)
+		}
+	}
+
+	return len(issues) == 100, nil
 }
 
 // deprecated
