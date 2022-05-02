@@ -283,7 +283,7 @@ func GetGithubCommitsRest(ctx context.Context, httpClient *http.Client, repo *Re
 	return nil
 }
 
-func GetGithubReleasesGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
+func GetGithubReleasesGraphQLManual(client *http.Client, repo *RepoInfo, startDate string) error {
 	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
@@ -348,7 +348,7 @@ func GetGithubReleasesGraphQL(client *http.Client, repo *RepoInfo, startDate str
 	return nil
 }
 
-func GetGithubReleasesGraphQLV2(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startDate string) error {
+func GetGithubReleasesGraphQL(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startDate string) error {
 	client := githubv4.NewClient(httpClient)
 
 	var q struct {
