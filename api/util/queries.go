@@ -19,62 +19,50 @@ import (
 
 const GraphQLEndpoint = "https://api.github.com/graphql"
 
-func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
-	query, err := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
+func GetCoreRepoInfoGraphQL(ctx context.Context, httpClient *http.Client, repo *RepoInfo) error {
+	client := githubv4.NewClient(httpClient)
+
+	var q struct {
+		Repository struct {
+			StargazerCount int
+			LatestRelease  struct {
+				CreatedAt time.Time
+			}
+			DefaultBranchRef struct {
+				Name string
+			}
+			Languages struct {
+				Nodes []struct {
+					Name string
+				}
+			} `graphql:"languages(first: 10)"`
+			LicenseInfo struct {
+				Key string
+			}
+			CreatedAt time.Time
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
+	variables := map[string]interface{}{
+		"owner": githubv4.String(repo.Owner),
+		"name":  githubv4.String(repo.Name),
+	}
+
+	err := client.Query(ctx, &q, variables)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
-	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", repo.Owner, repo.Name)
-
-	postBody, _ := json.Marshal(map[string]string{
-		"query":     query,
-		"variables": variables,
-	})
-	responseBody := bytes.NewBuffer(postBody)
-
-	postRequest, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
-	if err != nil {
-		log.Println(err)
-		return err
+	repo.Languages = make([]string, 0)
+	for _, node := range q.Repository.Languages.Nodes {
+		repo.Languages = append(repo.Languages, node.Name)
 	}
 
-	resp, err := client.Do(postRequest)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	if resp.StatusCode != 200 {
-		log.Println(resp.Status)
-		log.Println(resp.Header)
-		log.Println(resp.Body)
-		log.Println("Error querying github for core repo info")
-		return fmt.Errorf("failed to query github: core repo info\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-	}
-
-	defer resp.Body.Close()
-
-	var data RepoInfoResponse
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&data)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	var languages []string
-	for _, node := range data.Data.Repository.Languages.Edges {
-		languages = append(languages, node.Node.Name)
-	}
-
-	repo.License = data.Data.Repository.LicenseInfo.Key
-	repo.CreatedAt = data.Data.Repository.CreatedAt
-	repo.LatestRelease = data.Data.Repository.LatestRelease.CreatedAt
-	repo.Stars = data.Data.Repository.StargazerCount
-	repo.DefaultBranch = data.Data.Repository.DefaultBranchRef.Name
-	repo.Languages = append(repo.Languages, languages...)
+	repo.License = q.Repository.LicenseInfo.Key
+	repo.CreatedAt = q.Repository.CreatedAt
+	repo.LatestRelease = q.Repository.LatestRelease.CreatedAt
+	repo.Stars = q.Repository.StargazerCount
+	repo.DefaultBranch = q.Repository.DefaultBranchRef.Name
 
 	return nil
 }
@@ -105,7 +93,7 @@ func CheckRepoAccess(ctx context.Context, httpClient *http.Client, owner string,
 	return 1, nil
 }
 
-func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
+func getGithubDependenciesGraphQL(client *http.Client, repo *RepoInfo) error {
 	query, err := importQuery("./util/queries/dependencies.graphql")
 	if err != nil {
 		log.Println(err)
@@ -403,6 +391,89 @@ func GetGithubPullsGraphQL(ctx context.Context, httpClient *http.Client, repo *R
 	return nil
 }
 
+// Takes file path and reads in the query from it
+func importQuery(filename string) (string, error) {
+	file, err := os.Open(filename)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	defer file.Close()
+
+	query, err := ioutil.ReadAll(file)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return string(query[:]), nil // converts byte array to string
+}
+
+// deprecated
+func GetCoreRepoInfoGraphQLManual(client *http.Client, repo *RepoInfo) error {
+	query, err := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", repo.Owner, repo.Name)
+
+	postBody, _ := json.Marshal(map[string]string{
+		"query":     query,
+		"variables": variables,
+	})
+	responseBody := bytes.NewBuffer(postBody)
+
+	postRequest, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	resp, err := client.Do(postRequest)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Println(resp.Body)
+		log.Println("Error querying github for core repo info")
+		return fmt.Errorf("failed to query github: core repo info\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+	}
+
+	defer resp.Body.Close()
+
+	var data RepoInfoResponse
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&data)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	var languages []string
+	for _, node := range data.Data.Repository.Languages.Edges {
+		languages = append(languages, node.Node.Name)
+	}
+
+	repo.License = data.Data.Repository.LicenseInfo.Key
+	repo.CreatedAt = data.Data.Repository.CreatedAt
+	repo.LatestRelease = data.Data.Repository.LatestRelease.CreatedAt
+	repo.Stars = data.Data.Repository.StargazerCount
+	repo.DefaultBranch = data.Data.Repository.DefaultBranchRef.Name
+	repo.Languages = append(repo.Languages, languages...)
+
+	return nil
+}
+
+//deprecated
 func GetGithubPullsGraphQLManual(client *http.Client, repo *RepoInfo, startPoint time.Time) error {
 	query, err := importQuery("./util/queries/pullRequests.graphql") //TODO: Make this a an env var probably
 	if err != nil {
@@ -485,27 +556,6 @@ func GetGithubPullsGraphQLManual(client *http.Client, repo *RepoInfo, startPoint
 	repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, closedPulls...)
 
 	return nil
-}
-
-// Takes file path and reads in the query from it
-func importQuery(filename string) (string, error) {
-	file, err := os.Open(filename)
-
-	if err != nil {
-		log.Println(err)
-		return "", err
-	}
-
-	defer file.Close()
-
-	query, err := ioutil.ReadAll(file)
-
-	if err != nil {
-		log.Println(err)
-		return "", err
-	}
-
-	return string(query[:]), nil // converts byte array to string
 }
 
 // deprecated

@@ -365,7 +365,7 @@ func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) erro
 	})
 
 	errs.Go(func() error {
-		return GetCoreRepoInfo(httpClient, repo)
+		return GetCoreRepoInfoGraphQLManual(httpClient, repo)
 	})
 
 	errs.Go(func() error {
@@ -378,7 +378,7 @@ func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) erro
 	})
 
 	errs.Go(func() error {
-		return GetGithubDependencies(httpClient, repo)
+		return getGithubDependenciesGraphQL(httpClient, repo)
 	})
 
 	return errs.Wait()

@@ -10,6 +10,7 @@ type PageInfo struct {
 }
 
 // GraphQL Responses
+//deprecated
 type RepoInfoResponse struct {
 	Data struct {
 		Repository struct {
@@ -66,6 +67,7 @@ type DependencyResponse struct {
 	}
 }
 
+// deprecated
 type PullResponse struct {
 	Data struct {
 		Repository struct {
@@ -84,6 +86,7 @@ type PullResponse struct {
 	}
 }
 
+// deprecated
 type ReleaseResponse struct {
 	Data struct {
 		Repository struct {
