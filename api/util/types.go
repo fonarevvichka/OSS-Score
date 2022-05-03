@@ -107,7 +107,7 @@ type OpenIssue struct {
 
 type ClosedIssue struct {
 	CreatedAt time.Time
-	CloseDate time.Time
+	ClosedAt  time.Time
 }
 
 type Issues struct {
@@ -121,7 +121,7 @@ type OpenPR struct {
 
 type ClosedPR struct {
 	CreatedAt time.Time
-	CloseDate time.Time
+	ClosedAt  time.Time
 }
 
 type PullRequests struct {

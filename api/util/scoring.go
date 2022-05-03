@@ -78,7 +78,7 @@ func ParseIssues(issues Issues, startPoint time.Time) (float64, float64) {
 
 	for _, issue := range issues.ClosedIssues {
 		if issue.CreatedAt.After(startPoint) {
-			totalClosureTime += issue.CloseDate.Sub(issue.CreatedAt).Hours()
+			totalClosureTime += issue.ClosedAt.Sub(issue.CreatedAt).Hours()
 			closedIssueCounter += 1
 		}
 	}
@@ -112,7 +112,7 @@ func ParsePullRequests(pulls PullRequests, startPoint time.Time) (float64, float
 
 	for _, pull := range pulls.ClosedPR {
 		if pull.CreatedAt.After(startPoint) {
-			totalClosureTime += pull.CloseDate.Sub(pull.CreatedAt).Hours()
+			totalClosureTime += pull.ClosedAt.Sub(pull.CreatedAt).Hours()
 			closedPullCounter += 1
 		}
 	}
