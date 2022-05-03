@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/google/go-github/v43/github"
@@ -328,6 +329,10 @@ func GetGithubReleasesGraphQL(ctx context.Context, httpClient *http.Client, repo
 		}
 		variables["cursor"] = githubv4.String(q.Repository.Releases.PageInfo.EndCursor)
 	}
+
+	sort.Slice(repo.Releases, func(i, j int) bool {
+		return repo.Releases[i].CreatedAt.After(repo.Releases[j].CreatedAt)
+	})
 
 	return nil
 }
