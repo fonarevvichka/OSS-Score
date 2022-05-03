@@ -361,8 +361,7 @@ func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) erro
 	})
 
 	errs.Go(func() error {
-		// TODO, not taking into account the timeframe
-		return GetGithubReleasesGraphQLManual(httpClient, repo, startPoint.Format(time.RFC3339))
+		return GetGithubReleasesGraphQL(ctx, httpClient, repo, startPoint)
 	})
 
 	errs.Go(func() error {

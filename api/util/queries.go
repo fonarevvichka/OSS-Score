@@ -283,80 +283,18 @@ func GetGithubCommitsRest(ctx context.Context, httpClient *http.Client, repo *Re
 	return nil
 }
 
-func GetGithubReleasesGraphQLManual(client *http.Client, repo *RepoInfo, startDate string) error {
-	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	hasNextPage := true
-	cursor := "init"
-
-	var data ReleaseResponse
-	var variables string
-
-	for hasNextPage {
-		if cursor == "init" {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
-		} else {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
-		}
-
-		postBody, _ := json.Marshal(map[string]string{
-			"query":     query,
-			"variables": variables,
-		})
-		responseBody := bytes.NewBuffer(postBody)
-
-		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-
-		resp, err := client.Do(post_request)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != 200 {
-			log.Println(resp.Status)
-			log.Println(resp.Header)
-			log.Println(resp.Body)
-			log.Println("Error querying github for releases")
-			return fmt.Errorf("failed to query github: releases\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-		}
-
-		decoder := json.NewDecoder(resp.Body)
-		if decoder.Decode(&data) != nil {
-			log.Println(err)
-			return err
-		}
-
-		for _, node := range data.Data.Repository.Releases.Edges {
-			repo.Releases = append(repo.Releases, Release{
-				CreatedAt: node.Node.CreatedAt,
-			})
-		}
-		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
-		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
-	}
-
-	return nil
-}
-
-func GetGithubReleasesGraphQL(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startDate string) error {
+func GetGithubReleasesGraphQL(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
 	client := githubv4.NewClient(httpClient)
 
 	var q struct {
 		Repository struct {
 			Releases struct {
-				Nodes    []Release
+				Nodes []struct {
+					CreatedAt    time.Time
+					IsPrerelease bool
+				}
 				PageInfo PageInfo
-			} `graphql:"releases(first: 100, after: $cursor, orderBy: {field: CREATED_AT, direction: ASC})"`
+			} `graphql:"releases(first: 100, after: $cursor, orderBy: {field: CREATED_AT, direction: DESC})"`
 		} `graphql:"repository(owner: $owner, name: $name)"`
 	}
 
@@ -366,14 +304,26 @@ func GetGithubReleasesGraphQL(ctx context.Context, httpClient *http.Client, repo
 		"cursor": (*githubv4.String)(nil), // nil to start n first page
 	}
 
+	quit := false
 	for {
 		err := client.Query(ctx, &q, variables)
 		if err != nil {
 			return err
 		}
-		repo.Releases = append(repo.Releases, q.Repository.Releases.Nodes...)
+		for _, node := range q.Repository.Releases.Nodes {
+			if node.CreatedAt.After(startPoint) {
+				if !node.IsPrerelease {
+					repo.Releases = append(repo.Releases, Release{
+						CreatedAt: node.CreatedAt,
+					})
+				}
+			} else {
+				quit = true
+				break
+			}
+		}
 
-		if !q.Repository.Releases.PageInfo.HasNextPage {
+		if !q.Repository.Releases.PageInfo.HasNextPage || quit {
 			break
 		}
 		variables["cursor"] = githubv4.String(q.Repository.Releases.PageInfo.EndCursor)
@@ -485,6 +435,72 @@ func importQuery(filename string) (string, error) {
 	}
 
 	return string(query[:]), nil // converts byte array to string
+}
+
+// deprecated
+func GetGithubReleasesGraphQLManual(client *http.Client, repo *RepoInfo, startDate string) error {
+	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	hasNextPage := true
+	cursor := "init"
+
+	var data ReleaseResponse
+	var variables string
+
+	for hasNextPage {
+		if cursor == "init" {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
+		} else {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
+		}
+
+		postBody, _ := json.Marshal(map[string]string{
+			"query":     query,
+			"variables": variables,
+		})
+		responseBody := bytes.NewBuffer(postBody)
+
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			log.Println(resp.Status)
+			log.Println(resp.Header)
+			log.Println(resp.Body)
+			log.Println("Error querying github for releases")
+			return fmt.Errorf("failed to query github: releases\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+		}
+
+		decoder := json.NewDecoder(resp.Body)
+		if decoder.Decode(&data) != nil {
+			log.Println(err)
+			return err
+		}
+
+		for _, node := range data.Data.Repository.Releases.Edges {
+			repo.Releases = append(repo.Releases, Release{
+				CreatedAt: node.Node.CreatedAt,
+			})
+		}
+		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
+		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
+	}
+
+	return nil
 }
 
 // deprecated
