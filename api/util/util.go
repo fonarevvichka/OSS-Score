@@ -377,9 +377,9 @@ func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) erro
 		return GetGithubPullsGraphQL(ctx, httpClient, repo, startPoint)
 	})
 
-	errs.Go(func() error {
-		return getGithubDependenciesGraphQL(httpClient, repo)
-	})
+	// errs.Go(func() error {
+	// 	return getGithubDependenciesGraphQL(httpClient, repo)
+	// })
 
 	return errs.Wait()
 }

@@ -44,7 +44,7 @@ require (
 	github.com/aws/smithy-go v1.11.1 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	go.mongodb.org/mongo-driver v1.8.4
+	go.mongodb.org/mongo-driver v1.9.1
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	google.golang.org/appengine v1.6.7 // indirect

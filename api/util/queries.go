@@ -290,7 +290,7 @@ func GetGithubReleasesGraphQL(ctx context.Context, httpClient *http.Client, repo
 	variables := map[string]interface{}{
 		"owner":  githubv4.String(repo.Owner),
 		"name":   githubv4.String(repo.Name),
-		"cursor": (*githubv4.String)(nil), // nil to start n first page
+		"cursor": (*githubv4.String)(nil), // nil to start on first page
 	}
 
 	quit := false
