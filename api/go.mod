@@ -18,6 +18,8 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2 // indirect
+	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.0.2 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect
@@ -42,7 +44,7 @@ require (
 	github.com/aws/smithy-go v1.11.1 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	go.mongodb.org/mongo-driver v1.8.4
+	go.mongodb.org/mongo-driver v1.9.1
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	google.golang.org/appengine v1.6.7 // indirect

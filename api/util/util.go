@@ -155,8 +155,8 @@ func GetScore(ctx context.Context, collection *mongo.Collection, catalog string,
 		expireDate := time.Now().AddDate(0, 0, -shelfLife)
 		startPoint := time.Now().AddDate(-(timeFrame / 12), -(timeFrame % 12), 0)
 
-		if startPoint.Before(repo.CreateDate) {
-			startPoint = repo.CreateDate
+		if startPoint.Before(repo.CreatedAt) {
+			startPoint = repo.CreatedAt
 		}
 
 		if repo.Status == 3 {
@@ -255,8 +255,8 @@ func addUpdateRepo(ctx context.Context, collection *mongo.Collection, catalog st
 		}
 	}
 
-	if repo.DataStartPoint.Before(repo.CreateDate) {
-		repo.DataStartPoint = repo.CreateDate
+	if repo.DataStartPoint.Before(repo.CreatedAt) {
+		repo.DataStartPoint = repo.CreatedAt
 	}
 
 	repo.UpdatedAt = time.Now()
@@ -361,12 +361,11 @@ func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) erro
 	})
 
 	errs.Go(func() error {
-		// TODO, not taking into account the timeframe
-		return GetGithubReleasesGraphQL(httpClient, repo, startPoint.Format(time.RFC3339))
+		return GetGithubReleasesGraphQL(ctx, httpClient, repo, startPoint)
 	})
 
 	errs.Go(func() error {
-		return GetCoreRepoInfo(httpClient, repo)
+		return GetCoreRepoInfoGraphQLManual(httpClient, repo)
 	})
 
 	errs.Go(func() error {
@@ -375,12 +374,12 @@ func QueryGithub(ctx context.Context, repo *RepoInfo, startPoint time.Time) erro
 	})
 
 	errs.Go(func() error {
-		return GetGithubPullsGraphQL(httpClient, repo, startPoint)
+		return GetGithubPullsGraphQL(ctx, httpClient, repo, startPoint)
 	})
 
-	errs.Go(func() error {
-		return GetGithubDependencies(httpClient, repo)
-	})
+	// errs.Go(func() error {
+	// 	return getGithubDependenciesGraphQL(httpClient, repo)
+	// })
 
 	return errs.Wait()
 }

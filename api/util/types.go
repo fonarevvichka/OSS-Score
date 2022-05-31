@@ -10,6 +10,7 @@ type PageInfo struct {
 }
 
 // GraphQL Responses
+//deprecated
 type RepoInfoResponse struct {
 	Data struct {
 		Repository struct {
@@ -66,6 +67,7 @@ type DependencyResponse struct {
 	}
 }
 
+// deprecated
 type PullResponse struct {
 	Data struct {
 		Repository struct {
@@ -84,6 +86,7 @@ type PullResponse struct {
 	}
 }
 
+// deprecated
 type ReleaseResponse struct {
 	Data struct {
 		Repository struct {
@@ -100,14 +103,14 @@ type ReleaseResponse struct {
 }
 
 type OpenIssue struct {
-	CreateDate time.Time
+	CreatedAt time.Time
 
 	Assignees int
 }
 
 type ClosedIssue struct {
-	CreateDate time.Time
-	CloseDate  time.Time
+	CreatedAt time.Time
+	ClosedAt  time.Time
 }
 
 type Issues struct {
@@ -116,12 +119,12 @@ type Issues struct {
 }
 
 type OpenPR struct {
-	CreateDate time.Time
+	CreatedAt time.Time
 }
 
 type ClosedPR struct {
-	CreateDate time.Time
-	CloseDate  time.Time
+	CreatedAt time.Time
+	ClosedAt  time.Time
 }
 
 type PullRequests struct {
@@ -130,7 +133,7 @@ type PullRequests struct {
 }
 
 type Release struct {
-	CreateDate time.Time
+	CreatedAt time.Time
 }
 
 type Commit struct {
@@ -166,7 +169,7 @@ type RepoInfo struct {
 	UpdatedAt      time.Time
 
 	License       string
-	CreateDate    time.Time
+	CreatedAt     time.Time
 	LatestRelease time.Time
 	Stars         int
 

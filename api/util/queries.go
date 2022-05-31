@@ -9,70 +9,60 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/google/go-github/v43/github"
+	"github.com/shurcooL/githubv4"
 	"golang.org/x/sync/errgroup"
 )
 
 const GraphQLEndpoint = "https://api.github.com/graphql"
 
-func GetCoreRepoInfo(client *http.Client, repo *RepoInfo) error {
-	query, err := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
+func GetCoreRepoInfoGraphQL(ctx context.Context, httpClient *http.Client, repo *RepoInfo) error {
+	client := githubv4.NewClient(httpClient)
+
+	var q struct {
+		Repository struct {
+			StargazerCount int
+			LatestRelease  struct {
+				CreatedAt time.Time
+			}
+			DefaultBranchRef struct {
+				Name string
+			}
+			Languages struct {
+				Nodes []struct {
+					Name string
+				}
+			} `graphql:"languages(first: 10)"`
+			LicenseInfo struct {
+				Key string
+			}
+			CreatedAt time.Time
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
+	variables := map[string]interface{}{
+		"owner": githubv4.String(repo.Owner),
+		"name":  githubv4.String(repo.Name),
+	}
+
+	err := client.Query(ctx, &q, variables)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
-	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", repo.Owner, repo.Name)
-
-	postBody, _ := json.Marshal(map[string]string{
-		"query":     query,
-		"variables": variables,
-	})
-	responseBody := bytes.NewBuffer(postBody)
-
-	postRequest, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
-	if err != nil {
-		log.Println(err)
-		return err
+	repo.Languages = make([]string, 0)
+	for _, node := range q.Repository.Languages.Nodes {
+		repo.Languages = append(repo.Languages, node.Name)
 	}
 
-	resp, err := client.Do(postRequest)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	if resp.StatusCode != 200 {
-		log.Println(resp.Status)
-		log.Println(resp.Header)
-		log.Println(resp.Body)
-		log.Println("Error querying github for core repo info")
-		return fmt.Errorf("failed to query github: core repo info\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-	}
-
-	defer resp.Body.Close()
-
-	var data RepoInfoResponse
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&data)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	var languages []string
-	for _, node := range data.Data.Repository.Languages.Edges {
-		languages = append(languages, node.Node.Name)
-	}
-
-	repo.License = data.Data.Repository.LicenseInfo.Key
-	repo.CreateDate = data.Data.Repository.CreatedAt
-	repo.LatestRelease = data.Data.Repository.LatestRelease.CreatedAt
-	repo.Stars = data.Data.Repository.StargazerCount
-	repo.DefaultBranch = data.Data.Repository.DefaultBranchRef.Name
-	repo.Languages = append(repo.Languages, languages...)
+	repo.License = q.Repository.LicenseInfo.Key
+	repo.CreatedAt = q.Repository.CreatedAt
+	repo.LatestRelease = q.Repository.LatestRelease.CreatedAt
+	repo.Stars = q.Repository.StargazerCount
+	repo.DefaultBranch = q.Repository.DefaultBranchRef.Name
 
 	return nil
 }
@@ -103,7 +93,7 @@ func CheckRepoAccess(ctx context.Context, httpClient *http.Client, owner string,
 	return 1, nil
 }
 
-func GetGithubDependencies(client *http.Client, repo *RepoInfo) error {
+func getGithubDependenciesGraphQL(client *http.Client, repo *RepoInfo) error {
 	query, err := importQuery("./util/queries/dependencies.graphql")
 	if err != nil {
 		log.Println(err)
@@ -201,13 +191,13 @@ func getGithubIssueRestTyped(ctx context.Context, client *github.Client, repo *R
 				if !gitIssue.IsPullRequest() {
 					if *gitIssue.State == "open" { // issue not yet closed
 						repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, OpenIssue{
-							CreateDate: gitIssue.GetCreatedAt(),
-							Assignees:  len(gitIssue.Assignees),
+							CreatedAt: gitIssue.GetCreatedAt(),
+							Assignees: len(gitIssue.Assignees),
 						})
 					} else {
 						repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, ClosedIssue{
-							CreateDate: gitIssue.GetCreatedAt(),
-							CloseDate:  gitIssue.GetClosedAt(),
+							CreatedAt: gitIssue.GetCreatedAt(),
+							ClosedAt:  gitIssue.GetClosedAt(),
 						})
 					}
 				}
@@ -282,72 +272,209 @@ func GetGithubCommitsRest(ctx context.Context, httpClient *http.Client, repo *Re
 	return nil
 }
 
-func GetGithubReleasesGraphQL(client *http.Client, repo *RepoInfo, startDate string) error {
-	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
+func GetGithubReleasesGraphQL(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
+	client := githubv4.NewClient(httpClient)
+
+	var q struct {
+		Repository struct {
+			Releases struct {
+				Nodes []struct {
+					CreatedAt    time.Time
+					IsPrerelease bool
+				}
+				PageInfo PageInfo
+			} `graphql:"releases(first: 100, after: $cursor, orderBy: {field: CREATED_AT, direction: DESC})"`
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
+	variables := map[string]interface{}{
+		"owner":  githubv4.String(repo.Owner),
+		"name":   githubv4.String(repo.Name),
+		"cursor": (*githubv4.String)(nil), // nil to start on first page
+	}
+
+	quit := false
+	for {
+		err := client.Query(ctx, &q, variables)
+		if err != nil {
+			return err
+		}
+		for _, release := range q.Repository.Releases.Nodes {
+			if release.CreatedAt.Before(startPoint) {
+				quit = true
+				break
+			}
+			if !release.IsPrerelease {
+				repo.Releases = append(repo.Releases, Release{
+					CreatedAt: release.CreatedAt,
+				})
+			}
+		}
+
+		if !q.Repository.Releases.PageInfo.HasNextPage || quit {
+			break
+		}
+		variables["cursor"] = githubv4.String(q.Repository.Releases.PageInfo.EndCursor)
+	}
+
+	// sort releases so most recent release is
+	sort.Slice(repo.Releases, func(i, j int) bool {
+		return repo.Releases[i].CreatedAt.After(repo.Releases[j].CreatedAt)
+	})
+
+	return nil
+}
+
+func GetGithubPullsGraphQL(ctx context.Context, httpClient *http.Client, repo *RepoInfo, startPoint time.Time) error {
+	client := githubv4.NewClient(httpClient)
+
+	var q struct {
+		Repository struct {
+			PullRequests struct {
+				Nodes []struct {
+					Closed    bool
+					Merged    bool
+					CreatedAt time.Time
+					ClosedAt  time.Time
+				}
+				PageInfo PageInfo
+			} `graphql:"pullRequests(first: 100, after: $cursor, orderBy: {field: CREATED_AT, direction: DESC})"`
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
+	variables := map[string]interface{}{
+		"owner":  githubv4.String(repo.Owner),
+		"name":   githubv4.String(repo.Name),
+		"cursor": (*githubv4.String)(nil), // nil to start n first page
+	}
+
+	quit := false
+	for {
+		err := client.Query(ctx, &q, variables)
+		if err != nil {
+			return err
+		}
+
+		for _, pull := range q.Repository.PullRequests.Nodes {
+			if pull.CreatedAt.Before(startPoint) {
+				quit = true
+				break
+			}
+			if pull.Closed {
+				if pull.Merged {
+					repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, ClosedPR{
+						CreatedAt: pull.CreatedAt,
+						ClosedAt:  pull.ClosedAt,
+					})
+				}
+			} else {
+				repo.PullRequests.OpenPR = append(repo.PullRequests.OpenPR, OpenPR{
+					CreatedAt: pull.CreatedAt,
+				})
+			}
+		}
+
+		if !q.Repository.PullRequests.PageInfo.HasNextPage || quit {
+			break
+		}
+		variables["cursor"] = githubv4.String(q.Repository.PullRequests.PageInfo.EndCursor)
+	}
+
+	// sort pull request so most recent release is
+	sort.Slice(repo.PullRequests.ClosedPR, func(i, j int) bool {
+		return repo.PullRequests.ClosedPR[i].CreatedAt.After(repo.PullRequests.ClosedPR[j].CreatedAt)
+	})
+	sort.Slice(repo.PullRequests.OpenPR, func(i, j int) bool {
+		return repo.PullRequests.OpenPR[i].CreatedAt.After(repo.PullRequests.OpenPR[j].CreatedAt)
+	})
+
+	return nil
+}
+
+// Takes file path and reads in the query from it
+func importQuery(filename string) (string, error) {
+	file, err := os.Open(filename)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	defer file.Close()
+
+	query, err := ioutil.ReadAll(file)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return string(query[:]), nil // converts byte array to string
+}
+
+// deprecated
+func GetCoreRepoInfoGraphQLManual(client *http.Client, repo *RepoInfo) error {
+	query, err := importQuery("./util/queries/repoInfo.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 
-	hasNextPage := true
-	cursor := "init"
+	variables := fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\"}", repo.Owner, repo.Name)
 
-	var data ReleaseResponse
-	var variables string
+	postBody, _ := json.Marshal(map[string]string{
+		"query":     query,
+		"variables": variables,
+	})
+	responseBody := bytes.NewBuffer(postBody)
 
-	for hasNextPage {
-		if cursor == "init" {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
-		} else {
-			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
-		}
-
-		postBody, _ := json.Marshal(map[string]string{
-			"query":     query,
-			"variables": variables,
-		})
-		responseBody := bytes.NewBuffer(postBody)
-
-		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-
-		resp, err := client.Do(post_request)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != 200 {
-			log.Println(resp.Status)
-			log.Println(resp.Header)
-			log.Println(resp.Body)
-			log.Println("Error querying github for releases")
-			return fmt.Errorf("failed to query github: releases\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
-		}
-
-		decoder := json.NewDecoder(resp.Body)
-		if decoder.Decode(&data) != nil {
-			log.Println(err)
-			return err
-		}
-
-		for _, node := range data.Data.Repository.Releases.Edges {
-			repo.Releases = append(repo.Releases, Release{
-				CreateDate: node.Node.CreatedAt,
-			})
-		}
-		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
-		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
+	postRequest, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
+	if err != nil {
+		log.Println(err)
+		return err
 	}
+
+	resp, err := client.Do(postRequest)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		log.Println(resp.Status)
+		log.Println(resp.Header)
+		log.Println(resp.Body)
+		log.Println("Error querying github for core repo info")
+		return fmt.Errorf("failed to query github: core repo info\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+	}
+
+	defer resp.Body.Close()
+
+	var data RepoInfoResponse
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&data)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	var languages []string
+	for _, node := range data.Data.Repository.Languages.Edges {
+		languages = append(languages, node.Node.Name)
+	}
+
+	repo.License = data.Data.Repository.LicenseInfo.Key
+	repo.CreatedAt = data.Data.Repository.CreatedAt
+	repo.LatestRelease = data.Data.Repository.LatestRelease.CreatedAt
+	repo.Stars = data.Data.Repository.StargazerCount
+	repo.DefaultBranch = data.Data.Repository.DefaultBranchRef.Name
+	repo.Languages = append(repo.Languages, languages...)
 
 	return nil
 }
 
-func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.Time) error {
+//deprecated
+func GetGithubPullsGraphQLManual(client *http.Client, repo *RepoInfo, startPoint time.Time) error {
 	query, err := importQuery("./util/queries/pullRequests.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
@@ -409,14 +536,14 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 			if node.Node.Closed {
 				if node.Node.Merged {
 					pull := ClosedPR{
-						CreateDate: node.Node.CreatedAt,
-						CloseDate:  node.Node.ClosedAt,
+						CreatedAt: node.Node.CreatedAt,
+						ClosedAt:  node.Node.ClosedAt,
 					}
 					closedPulls = append(closedPulls, pull)
 				}
 			} else {
 				pull := OpenPR{
-					CreateDate: node.Node.CreatedAt,
+					CreatedAt: node.Node.CreatedAt,
 				}
 				openPulls = append(openPulls, pull)
 			}
@@ -431,25 +558,70 @@ func GetGithubPullsGraphQL(client *http.Client, repo *RepoInfo, startPoint time.
 	return nil
 }
 
-// Takes file path and reads in the query from it
-func importQuery(filename string) (string, error) {
-	file, err := os.Open(filename)
-
+// deprecated
+func GetGithubReleasesGraphQLManual(client *http.Client, repo *RepoInfo, startDate string) error {
+	query, err := importQuery("./util/queries/releases.graphql") //TODO: Make this a an env var probably
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return err
 	}
 
-	defer file.Close()
+	hasNextPage := true
+	cursor := "init"
 
-	query, err := ioutil.ReadAll(file)
+	var data ReleaseResponse
+	var variables string
 
-	if err != nil {
-		log.Println(err)
-		return "", err
+	for hasNextPage {
+		if cursor == "init" {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": null, \"startDate\": \"%s\"}", repo.Owner, repo.Name, startDate)
+		} else {
+			variables = fmt.Sprintf("{\"owner\": \"%s\", \"name\": \"%s\", \"cursor\": \"%s\", \"startDate\": \"%s\"}", repo.Owner, repo.Name, cursor, startDate)
+		}
+
+		postBody, _ := json.Marshal(map[string]string{
+			"query":     query,
+			"variables": variables,
+		})
+		responseBody := bytes.NewBuffer(postBody)
+
+		post_request, err := http.NewRequest("POST", GraphQLEndpoint, responseBody)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		resp, err := client.Do(post_request)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			log.Println(resp.Status)
+			log.Println(resp.Header)
+			log.Println(resp.Body)
+			log.Println("Error querying github for releases")
+			return fmt.Errorf("failed to query github: releases\n Status: %s  \n Header: %s \n Body: %s", resp.Status, resp.Header, resp.Body)
+		}
+
+		decoder := json.NewDecoder(resp.Body)
+		if decoder.Decode(&data) != nil {
+			log.Println(err)
+			return err
+		}
+
+		for _, node := range data.Data.Repository.Releases.Edges {
+			repo.Releases = append(repo.Releases, Release{
+				CreatedAt: node.Node.CreatedAt,
+			})
+		}
+		hasNextPage = data.Data.Repository.Releases.PageInfo.HasNextPage
+		cursor = data.Data.Repository.Releases.PageInfo.EndCursor
 	}
 
-	return string(query[:]), nil // converts byte array to string
+	return nil
 }
 
 // deprecated
@@ -490,15 +662,15 @@ func getGithubIssuePage(client *http.Client, repo *RepoInfo, state string, page 
 	for _, issueResponse := range issues {
 		if issueResponse.State == "open" {
 			newIssue := OpenIssue{
-				CreateDate: issueResponse.Created_at,
+				CreatedAt: issueResponse.Created_at,
 				// Comments:   issueResponse.Comments,
 				Assignees: len(issueResponse.Assignees),
 			}
 			repo.Issues.OpenIssues = append(repo.Issues.OpenIssues, newIssue)
 		} else {
 			newIssue := ClosedIssue{
-				CreateDate: issueResponse.Created_at,
-				CloseDate:  issueResponse.Closed_at,
+				CreatedAt: issueResponse.Created_at,
+				ClosedAt:  issueResponse.Closed_at,
 				// Comments:   issueResponse.Comments,
 			}
 			repo.Issues.ClosedIssues = append(repo.Issues.ClosedIssues, newIssue)
@@ -566,16 +738,16 @@ func GetGithubIssuesGraphQL(client *http.Client, repo *RepoInfo, startDate strin
 		for _, node := range data.Data.Repository.Issues.Edges {
 			if node.Node.Closed {
 				issue := ClosedIssue{
-					CreateDate: node.Node.CreatedAt,
-					CloseDate:  node.Node.ClosedAt,
+					CreatedAt: node.Node.CreatedAt,
+					ClosedAt:  node.Node.ClosedAt,
 					// Participants: node.Node.Participants.TotalCount,
 					// Comments:     node.Node.Assignees.TotalCount,
 				}
 				closedIssues = append(closedIssues, issue)
 			} else {
 				issue := OpenIssue{
-					CreateDate: node.Node.CreatedAt,
-					Assignees:  node.Node.Assignees.TotalCount,
+					CreatedAt: node.Node.CreatedAt,
+					Assignees: node.Node.Assignees.TotalCount,
 					// Participants: node.Node.Participants.TotalCount,
 					// Comments:     node.Node.Assignees.TotalCount,
 				}
@@ -744,13 +916,13 @@ func getGithubPullRequestPage(client *http.Client, repo *RepoInfo, state string,
 	for _, pr := range prs {
 		if pr.State == "open" {
 			newPR := OpenPR{
-				CreateDate: pr.Created_at,
+				CreatedAt: pr.Created_at,
 			}
 			repo.PullRequests.OpenPR = append(repo.PullRequests.OpenPR, newPR)
 		} else {
 			newPR := ClosedPR{
-				CreateDate: pr.Created_at,
-				CloseDate:  pr.Closed_at,
+				CreatedAt: pr.Created_at,
+				ClosedAt:  pr.Closed_at,
 			}
 			repo.PullRequests.ClosedPR = append(repo.PullRequests.ClosedPR, newPR)
 		}
