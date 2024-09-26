@@ -4,6 +4,7 @@ query ($name: String!, $owner: String!, $cursor: String) {
       edges {
         node {
           closed
+          merged
           createdAt
           closedAt
         }
